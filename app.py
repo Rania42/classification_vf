@@ -4,12 +4,14 @@ import re
 import time
 import uuid
 import base64
+import shutil
 import requests
 import numpy as np
 from PIL import Image
 import threading
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from collections import Counter
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -19,24 +21,37 @@ from torchvision import transforms
 from transformers import AutoTokenizer, AutoModel
 
 import easyocr
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+
+# MongoDB
+from pymongo import MongoClient
+from bson import ObjectId
+from bson.json_util import dumps as bson_dumps
+import gridfs
 
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
 MODEL_PATH   = "model/bank_doc_classifier_multimodal.pth"
 OLLAMA_URL   = "http://localhost:11434/api/generate"
-OLLAMA_CHAT  = "http://localhost:11434/api/chat"   # endpoint chat (pour Qwen vision)
+OLLAMA_CHAT  = "http://localhost:11434/api/chat"
 OLLAMA_MODEL = "llama3.2"
-QWEN_MODEL   = "qwen2.5vl:3b"                     # ← nouveau modèle vision
+QWEN_MODEL   = "qwen2.5vl:3b"
 DEVICE       = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 OLLAMA_TIMEOUT      = 10
 OLLAMA_MAX_RETRIES  = 1
-QWEN_TIMEOUT        = 30   # Qwen vision est plus lent (analyse image)
+QWEN_TIMEOUT        = 120
 USE_OLLAMA          = True
-USE_QWEN            = True   # flag global pour Qwen
+USE_QWEN            = True
+
+# MongoDB config
+MONGO_URI    = "mongodb://localhost:27017/"
+MONGO_DB     = "bankdoc"
+DOCS_FOLDER  = "stored_documents"   # dossier local pour copies physiques
+
+os.makedirs(DOCS_FOLDER, exist_ok=True)
 
 KEYWORD_RULES = {
     "acte_heredite": [
@@ -80,28 +95,110 @@ KEYWORD_RULES = {
 }
 
 # ─────────────────────────────────────────────
+# MONGODB INIT
+# ─────────────────────────────────────────────
+mongo_client = None
+mongo_db     = None
+fs           = None
+
+def init_mongodb():
+    global mongo_client, mongo_db, fs
+    try:
+        mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
+        mongo_client.server_info()  # force connection test
+        mongo_db = mongo_client[MONGO_DB]
+        fs       = gridfs.GridFS(mongo_db)
+
+        # Index pour la recherche
+        mongo_db.documents.create_index("prediction")
+        mongo_db.documents.create_index("original_filename")
+        mongo_db.documents.create_index("uploaded_at")
+        mongo_db.documents.create_index([("ocr_text", "text"), ("original_filename", "text")])
+
+        print("[MongoDB] ✅ Connecté — base : bankdoc")
+        return True
+    except Exception as e:
+        print(f"[MongoDB] ❌ Erreur : {e}")
+        return False
+
+MONGO_AVAILABLE = init_mongodb()
+
+
+def save_document_to_mongo(file_path: str, original_filename: str, result: dict) -> str | None:
+    """
+    Sauvegarde le document dans MongoDB (GridFS pour le fichier + collection documents pour les métadonnées).
+    Retourne l'ObjectId sous forme de string, ou None si erreur.
+    """
+    if not MONGO_AVAILABLE:
+        return None
+    try:
+        ext      = original_filename.rsplit(".", 1)[-1].lower() if "." in original_filename else "jpg"
+        doc_id   = str(uuid.uuid4())
+        category = result.get("prediction", "inconnu")
+
+        # ── Copie physique organisée par catégorie ──────────────────
+        cat_folder = os.path.join(DOCS_FOLDER, category)
+        os.makedirs(cat_folder, exist_ok=True)
+        stored_filename = f"{doc_id}.{ext}"
+        stored_path     = os.path.join(cat_folder, stored_filename)
+        shutil.copy2(file_path, stored_path)
+
+        # ── GridFS : stockage binaire dans MongoDB ──────────────────
+        with open(file_path, "rb") as f_bin:
+            gridfs_id = fs.put(
+                f_bin,
+                filename=stored_filename,
+                content_type=f"image/{ext}" if ext != "pdf" else "application/pdf",
+                metadata={"category": category, "doc_id": doc_id},
+            )
+
+        # ── Collection documents : métadonnées ──────────────────────
+        doc = {
+            "doc_id":            doc_id,
+            "original_filename": original_filename,
+            "stored_filename":   stored_filename,
+            "stored_path":       stored_path,
+            "gridfs_id":         gridfs_id,
+            "prediction":        category,
+            "confidence":        result.get("confidence", 0),
+            "path":              result.get("path", ""),
+            "ocr_text":          result.get("ocr_text", ""),
+            "all_scores":        result.get("all_scores", []),
+            "qwen":              result.get("qwen", {}),
+            "votes":             result.get("votes", {}),
+            "agreement":         result.get("agreement", True),
+            "time_ms":           result.get("time_ms", 0),
+            "uploaded_at":       datetime.utcnow(),
+            "file_size_bytes":   os.path.getsize(file_path),
+        }
+        insert_result = mongo_db.documents.insert_one(doc)
+        mongo_id = str(insert_result.inserted_id)
+        print(f"[MongoDB] ✅ Document sauvegardé : {mongo_id} → {category}/{stored_filename}")
+        return mongo_id
+
+    except Exception as e:
+        print(f"[MongoDB] ❌ Erreur sauvegarde : {e}")
+        return None
+
+
+# ─────────────────────────────────────────────
 # OLLAMA / QWEN — UTILITAIRES
 # ─────────────────────────────────────────────
 
 def check_ollama_available():
-    """Vérifie Ollama et détecte quels modèles sont disponibles."""
     global USE_OLLAMA, USE_QWEN
     try:
         response = requests.get("http://localhost:11434/api/tags", timeout=3)
         if response.status_code != 200:
             USE_OLLAMA = USE_QWEN = False
             return False
-
         models = response.json().get("models", [])
         names  = [m.get("name", "") for m in models]
-
         USE_OLLAMA = any(OLLAMA_MODEL in n for n in names)
         USE_QWEN   = any(QWEN_MODEL   in n for n in names)
-
         print(f"[Ollama] llama3.2 : {'✅' if USE_OLLAMA else '❌'}  |  "
               f"qwen2.5vl : {'✅' if USE_QWEN else '❌'}")
         return True
-
     except Exception as e:
         print(f"[Ollama] ❌ Non disponible : {e}")
         USE_OLLAMA = USE_QWEN = False
@@ -109,19 +206,14 @@ def check_ollama_available():
 
 
 def call_ollama_text(prompt: str, timeout: int = OLLAMA_TIMEOUT) -> str | None:
-    """Appel Ollama llama3.2 (texte seul)."""
     if not USE_OLLAMA:
         return None
     try:
         with ThreadPoolExecutor(max_workers=1) as ex:
             fut = ex.submit(
                 requests.post, OLLAMA_URL,
-                json={
-                    "model":  OLLAMA_MODEL,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {"temperature": 0.1, "num_predict": 256},
-                },
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                      "options": {"temperature": 0.1, "num_predict": 256}},
                 timeout=timeout,
             )
             resp = fut.result(timeout=timeout)
@@ -135,7 +227,6 @@ def call_ollama_text(prompt: str, timeout: int = OLLAMA_TIMEOUT) -> str | None:
 
 
 def image_to_base64(img_path: str, max_size: int = 1024) -> str:
-    """Redimensionne l'image et la convertit en base64 pour Qwen-VL."""
     img = Image.open(img_path).convert("RGB")
     w, h = img.size
     if max(w, h) > max_size:
@@ -148,10 +239,6 @@ def image_to_base64(img_path: str, max_size: int = 1024) -> str:
 
 def call_qwen_vision(img_path: str, ocr_text: str, doc_classes: list[str],
                      timeout: int = QWEN_TIMEOUT) -> dict:
-    """
-    Appelle Qwen2.5-VL via l'API /api/chat d'Ollama.
-    Retourne {"class": str, "confidence": float, "reasoning": str}
-    """
     if not USE_QWEN:
         return {"class": None, "confidence": 0.0, "reasoning": "Qwen non disponible"}
 
@@ -174,80 +261,45 @@ INSTRUCTIONS :
 Si le document ne correspond à aucune catégorie, utilise "inconnu"."""
 
     img_b64 = image_to_base64(img_path)
-
     payload = {
-        "model": QWEN_MODEL,
-        "stream": False,
+        "model": QWEN_MODEL, "stream": False,
         "options": {"temperature": 0.1, "num_predict": 300},
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt,
-                "images": [img_b64],
-            }
-        ],
+        "messages": [{"role": "user", "content": prompt, "images": [img_b64]}],
     }
 
     try:
         with ThreadPoolExecutor(max_workers=1) as ex:
-            fut = ex.submit(
-                requests.post, OLLAMA_CHAT,
-                json=payload,
-                timeout=timeout,
-            )
+            fut  = ex.submit(requests.post, OLLAMA_CHAT, json=payload, timeout=timeout)
             resp = fut.result(timeout=timeout)
 
         if resp.status_code != 200:
-            print(f"[Qwen] HTTP {resp.status_code}")
             return {"class": None, "confidence": 0.0, "reasoning": f"HTTP {resp.status_code}"}
 
         raw = resp.json().get("message", {}).get("content", "").strip()
-        print(f"[Qwen] Réponse brute : {raw[:200]}")
-
-        # Parser le JSON retourné par Qwen
-        parsed = _parse_json_response(raw, doc_classes)
-        return parsed
+        return _parse_json_response(raw, doc_classes)
 
     except FuturesTimeoutError:
-        print(f"[Qwen] Timeout ({timeout}s)")
         return {"class": None, "confidence": 0.0, "reasoning": f"Timeout ({timeout}s)"}
     except Exception as e:
-        print(f"[Qwen] Erreur : {e}")
         return {"class": None, "confidence": 0.0, "reasoning": str(e)}
 
 
 def _parse_json_response(raw: str, valid_classes: list[str]) -> dict:
-    """Extrait et valide le JSON renvoyé par le LLM."""
     import json
-
-    # Nettoyer les balises markdown
     raw = re.sub(r"```(?:json)?\s*", "", raw).strip()
-
-    # Tenter parse direct
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
-        # Chercher un objet JSON dans le texte
         m = re.search(r'\{[^{}]*"class"[^{}]*\}', raw, re.DOTALL)
-        if m:
-            try:
-                data = json.loads(m.group())
-            except Exception:
-                data = {}
-        else:
-            data = {}
+        data = json.loads(m.group()) if m else {}
 
-    cls         = data.get("class", "").strip().lower().replace(" ", "_")
-    confidence  = float(data.get("confidence", 0.5))
-    reasoning   = data.get("reasoning", "")
+    cls        = data.get("class", "").strip().lower().replace(" ", "_")
+    confidence = float(data.get("confidence", 0.5))
+    reasoning  = data.get("reasoning", "")
 
-    # Valider la classe contre les classes connues
     cls_valid = next(
-        (c for c in valid_classes if c.lower() == cls or cls in c.lower()),
-        None
+        (c for c in valid_classes if c.lower() == cls or cls in c.lower()), None
     )
-
-    # Fallback : chercher une classe connue dans la réponse brute
     if not cls_valid:
         for c in valid_classes:
             if c.lower() in raw.lower():
@@ -262,14 +314,12 @@ def _parse_json_response(raw: str, valid_classes: list[str]) -> dict:
 
 
 # ─────────────────────────────────────────────
-# ARCHITECTURE DU MODÈLE (inchangée)
+# ARCHITECTURE DU MODÈLE
 # ─────────────────────────────────────────────
 class MultimodalBankClassifier(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
-        self.vision_model = timm.create_model(
-            "efficientnet_b0", pretrained=False, num_classes=0
-        )
+        self.vision_model = timm.create_model("efficientnet_b0", pretrained=False, num_classes=0)
         visual_dim = self.vision_model.num_features
         self.text_model = AutoModel.from_pretrained("bert-base-multilingual-cased")
         text_dim = self.text_model.config.hidden_size
@@ -283,9 +333,7 @@ class MultimodalBankClassifier(nn.Module):
 
     def forward(self, image, input_ids, attention_mask):
         v = self.vision_model(image)
-        t = self.text_model(
-            input_ids=input_ids, attention_mask=attention_mask
-        ).last_hidden_state[:, 0, :]
+        t = self.text_model(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state[:, 0, :]
         return self.fusion(torch.cat([v, t], dim=1))
 
 
@@ -328,7 +376,7 @@ img_transform = transforms.Compose([
 check_ollama_available()
 
 print("\n" + "=" * 60)
-print("  Pipeline : EfficientNet+mBERT → Agents → Qwen2.5-VL")
+print(f"  MongoDB : {'CONNECTÉ' if MONGO_AVAILABLE else 'INACTIF'}")
 print(f"  Ollama llama3.2 : {'ACTIF' if USE_OLLAMA else 'INACTIF'}")
 print(f"  Qwen2.5-VL      : {'ACTIF' if USE_QWEN   else 'INACTIF'}")
 print("  http://localhost:5000")
@@ -355,10 +403,8 @@ def classify_with_model(img_path: str, text: str):
     tok        = tokenizer(text, max_length=max_text,
                            padding="max_length", truncation=True, return_tensors="pt")
     with torch.no_grad():
-        logits = model(img_tensor,
-                       tok["input_ids"].to(DEVICE),
-                       tok["attention_mask"].to(DEVICE))
-        probs = F.softmax(logits, dim=1).cpu().numpy()[0]
+        logits = model(img_tensor, tok["input_ids"].to(DEVICE), tok["attention_mask"].to(DEVICE))
+        probs  = F.softmax(logits, dim=1).cpu().numpy()[0]
 
     pred_idx   = int(np.argmax(probs))
     pred_class = le.classes_[pred_idx]
@@ -391,7 +437,6 @@ def agent_keywords(text: str) -> dict:
             scores[cls] = len(hits)
             found[cls]  = hits
 
-    # Détection date de naissance → carte identité
     if re.search(r"n[ée] le \d{1,2}[./-]\d{1,2}[./-]\d{4}", text_lower):
         scores["carte_identite"] = scores.get("carte_identite", 0) + 3
         found.setdefault("carte_identite", []).append("date_naissance")
@@ -403,7 +448,6 @@ def agent_keywords(text: str) -> dict:
 
 
 def agent_llm_texte(text: str, model_prediction: str) -> str:
-    """Agent LLM texte (llama3.2) — règles rapides + fallback LLM."""
     text_lower = text.lower()
     if any(w in text_lower for w in ["carte nationale", "cni", "cin"]):
         if re.search(r"n[ée] le \d{1,2}[./-]\d{1,2}[./-]\d{4}", text_lower):
@@ -455,6 +499,7 @@ def classify():
     tmp_path = os.path.join(UPLOAD_TEMP, f"{uuid.uuid4().hex}.{ext}")
     file.save(tmp_path)
     steps = []
+    raw_text = ""
 
     try:
         # ── Étape 1 : OCR ────────────────────────────────────────────
@@ -467,7 +512,6 @@ def classify():
         steps.append({"step": "Modèle multimodal (EfficientNet+mBERT)", "status": "ok",
                       "detail": f"{pred_class} — confiance {confidence:.1%}"})
 
-        # Correction spéciale carte identité haute priorité
         if re.search(r"carte nationale|cni|cin", raw_text.lower()):
             if re.search(r"n[ée] le \d{1,2}[./-]\d{1,2}[./-]\d{4}", raw_text.lower()):
                 if confidence < 0.8:
@@ -475,17 +519,15 @@ def classify():
                     steps.append({"step": "Règle métier CIN", "status": "warning",
                                   "detail": "Carte d'identité détectée — correction prioritaire"})
 
-        # ── Étape 3 : Qwen2.5-VL (TOUJOURS appelé pour comparaison) ─
+        # ── Étape 3 : Qwen2.5-VL ─────────────────────────────────────
         qwen_result = {"class": None, "confidence": 0.0, "reasoning": "Non activé"}
         if USE_QWEN:
             steps.append({"step": "Qwen2.5-VL (analyse visuelle)", "status": "ok",
                           "detail": "Analyse en cours…"})
             qwen_result = call_qwen_vision(tmp_path, raw_text, DOC_CLASSES)
-
             status_qwen = "ok" if qwen_result["class"] else "warning"
             steps[-1] = {
-                "step":   "Qwen2.5-VL (analyse visuelle)",
-                "status": status_qwen,
+                "step": "Qwen2.5-VL (analyse visuelle)", "status": status_qwen,
                 "detail": (
                     f"Classe : {qwen_result['class'] or 'non déterminé'}  |  "
                     f"Confiance : {qwen_result['confidence']:.0%}  |  "
@@ -496,127 +538,129 @@ def classify():
             steps.append({"step": "Qwen2.5-VL", "status": "warning",
                           "detail": "Modèle non disponible (ollama list)"})
 
-        # Accord EfficientNet ↔ Qwen
         qwen_agrees = (
             qwen_result["class"] is not None
             and qwen_result["class"].lower() == pred_class.lower()
         )
 
-        # ── Chemin direct : confiance élevée + accord Qwen ────────────
+        # ── Résolution finale ─────────────────────────────────────────
+        final_prediction = pred_class
+        final_confidence = confidence
+        final_scores     = all_scores
+        path             = "direct"
+        votes            = {}
+        agreement        = True
+
         if confidence >= CONFIDENCE_THRESHOLD and qwen_agrees:
             steps.append({
-                "step":   f"Validation croisée (seuil ≥ {CONFIDENCE_THRESHOLD:.0%} + Qwen ✓)",
+                "step": f"Validation croisée (seuil ≥ {CONFIDENCE_THRESHOLD:.0%} + Qwen ✓)",
                 "status": "ok",
                 "detail": f"Les deux modèles s'accordent sur « {pred_class} »",
             })
-            return _build_response(
-                prediction=pred_class,
-                confidence=confidence,
-                all_scores=all_scores,
-                path="direct_qwen_validated",
-                steps=steps,
-                qwen=qwen_result,
-                time_ms=int((time.time() - t0) * 1000),
-            )
+            path = "direct_qwen_validated"
 
-        # ── Confiance élevée mais désaccord Qwen ─────────────────────
-        if confidence >= CONFIDENCE_THRESHOLD and not qwen_agrees and qwen_result["class"]:
+        elif confidence >= CONFIDENCE_THRESHOLD and not qwen_agrees and qwen_result["class"]:
             steps.append({
-                "step":   "Désaccord EfficientNet ↔ Qwen",
-                "status": "warning",
+                "step": "Désaccord EfficientNet ↔ Qwen", "status": "warning",
                 "detail": (
                     f"EfficientNet → {pred_class} ({confidence:.0%})  |  "
                     f"Qwen → {qwen_result['class']} ({qwen_result['confidence']:.0%})"
                 ),
             })
-            # On fait confiance au modèle entraîné si confiance > 85%
             if confidence >= 0.85:
-                final = pred_class
+                final_prediction = pred_class
                 steps.append({"step": "Décision", "status": "ok",
                                "detail": f"EfficientNet prioritaire (confiance {confidence:.0%} > 85%)"})
             elif qwen_result["confidence"] >= 0.80:
-                final = qwen_result["class"]
+                final_prediction = qwen_result["class"]
+                final_confidence = qwen_result["confidence"]
                 steps.append({"step": "Décision", "status": "ok",
                                "detail": f"Qwen prioritaire (confiance {qwen_result['confidence']:.0%})"})
             else:
-                final = pred_class
                 steps.append({"step": "Décision", "status": "warning",
                                "detail": "Désaccord non résolu — révision manuelle recommandée"})
+            path = "qwen_disagreement"
 
-            return _build_response(
-                prediction=final,
-                confidence=max(confidence, qwen_result["confidence"]),
-                all_scores=all_scores,
-                path="qwen_disagreement",
-                steps=steps,
-                qwen=qwen_result,
-                time_ms=int((time.time() - t0) * 1000),
-            )
+        else:
+            steps.append({"step": f"Confiance faible (< {CONFIDENCE_THRESHOLD:.0%})",
+                          "status": "warning",
+                          "detail": f"{confidence:.1%} — agents complémentaires activés"})
 
-        # ── Confiance faible : activation de tous les agents ─────────
-        steps.append({"step": f"Confiance faible (< {CONFIDENCE_THRESHOLD:.0%})",
-                      "status": "warning",
-                      "detail": f"{confidence:.1%} — agents complémentaires activés"})
+            clean_text = agent_nettoyeur_rapide(raw_text)
+            steps.append({"step": "Agent Nettoyeur", "status": "ok",
+                          "detail": "Texte nettoyé" if clean_text != raw_text else "Nettoyage non nécessaire"})
 
-        # Nettoyage texte
-        clean_text = agent_nettoyeur_rapide(raw_text)
-        steps.append({"step": "Agent Nettoyeur", "status": "ok",
-                      "detail": "Texte nettoyé" if clean_text != raw_text else "Nettoyage non nécessaire"})
+            pred2, conf2, scores2 = classify_with_model(tmp_path, clean_text)
+            final_scores = scores2
+            steps.append({"step": "Reclassification (texte propre)", "status": "ok",
+                          "detail": f"{pred2} — {conf2:.1%}"})
 
-        # Reclassification sur texte propre
-        pred2, conf2, scores2 = classify_with_model(tmp_path, clean_text)
-        steps.append({"step": "Reclassification (texte propre)", "status": "ok",
-                      "detail": f"{pred2} — {conf2:.1%}"})
+            kw = agent_keywords(clean_text)
+            steps.append({"step": "Agent Mots-clés", "status": "ok" if kw["class"] else "info",
+                          "detail": f"Classe : {kw['class'] or 'aucune'}  |  Score : {kw['score']}"})
 
-        # Agent mots-clés
-        kw = agent_keywords(clean_text)
-        steps.append({"step": "Agent Mots-clés", "status": "ok" if kw["class"] else "info",
-                      "detail": f"Classe : {kw['class'] or 'aucune'}  |  Score : {kw['score']}"})
+            llm_class = agent_llm_texte(clean_text, pred2)
+            steps.append({"step": "Agent LLM texte (llama3.2)", "status": "ok",
+                          "detail": f"→ {llm_class}" + (" (correction)" if llm_class != pred2 else "")})
 
-        # Agent LLM texte (llama3.2)
-        llm_class = agent_llm_texte(clean_text, pred2)
-        steps.append({"step": "Agent LLM texte (llama3.2)", "status": "ok",
-                      "detail": f"→ {llm_class}" + (" (correction)" if llm_class != pred2 else "")})
+            vote_list = [pred2, llm_class]
+            if kw["class"]:
+                vote_list.append(kw["class"])
+            if qwen_result["class"]:
+                vote_list.append(qwen_result["class"])
+                vote_list.append(qwen_result["class"])
 
-        # ── Vote final : modèle + keywords + llama + Qwen ────────────
-        votes = [pred2, llm_class]
-        if kw["class"]:
-            votes.append(kw["class"])
-        if qwen_result["class"]:
-            # Qwen a double poids car analyse visuelle directe
-            votes.append(qwen_result["class"])
-            votes.append(qwen_result["class"])
+            vote_counts  = Counter(vote_list)
+            final_prediction, top_votes = vote_counts.most_common(1)[0]
+            agreement    = top_votes >= 2
+            final_confidence = max(conf2, qwen_result.get("confidence", 0))
+            votes = {"model": pred2, "keywords": kw["class"], "llm": llm_class, "qwen": qwen_result["class"]}
+            path  = "agents"
 
-        vote_counts  = Counter(votes)
-        final_class, top_votes = vote_counts.most_common(1)[0]
-        agreement    = top_votes >= 2
+            steps.append({
+                "step": "Vote final (modèle + keywords + llama + Qwen×2)",
+                "status": "ok" if agreement else "warning",
+                "detail": (
+                    f"Résultat : {final_prediction}  |  "
+                    f"{top_votes}/{len(vote_list)} votes  |  "
+                    f"{'Accord ✓' if agreement else 'Désaccord ⚠ — révision recommandée'}"
+                ),
+            })
 
-        steps.append({
-            "step":   "Vote final (modèle + keywords + llama + Qwen×2)",
-            "status": "ok" if agreement else "warning",
-            "detail": (
-                f"Résultat : {final_class}  |  "
-                f"{top_votes}/{len(votes)} votes  |  "
-                f"{'Accord ✓' if agreement else 'Désaccord ⚠ — révision recommandée'}"
-            ),
-        })
+        time_ms = int((time.time() - t0) * 1000)
 
-        return _build_response(
-            prediction=final_class,
-            confidence=max(conf2, qwen_result.get("confidence", 0)),
-            all_scores=scores2,
-            path="agents",
-            steps=steps,
-            qwen=qwen_result,
-            votes={
-                "model":    pred2,
-                "keywords": kw["class"],
-                "llm":      llm_class,
-                "qwen":     qwen_result["class"],
-            },
-            agreement=agreement,
-            time_ms=int((time.time() - t0) * 1000),
+        result_data = {
+            "prediction": final_prediction,
+            "confidence": round(final_confidence * 100, 2),
+            "all_scores": final_scores,
+            "path":       path,
+            "steps":      steps,
+            "qwen":       qwen_result,
+            "votes":      votes,
+            "agreement":  agreement,
+            "time_ms":    time_ms,
+            "ocr_text":   raw_text,
+        }
+
+        # ── Sauvegarde MongoDB ────────────────────────────────────────
+        mongo_id = save_document_to_mongo(
+            tmp_path,
+            file.filename,
+            {**result_data, "ocr_text": raw_text},
         )
+        if mongo_id:
+            result_data["mongo_id"] = mongo_id
+            steps.append({
+                "step": "Sauvegarde MongoDB", "status": "ok",
+                "detail": f"ID : {mongo_id} → catégorie : {final_prediction}",
+            })
+        else:
+            steps.append({
+                "step": "Sauvegarde MongoDB", "status": "warning",
+                "detail": "MongoDB non disponible — document non sauvegardé",
+            })
+
+        return jsonify(result_data)
 
     except Exception as e:
         import traceback
@@ -628,25 +672,181 @@ def classify():
             os.remove(tmp_path)
 
 
-def _build_response(**kwargs) -> object:
-    """Construit la réponse JSON standardisée."""
-    base = {
-        "prediction":  kwargs.get("prediction", "inconnu"),
-        "confidence":  round(kwargs.get("confidence", 0) * 100, 2),
-        "all_scores":  kwargs.get("all_scores", []),
-        "path":        kwargs.get("path", "direct"),
-        "steps":       kwargs.get("steps", []),
-        "qwen":        kwargs.get("qwen", {}),
-        "votes":       kwargs.get("votes", {}),
-        "agreement":   kwargs.get("agreement", True),
-        "time_ms":     kwargs.get("time_ms", 0),
-    }
-    return jsonify(base)
+# ─────────────────────────────────────────────
+# ROUTES MONGODB — RECHERCHE & GESTION
+# ─────────────────────────────────────────────
+
+def _serialize_doc(doc: dict) -> dict:
+    """Sérialise un document MongoDB en JSON-safe dict."""
+    doc["_id"]       = str(doc["_id"])
+    doc["gridfs_id"] = str(doc.get("gridfs_id", ""))
+    if "uploaded_at" in doc:
+        doc["uploaded_at"] = doc["uploaded_at"].isoformat() + "Z"
+    return doc
+
+
+@app.route("/documents", methods=["GET"])
+def list_documents():
+    """
+    Liste les documents avec filtres optionnels.
+    Query params : category, q (recherche texte), page, per_page
+    """
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible", "documents": [], "total": 0}), 200
+
+    category = request.args.get("category", "")
+    q        = request.args.get("q", "").strip()
+    page     = max(int(request.args.get("page", 1)), 1)
+    per_page = min(int(request.args.get("per_page", 20)), 100)
+    skip     = (page - 1) * per_page
+
+    query = {}
+    if category:
+        query["prediction"] = category
+    if q:
+        query["$or"] = [
+            {"original_filename": {"$regex": q, "$options": "i"}},
+            {"ocr_text":          {"$regex": q, "$options": "i"}},
+            {"prediction":        {"$regex": q, "$options": "i"}},
+        ]
+
+    total = mongo_db.documents.count_documents(query)
+    docs  = list(
+        mongo_db.documents.find(query, {"ocr_text": 0})
+        .sort("uploaded_at", -1)
+        .skip(skip)
+        .limit(per_page)
+    )
+
+    return jsonify({
+        "documents": [_serialize_doc(d) for d in docs],
+        "total":     total,
+        "page":      page,
+        "per_page":  per_page,
+        "pages":     (total + per_page - 1) // per_page,
+    })
+
+
+@app.route("/documents/stats", methods=["GET"])
+def documents_stats():
+    """Statistiques par catégorie."""
+    if not MONGO_AVAILABLE:
+        return jsonify({"stats": [], "total": 0, "mongodb": False})
+
+    pipeline = [
+        {"$group": {
+            "_id":      "$prediction",
+            "count":    {"$sum": 1},
+            "avg_conf": {"$avg": "$confidence"},
+            "last_at":  {"$max": "$uploaded_at"},
+        }},
+        {"$sort": {"count": -1}},
+    ]
+    stats = list(mongo_db.documents.aggregate(pipeline))
+    total = mongo_db.documents.count_documents({})
+
+    return jsonify({
+        "stats":   [{"category": s["_id"], "count": s["count"],
+                     "avg_confidence": round(s["avg_conf"] or 0, 1),
+                     "last_upload": s["last_at"].isoformat() + "Z" if s["last_at"] else None}
+                    for s in stats],
+        "total":   total,
+        "mongodb": True,
+    })
+
+
+@app.route("/documents/<doc_id>", methods=["GET"])
+def get_document(doc_id: str):
+    """Détail d'un document."""
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
+        if not doc:
+            return jsonify({"error": "Document introuvable"}), 404
+        return jsonify(_serialize_doc(doc))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/documents/<doc_id>/download", methods=["GET"])
+def download_document(doc_id: str):
+    """Télécharge le fichier depuis GridFS."""
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
+        if not doc:
+            return jsonify({"error": "Document introuvable"}), 404
+
+        # Essayer d'abord le fichier physique
+        stored_path = doc.get("stored_path", "")
+        if stored_path and os.path.exists(stored_path):
+            return send_file(
+                stored_path,
+                as_attachment=True,
+                download_name=doc["original_filename"],
+            )
+
+        # Fallback : GridFS
+        gridfs_id = doc.get("gridfs_id")
+        if gridfs_id:
+            grid_file = fs.get(gridfs_id)
+            return send_file(
+                io.BytesIO(grid_file.read()),
+                as_attachment=True,
+                download_name=doc["original_filename"],
+                mimetype=grid_file.content_type or "application/octet-stream",
+            )
+
+        return jsonify({"error": "Fichier physique introuvable"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/documents/<doc_id>", methods=["DELETE"])
+def delete_document(doc_id: str):
+    """Supprime un document (MongoDB + fichier physique)."""
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
+        if not doc:
+            return jsonify({"error": "Document introuvable"}), 404
+
+        # Supprimer fichier physique
+        stored_path = doc.get("stored_path", "")
+        if stored_path and os.path.exists(stored_path):
+            os.remove(stored_path)
+
+        # Supprimer GridFS
+        gridfs_id = doc.get("gridfs_id")
+        if gridfs_id:
+            try:
+                fs.delete(gridfs_id)
+            except Exception:
+                pass
+
+        # Supprimer document MongoDB
+        mongo_db.documents.delete_one({"_id": ObjectId(doc_id)})
+
+        return jsonify({"success": True, "deleted_id": doc_id})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/status", methods=["GET"])
 def status():
     check_ollama_available()
+    mongo_ok = False
+    try:
+        mongo_client.server_info()
+        mongo_ok = True
+    except Exception:
+        pass
+
     return jsonify({
         "model_loaded":  True,
         "device":        str(DEVICE),
@@ -657,6 +857,8 @@ def status():
         "ollama_model":  OLLAMA_MODEL,
         "qwen":          USE_QWEN,
         "qwen_model":    QWEN_MODEL,
+        "mongodb":       mongo_ok,
+        "docs_folder":   os.path.abspath(DOCS_FOLDER),
     })
 
 

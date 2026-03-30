@@ -32,267 +32,381 @@ body {
 /* ── HEADER ── */
 header {
   border-bottom: 1px solid var(--border);
-  padding: 16px 36px;
+  padding: 14px 28px;
   display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
 }
 .logo-mark {
-  width: 34px; height: 34px;
+  width: 32px; height: 32px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 13px; font-weight: 500; color: #fff;
+  font-family: var(--mono); font-size: 11px; font-weight: 500; color: #fff;
 }
-header h1 { font-size: 15px; font-weight: 600; }
-header span { font-size: 12px; color: var(--text2); margin-left: 4px; }
+header h1 { font-size: 14px; font-weight: 600; }
+header span { font-size: 11px; color: var(--text2); margin-left: 4px; }
+
+/* Nav tabs */
+.nav-tabs {
+  display: flex; gap: 4px; margin-left: 24px;
+}
+.nav-tab {
+  padding: 6px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  border: 1px solid transparent; transition: all .15s;
+  color: var(--text2); background: none;
+}
+.nav-tab:hover { color: var(--text); background: var(--bg3); }
+.nav-tab.active { color: var(--text); background: var(--bg3); border-color: var(--border); }
 
 .status-bar {
-  margin-left: auto;
-  display: flex; align-items: center; gap: 16px;
+  margin-left: auto; display: flex; align-items: center; gap: 14px;
   font-size: 11px; font-family: var(--mono);
 }
 .status-item { display: flex; align-items: center; gap: 6px; }
-.dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--text2);
-  animation: pulse 2s ease-in-out infinite;
-}
-.dot.ok  { background: var(--green); }
-.dot.err { background: var(--red); animation: none; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text2); animation: pulse 2s ease-in-out infinite; }
+.dot.ok   { background: var(--green); }
+.dot.err  { background: var(--red); animation: none; }
 .dot.warn { background: var(--orange); }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-/* ── LAYOUT ── */
-main {
-  flex: 1;
+/* ── PAGES ── */
+.page { display: none; flex: 1; }
+.page.active { display: flex; }
+
+/* ══════════════════════════════════════════
+   PAGE CLASSIFY
+══════════════════════════════════════════ */
+#page-classify {
   display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 0;
-  height: calc(100vh - 57px);
+  grid-template-columns: 380px 1fr;
+  height: calc(100vh - 55px);
   overflow: hidden;
 }
-
-/* ── LEFT ── */
 .left {
   border-right: 1px solid var(--border);
-  padding: 28px;
-  display: flex; flex-direction: column; gap: 20px;
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 18px;
   overflow-y: auto;
 }
 .section-label {
   font-size: 10px; font-family: var(--mono);
   letter-spacing: .12em; color: var(--text2);
-  text-transform: uppercase; margin-bottom: 8px;
+  text-transform: uppercase; margin-bottom: 7px;
 }
 .dropzone {
   border: 1.5px dashed var(--border); border-radius: 12px;
-  padding: 36px 20px; text-align: center; cursor: pointer;
+  padding: 30px 20px; text-align: center; cursor: pointer;
   transition: border-color .2s, background .2s; position: relative;
 }
 .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: rgba(79,142,247,.05); }
 .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
-.dz-icon { font-size: 30px; margin-bottom: 10px; }
-.dz-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
-.dz-sub { font-size: 11px; color: var(--text2); }
+.dz-icon { font-size: 26px; margin-bottom: 8px; }
+.dz-title { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+.dz-sub { font-size: 10px; color: var(--text2); }
 
 #preview-wrap { display: none; }
-#preview-wrap img {
-  width: 100%; border-radius: 10px;
-  border: 1px solid var(--border);
-  max-height: 220px; object-fit: contain;
-  background: var(--bg2);
-}
-.preview-meta { margin-top: 8px; font-size: 11px; font-family: var(--mono); color: var(--text2); display: flex; gap: 14px; }
+#preview-wrap img { width: 100%; border-radius: 10px; border: 1px solid var(--border); max-height: 200px; object-fit: contain; background: var(--bg2); }
+.preview-meta { margin-top: 7px; font-size: 10px; font-family: var(--mono); color: var(--text2); display: flex; gap: 12px; }
 
 button#btn-classify {
-  width: 100%; padding: 13px;
+  width: 100%; padding: 12px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff; border: none; border-radius: 10px;
-  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  font-family: var(--sans); font-size: 12px; font-weight: 600;
   cursor: pointer; transition: opacity .2s;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 button#btn-classify:hover { opacity: .9; }
 button#btn-classify:disabled { opacity: .4; cursor: not-allowed; }
-.spinner {
-  width: 15px; height: 15px;
-  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
-  border-radius: 50%; animation: spin .7s linear infinite; display: none;
-}
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* Pipeline info */
-.pipe-info {
-  font-size: 11px; color: var(--text2); line-height: 1.6;
-  padding: 12px; background: var(--bg2);
-  border-radius: 8px; border: 1px solid var(--border);
-}
+.pipe-info { font-size: 10px; color: var(--text2); line-height: 1.6; padding: 10px 12px; background: var(--bg2); border-radius: 8px; border: 1px solid var(--border); }
 .pipe-info strong { color: var(--text); }
-
-/* Toggles */
-.toggles { display: flex; flex-direction: column; gap: 8px; }
-.toggle-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px; background: var(--bg2);
-  border: 1px solid var(--border); border-radius: 8px;
-  font-size: 12px;
-}
+.toggles { display: flex; flex-direction: column; gap: 7px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 11px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; }
 .toggle-label { display: flex; align-items: center; gap: 8px; }
-.toggle-switch {
-  position: relative; width: 32px; height: 18px;
-  display: inline-block;
-}
+.toggle-switch { position: relative; width: 30px; height: 17px; display: inline-block; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-  position: absolute; inset: 0;
-  background: var(--border); border-radius: 18px; cursor: pointer;
-  transition: background .2s;
-}
-.toggle-slider:before {
-  content: ""; position: absolute;
-  width: 12px; height: 12px; left: 3px; top: 3px;
-  background: #fff; border-radius: 50%; transition: transform .2s;
-}
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 17px; cursor: pointer; transition: background .2s; }
+.toggle-slider:before { content: ""; position: absolute; width: 11px; height: 11px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .2s; }
 input:checked + .toggle-slider { background: var(--accent); }
-input:checked + .toggle-slider:before { transform: translateX(14px); }
+input:checked + .toggle-slider:before { transform: translateX(13px); }
 
-/* ── RIGHT ── */
-.right {
-  padding: 28px; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 24px;
-}
-.empty-state {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 10px; color: var(--text2);
-}
-.empty-state .em-icon { font-size: 44px; opacity: .3; }
-.empty-state p { font-size: 13px; }
+.right { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text2); }
+.empty-state .em-icon { font-size: 40px; opacity: .3; }
+.empty-state p { font-size: 12px; }
 
-/* Result card */
-.result-card {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 14px; padding: 22px;
-}
+/* Result cards */
+.result-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .result-card.path-direct_qwen_validated { border-color: rgba(45,212,160,.4); }
 .result-card.path-qwen_disagreement     { border-color: rgba(245,166,35,.4); }
 .result-card.path-agents                { border-color: rgba(167,139,250,.3); }
-
-.result-header {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; margin-bottom: 18px;
-}
-.result-class { font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
-.path-badge {
-  font-family: var(--mono); font-size: 10px;
-  padding: 4px 10px; border-radius: 20px;
-  background: rgba(45,212,160,.12); color: var(--green);
-}
+.result-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.result-class { font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+.path-badge { font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 20px; background: rgba(45,212,160,.12); color: var(--green); }
 .path-badge.warn { background: rgba(245,166,35,.12); color: var(--orange); }
 .path-badge.agents { background: rgba(167,139,250,.12); color: var(--purple); }
-
-/* Confidence */
-.conf-row { margin-bottom: 18px; }
-.conf-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+.conf-row { margin-bottom: 16px; }
+.conf-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 5px; }
 .conf-val { font-family: var(--mono); color: var(--text); font-weight: 500; }
-.bar-bg { height: 5px; background: var(--bg3); border-radius: 3px; }
-.bar-fill {
-  height: 5px; border-radius: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--green));
-  transition: width .8s cubic-bezier(.4,0,.2,1);
-}
+.bar-bg { height: 4px; background: var(--bg3); border-radius: 3px; }
+.bar-fill { height: 4px; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .8s cubic-bezier(.4,0,.2,1); }
 .bar-fill.low { background: linear-gradient(90deg, var(--orange), var(--red)); }
-
-/* Qwen card */
-.qwen-card {
-  background: var(--bg3); border: 1px solid rgba(167,139,250,.25);
-  border-radius: 10px; padding: 14px;
-}
-.qwen-header {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 10px;
-}
-.qwen-badge {
-  font-family: var(--mono); font-size: 10px; font-weight: 500;
-  padding: 3px 8px; border-radius: 4px;
-  background: rgba(167,139,250,.15); color: var(--purple);
-  border: 1px solid rgba(167,139,250,.3);
-}
+.qwen-card { background: var(--bg3); border: 1px solid rgba(167,139,250,.25); border-radius: 10px; padding: 12px; }
+.qwen-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.qwen-badge { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 4px; background: rgba(167,139,250,.15); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
 .qwen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.qwen-field label { font-size: 10px; font-family: var(--mono); color: var(--text2); display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .08em; }
-.qwen-field .val { font-size: 13px; font-weight: 500; }
-.qwen-reasoning {
-  margin-top: 10px; font-size: 11px; font-family: var(--mono);
-  color: var(--text2); line-height: 1.5;
-  background: var(--bg2); padding: 8px 10px; border-radius: 6px;
-}
-
-/* Comparison badge */
-.compare-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; font-family: var(--mono);
-  padding: 5px 10px; border-radius: 6px; margin-top: 8px;
-}
+.qwen-field label { font-size: 9px; font-family: var(--mono); color: var(--text2); display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .08em; }
+.qwen-field .val { font-size: 12px; font-weight: 500; }
+.qwen-reasoning { margin-top: 10px; font-size: 10px; font-family: var(--mono); color: var(--text2); line-height: 1.5; background: var(--bg2); padding: 7px 9px; border-radius: 6px; }
+.compare-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-family: var(--mono); padding: 4px 9px; border-radius: 6px; margin-top: 8px; }
 .compare-badge.agree { background: rgba(45,212,160,.1); color: var(--green); border: 1px solid rgba(45,212,160,.25); }
 .compare-badge.disagree { background: rgba(245,166,35,.1); color: var(--orange); border: 1px solid rgba(245,166,35,.25); }
-
-/* Votes */
-.votes-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 4px; }
-.vote-card {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px;
-}
+.votes-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 4px; }
+.vote-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 9px; }
 .vote-card.qwen-vote { border-color: rgba(167,139,250,.3); }
 .vote-source { font-size: 9px; font-family: var(--mono); color: var(--text2); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .08em; }
-.vote-val { font-size: 11px; font-weight: 500; word-break: break-word; }
-
-/* Scores */
-.scores-grid { display: flex; flex-direction: column; gap: 7px; }
-.score-row { display: grid; grid-template-columns: 155px 1fr 50px; align-items: center; gap: 8px; }
-.score-name { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vote-val { font-size: 10px; font-weight: 500; word-break: break-word; }
+.scores-grid { display: flex; flex-direction: column; gap: 6px; }
+.score-row { display: grid; grid-template-columns: 150px 1fr 46px; align-items: center; gap: 7px; }
+.score-name { font-size: 10px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .score-bar-bg { height: 3px; background: var(--bg3); border-radius: 2px; }
 .score-bar { height: 3px; border-radius: 2px; background: var(--border); transition: width .6s; }
 .score-bar.top { background: var(--accent); }
-.score-pct { font-family: var(--mono); font-size: 10px; color: var(--text2); text-align: right; }
-
-/* Steps */
+.score-pct { font-family: var(--mono); font-size: 9px; color: var(--text2); text-align: right; }
 .steps-list { display: flex; flex-direction: column; gap: 0; }
-.step-item { display: flex; gap: 10px; position: relative; padding-bottom: 14px; }
+.step-item { display: flex; gap: 9px; position: relative; padding-bottom: 12px; }
 .step-item:last-child { padding-bottom: 0; }
 .step-left { display: flex; flex-direction: column; align-items: center; }
-.step-dot {
-  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 600;
-}
+.step-dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
 .step-dot.ok      { background: rgba(45,212,160,.15); color: var(--green); border: 1px solid rgba(45,212,160,.3); }
 .step-dot.warning { background: rgba(245,166,35,.15); color: var(--orange); border: 1px solid rgba(245,166,35,.3); }
 .step-dot.info    { background: rgba(79,142,247,.12); color: var(--accent); border: 1px solid rgba(79,142,247,.25); }
 .step-line { flex:1; width:1px; background:var(--border); margin-top:3px; }
 .step-item:last-child .step-line { display: none; }
 .step-content { padding-top: 1px; flex: 1; }
-.step-name { font-size: 12px; font-weight: 500; margin-bottom: 3px; }
-.step-detail { font-size: 10px; font-family: var(--mono); color: var(--text2); line-height: 1.5; word-break: break-word; }
+.step-name { font-size: 11px; font-weight: 500; margin-bottom: 2px; }
+.step-detail { font-size: 9px; font-family: var(--mono); color: var(--text2); line-height: 1.5; word-break: break-word; }
+.ocr-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: var(--mono); font-size: 9px; color: var(--text2); line-height: 1.6; max-height: 100px; overflow-y: auto; white-space: pre-wrap; }
+.timing { font-family: var(--mono); font-size: 9px; color: var(--text2); text-align: right; }
 
-/* OCR */
-.ocr-box {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 8px; padding: 12px;
+/* ══════════════════════════════════════════
+   PAGE LIBRARY
+══════════════════════════════════════════ */
+#page-library {
+  flex-direction: column;
+  padding: 0;
+  height: calc(100vh - 55px);
+  overflow: hidden;
+}
+.lib-header {
+  padding: 20px 28px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.lib-title-row {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+}
+.lib-title { font-size: 18px; font-weight: 600; }
+.lib-total { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+.mongo-badge {
+  display: flex; align-items: center; gap: 5px;
   font-family: var(--mono); font-size: 10px;
-  color: var(--text2); line-height: 1.6;
-  max-height: 120px; overflow-y: auto;
-  white-space: pre-wrap;
+  padding: 3px 9px; border-radius: 20px;
+  margin-left: auto;
+}
+.mongo-badge.ok  { background: rgba(45,212,160,.1); color: var(--green); border: 1px solid rgba(45,212,160,.2); }
+.mongo-badge.err { background: rgba(240,82,82,.1); color: var(--red); border: 1px solid rgba(240,82,82,.2); }
+
+/* Search & filters */
+.lib-controls {
+  display: flex; align-items: center; gap: 10px; padding-bottom: 16px;
+  flex-wrap: wrap;
+}
+.search-wrap {
+  position: relative; flex: 1; min-width: 200px;
+}
+.search-wrap input {
+  width: 100%; padding: 9px 12px 9px 36px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 9px; color: var(--text); font-size: 12px;
+  font-family: var(--sans); outline: none;
+  transition: border-color .15s;
+}
+.search-wrap input:focus { border-color: var(--accent); }
+.search-wrap input::placeholder { color: var(--text2); }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+.search-wrap .clear-btn {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text2); cursor: pointer;
+  font-size: 14px; padding: 0; display: none;
 }
 
-.timing { font-family: var(--mono); font-size: 10px; color: var(--text2); text-align: right; }
+/* Category pills */
+.cat-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.cat-pill {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 11px; font-family: var(--mono); cursor: pointer;
+  background: var(--bg2); border: 1px solid var(--border); color: var(--text2);
+  transition: all .15s; white-space: nowrap;
+}
+.cat-pill:hover { border-color: var(--accent); color: var(--text); }
+.cat-pill.active { background: rgba(79,142,247,.12); border-color: var(--accent); color: var(--accent); }
+.cat-pill .pill-count { opacity: .6; margin-left: 4px; font-size: 9px; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex; gap: 16px; padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto; background: var(--bg2);
+}
+.stat-card {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 10px 14px; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 9px;
+  min-width: 130px; flex-shrink: 0;
+}
+.stat-cat { font-size: 10px; font-family: var(--mono); color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-count { font-size: 20px; font-weight: 600; line-height: 1; }
+.stat-conf { font-size: 9px; font-family: var(--mono); color: var(--text2); }
+
+/* Documents grid */
+.lib-body { flex: 1; overflow-y: auto; padding: 20px 28px; }
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.doc-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; cursor: pointer;
+  transition: border-color .15s, transform .15s;
+  position: relative;
+}
+.doc-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.doc-thumb {
+  height: 110px; background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.doc-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.doc-cat-badge {
+  position: absolute; top: 8px; right: 8px;
+  font-family: var(--mono); font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; background: rgba(15,17,23,.75);
+  border: 1px solid var(--border); backdrop-filter: blur(4px);
+}
+.doc-info { padding: 12px; }
+.doc-name { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+.doc-meta { font-family: var(--mono); font-size: 9px; color: var(--text2); display: flex; gap: 10px; margin-bottom: 8px; }
+.doc-conf { font-weight: 500; }
+.doc-conf.hi { color: var(--green); }
+.doc-conf.mid { color: var(--orange); }
+.doc-conf.lo { color: var(--red); }
+.doc-actions { display: flex; gap: 6px; }
+.doc-btn {
+  flex: 1; padding: 6px 8px; border-radius: 6px; font-size: 10px;
+  font-family: var(--mono); cursor: pointer; border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text2); transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.doc-btn:hover { border-color: var(--accent); color: var(--text); }
+.doc-btn.danger:hover { border-color: var(--red); color: var(--red); }
+.doc-btn.primary { background: rgba(79,142,247,.1); border-color: rgba(79,142,247,.3); color: var(--accent); }
+.doc-btn.primary:hover { background: rgba(79,142,247,.2); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding-bottom: 20px; }
+.page-btn { padding: 6px 12px; border-radius: 7px; font-size: 11px; font-family: var(--mono); cursor: pointer; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); transition: all .15s; }
+.page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.page-btn:disabled { opacity: .3; cursor: not-allowed; }
+.page-btn.active { background: rgba(79,142,247,.12); border-color: var(--accent); color: var(--accent); }
+.page-info { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+
+/* Empty library */
+.lib-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 80px 20px; color: var(--text2); }
+.lib-empty .em-icon { font-size: 48px; opacity: .25; }
+.lib-empty p { font-size: 13px; }
+.lib-empty .sub { font-size: 11px; font-family: var(--mono); opacity: .7; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; width: 100%; max-width: 620px;
+  max-height: 85vh; overflow-y: auto;
+  transform: scale(.96); transition: transform .2s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg2); z-index: 1;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; padding: 4px; transition: color .15s; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.modal-preview { width: 100%; border-radius: 10px; border: 1px solid var(--border); max-height: 280px; object-fit: contain; background: var(--bg3); }
+.modal-field { display: flex; flex-direction: column; gap: 4px; }
+.modal-label { font-size: 9px; font-family: var(--mono); color: var(--text2); text-transform: uppercase; letter-spacing: .1em; }
+.modal-val { font-size: 12px; font-family: var(--mono); }
+.modal-path {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 7px; padding: 9px 12px;
+  font-family: var(--mono); font-size: 10px; color: var(--text2);
+  word-break: break-all; line-height: 1.5;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.modal-path .folder-icon { flex-shrink: 0; margin-top: 1px; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-actions { display: flex; gap: 8px; padding-top: 4px; }
+.modal-btn {
+  flex: 1; padding: 10px; border-radius: 9px;
+  font-size: 12px; font-family: var(--sans); font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text); transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.modal-btn:hover { border-color: var(--accent); }
+.modal-btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border-color: transparent; }
+.modal-btn.primary:hover { opacity: .9; }
+.modal-btn.danger { color: var(--red); border-color: rgba(240,82,82,.25); }
+.modal-btn.danger:hover { background: rgba(240,82,82,.08); }
+.ocr-modal { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: var(--mono); font-size: 9px; color: var(--text2); line-height: 1.6; max-height: 130px; overflow-y: auto; white-space: pre-wrap; }
+
+/* Loading overlay */
+.loading-overlay {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 60px; color: var(--text2);
+}
+.loading-spinner { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+
+/* Toast */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 10px 16px; border-radius: 9px; font-size: 12px; font-family: var(--mono); background: var(--bg3); border: 1px solid var(--border); color: var(--text); animation: slideIn .25s ease; max-width: 320px; }
+.toast.success { border-color: rgba(45,212,160,.4); background: rgba(45,212,160,.08); }
+.toast.error { border-color: rgba(240,82,82,.4); background: rgba(240,82,82,.08); }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 @media (max-width: 800px) {
-  main { grid-template-columns: 1fr; height: auto; }
-  .left, .right { height: auto; overflow: visible; }
+  #page-classify { grid-template-columns: 1fr; height: auto; overflow: visible; }
   .votes-row { grid-template-columns: repeat(2,1fr); }
+  .docs-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 }
 </style>
 </head>
@@ -301,6 +415,10 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
 <header>
   <div class="logo-mark">BD</div>
   <h1>BankDoc Classifier <span>v3 + Qwen2.5-VL</span></h1>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPage('classify')">🏷 Classifier</button>
+    <button class="nav-tab" onclick="switchPage('library')" id="lib-tab">📚 Bibliothèque</button>
+  </div>
   <div class="status-bar">
     <div class="status-item">
       <div class="dot" id="dot-model"></div>
@@ -310,11 +428,15 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
       <div class="dot" id="dot-qwen"></div>
       <span id="txt-qwen" style="color:var(--text2)">Qwen…</span>
     </div>
+    <div class="status-item">
+      <div class="dot" id="dot-mongo"></div>
+      <span id="txt-mongo" style="color:var(--text2)">MongoDB…</span>
+    </div>
   </div>
 </header>
 
-<main>
-  <!-- ── LEFT ── -->
+<!-- ══ PAGE CLASSIFY ══ -->
+<div class="page active" id="page-classify">
   <div class="left">
     <div>
       <div class="section-label">Document</div>
@@ -325,7 +447,6 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
         <div class="dz-sub">JPG · PNG · PDF — traitement 100% local</div>
       </div>
     </div>
-
     <div id="preview-wrap">
       <div class="section-label">Aperçu</div>
       <img id="preview-img" src="" alt="Aperçu"/>
@@ -334,13 +455,10 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
         <span id="file-size">—</span>
       </div>
     </div>
-
     <button id="btn-classify" disabled>
       <div class="spinner" id="spinner"></div>
       <span id="btn-text">Sélectionner un document</span>
     </button>
-
-    <!-- Toggles agents -->
     <div>
       <div class="section-label">Agents actifs</div>
       <div class="toggles">
@@ -348,8 +466,8 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
           <div class="toggle-label">
             <span>🦙</span>
             <div>
-              <div style="font-size:12px;font-weight:500">llama3.2</div>
-              <div style="font-size:10px;color:var(--text2)">Agent LLM texte</div>
+              <div style="font-size:11px;font-weight:500">llama3.2</div>
+              <div style="font-size:9px;color:var(--text2)">Agent LLM texte</div>
             </div>
           </div>
           <label class="toggle-switch">
@@ -361,8 +479,8 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
           <div class="toggle-label">
             <span>🔮</span>
             <div>
-              <div style="font-size:12px;font-weight:500;color:var(--purple)">Qwen2.5-VL 7B</div>
-              <div style="font-size:10px;color:var(--text2)">Agent vision multimodal</div>
+              <div style="font-size:11px;font-weight:500;color:var(--purple)">Qwen2.5-VL 7B</div>
+              <div style="font-size:9px;color:var(--text2)">Agent vision multimodal</div>
             </div>
           </div>
           <label class="toggle-switch">
@@ -372,28 +490,92 @@ input:checked + .toggle-slider:before { transform: translateX(14px); }
         </div>
       </div>
     </div>
-
     <div class="pipe-info">
       <strong>Pipeline v3 :</strong> OCR → EfficientNet+mBERT
-      → <span style="color:var(--purple)">Qwen2.5-VL (vision)</span>
-      → Vote croisé : modèle + mots-clés + llama3.2 + <span style="color:var(--purple)">Qwen×2</span>
+      → <span style="color:var(--purple)">Qwen2.5-VL</span>
+      → Vote croisé + <strong>Sauvegarde MongoDB</strong>
     </div>
   </div>
 
-  <!-- ── RIGHT ── -->
   <div class="right" id="right-panel">
     <div class="empty-state" id="empty-state">
       <div class="em-icon">📄</div>
       <p>Les résultats de classification s'affichent ici</p>
     </div>
   </div>
-</main>
+</div>
+
+<!-- ══ PAGE LIBRARY ══ -->
+<div class="page" id="page-library" style="flex-direction:column">
+  <div class="lib-header">
+    <div class="lib-title-row">
+      <div class="lib-title">Bibliothèque de documents</div>
+      <div class="lib-total" id="lib-total">—</div>
+      <div class="mongo-badge" id="mongo-badge">
+        <div class="dot"></div>
+        <span>MongoDB</span>
+      </div>
+    </div>
+    <div class="lib-controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="lib-search" placeholder="Rechercher par nom, texte OCR, catégorie…"
+               oninput="onSearchInput(this.value)"/>
+        <button class="clear-btn" id="clear-search" onclick="clearSearch()">✕</button>
+      </div>
+      <div class="cat-pills" id="cat-pills">
+        <div class="cat-pill active" onclick="filterCategory('')" data-cat="">Tous</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="stats-bar" class="stats-bar" style="display:none"></div>
+
+  <div class="lib-body" id="lib-body">
+    <div class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <span style="font-size:12px;font-family:var(--mono)">Chargement…</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal détail document -->
+<div class="modal-overlay" id="doc-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Document</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
 
 <script>
 const API = "http://localhost:5000";
 let selectedFile = null;
+let currentPage  = 1;
+let currentCat   = "";
+let currentQuery = "";
+let searchTimer  = null;
+let allStats     = [];
 
-// ── Status ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
+function switchPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(`page-${name}`).classList.add("active");
+  event.target.classList.add("active");
+  if (name === "library") loadLibrary();
+}
+
+// ══════════════════════════════════════════
+// STATUS
+// ══════════════════════════════════════════
 async function checkStatus() {
   try {
     const r = await fetch(`${API}/status`, { signal: AbortSignal.timeout(4000) });
@@ -413,17 +595,34 @@ async function checkStatus() {
     tq.textContent = d.qwen ? "Qwen2.5-VL ✓" : "Qwen hors ligne";
     tq.style.color = d.qwen ? "var(--purple)" : "var(--orange)";
 
-    // Sync toggles
+    // MongoDB
+    const dmo = document.getElementById("dot-mongo");
+    const tmo = document.getElementById("txt-mongo");
+    dmo.className  = d.mongodb ? "dot ok" : "dot err";
+    tmo.textContent = d.mongodb ? "MongoDB ✓" : "MongoDB ✗";
+    tmo.style.color = d.mongodb ? "var(--green)" : "var(--red)";
+
+    // MongoDB badge in library
+    const mb = document.getElementById("mongo-badge");
+    if (mb) {
+      mb.className = `mongo-badge ${d.mongodb ? "ok" : "err"}`;
+      mb.innerHTML = `<div class="dot ${d.mongodb ? "ok" : "err"}"></div><span>${d.mongodb ? "MongoDB connecté" : "MongoDB hors ligne"}</span>`;
+    }
+
     document.getElementById("toggle-llama").checked = d.ollama;
     document.getElementById("toggle-qwen").checked  = d.qwen;
+
+    window._docsFolder = d.docs_folder || "";
   } catch {
-    document.getElementById("dot-model").className = "dot err";
+    ["dot-model","dot-qwen","dot-mongo"].forEach(id => {
+      document.getElementById(id).className = "dot err";
+    });
     document.getElementById("txt-model").textContent = "Serveur hors ligne";
     document.getElementById("txt-model").style.color = "var(--red)";
   }
 }
 checkStatus();
-setInterval(checkStatus, 10000);
+setInterval(checkStatus, 12000);
 
 async function setAgent(type, enabled) {
   const ep = type === "qwen" ? "/toggle_qwen" : "/toggle_ollama";
@@ -434,10 +633,11 @@ async function setAgent(type, enabled) {
   }).catch(() => {});
 }
 
-// ── File handling ────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════
+// CLASSIFY
+// ══════════════════════════════════════════
 const dropzone  = document.getElementById("dropzone");
 const fileInput = document.getElementById("file-input");
-
 dropzone.addEventListener("dragover",  e => { e.preventDefault(); dropzone.classList.add("drag"); });
 dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
 dropzone.addEventListener("drop", e => {
@@ -460,7 +660,6 @@ function handleFile(file) {
   reader.readAsDataURL(file);
 }
 
-// ── Classify ─────────────────────────────────────────────────────────────────
 document.getElementById("btn-classify").addEventListener("click", async () => {
   if (!selectedFile) return;
   const btn = document.getElementById("btn-classify");
@@ -471,7 +670,9 @@ document.getElementById("btn-classify").addEventListener("click", async () => {
     const fd = new FormData();
     fd.append("file", selectedFile);
     const r = await fetch(`${API}/classify`, { method: "POST", body: fd });
-    renderResult(await r.json());
+    const d = await r.json();
+    renderResult(d);
+    if (d.mongo_id) showToast("✅ Document sauvegardé dans MongoDB", "success");
   } catch (err) {
     renderError(err.message);
   } finally {
@@ -479,7 +680,294 @@ document.getElementById("btn-classify").addEventListener("click", async () => {
   }
 });
 
-// ── Render ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════
+// LIBRARY
+// ══════════════════════════════════════════
+async function loadLibrary(page = 1) {
+  currentPage = page;
+  const body  = document.getElementById("lib-body");
+  body.innerHTML = `<div class="loading-overlay"><div class="loading-spinner"></div><span style="font-size:12px;font-family:var(--mono)">Chargement…</span></div>`;
+
+  try {
+    // Stats + documents en parallèle
+    const [statsRes, docsRes] = await Promise.all([
+      fetch(`${API}/documents/stats`),
+      fetch(`${API}/documents?category=${encodeURIComponent(currentCat)}&q=${encodeURIComponent(currentQuery)}&page=${page}&per_page=24`),
+    ]);
+    const stats = await statsRes.json();
+    const docs  = await docsRes.json();
+
+    // Total
+    document.getElementById("lib-total").textContent = `${stats.total} document${stats.total !== 1 ? "s" : ""}`;
+
+    // Render stats bar
+    renderStatsBar(stats.stats);
+
+    // Category pills
+    renderCatPills(stats.stats);
+
+    // Docs grid
+    if (docs.error || !docs.documents) {
+      renderLibError(docs.error || "Erreur inconnue");
+      return;
+    }
+    renderDocsGrid(docs);
+
+  } catch (e) {
+    renderLibError("Impossible de contacter le serveur : " + e.message);
+  }
+}
+
+function renderStatsBar(stats) {
+  const bar = document.getElementById("stats-bar");
+  if (!stats || stats.length === 0) { bar.style.display = "none"; return; }
+  bar.style.display = "flex";
+  bar.innerHTML = stats.map(s => `
+    <div class="stat-card" onclick="filterCategory('${s.category}')" style="cursor:pointer">
+      <div class="stat-cat">${s.category}</div>
+      <div class="stat-count">${s.count}</div>
+      <div class="stat-conf">Moy. ${s.avg_confidence.toFixed(1)}%</div>
+    </div>
+  `).join("");
+}
+
+function renderCatPills(stats) {
+  const container = document.getElementById("cat-pills");
+  const total = stats.reduce((a, s) => a + s.count, 0);
+  container.innerHTML = `
+    <div class="cat-pill ${currentCat === "" ? "active" : ""}" onclick="filterCategory('')" data-cat="">
+      Tous <span class="pill-count">${total}</span>
+    </div>
+    ${stats.map(s => `
+      <div class="cat-pill ${currentCat === s.category ? "active" : ""}" onclick="filterCategory('${s.category}')" data-cat="${s.category}">
+        ${s.category} <span class="pill-count">${s.count}</span>
+      </div>
+    `).join("")}
+  `;
+}
+
+function renderDocsGrid(data) {
+  const body = document.getElementById("lib-body");
+  if (data.documents.length === 0) {
+    body.innerHTML = `
+      <div class="lib-empty">
+        <div class="em-icon">🔍</div>
+        <p>${currentQuery ? "Aucun résultat pour « " + currentQuery + " »" : "Aucun document dans cette catégorie"}</p>
+        <div class="sub">${currentQuery ? "Essayez d'autres mots-clés" : "Classifiez un document pour le voir apparaître ici"}</div>
+      </div>`;
+    return;
+  }
+
+  const grid = data.documents.map(doc => `
+    <div class="doc-card" onclick="openDocModal('${doc._id}')">
+      <div class="doc-thumb">
+        <span>${catEmoji(doc.prediction)}</span>
+        <div class="doc-cat-badge">${doc.prediction || "inconnu"}</div>
+      </div>
+      <div class="doc-info">
+        <div class="doc-name" title="${doc.original_filename}">${doc.original_filename}</div>
+        <div class="doc-meta">
+          <span class="doc-conf ${confClass(doc.confidence)}">${doc.confidence?.toFixed(1)}%</span>
+          <span>${formatDate(doc.uploaded_at)}</span>
+          <span>${formatSize(doc.file_size_bytes)}</span>
+        </div>
+        <div class="doc-actions" onclick="event.stopPropagation()">
+          <button class="doc-btn primary" onclick="downloadDoc('${doc._id}', '${escHtml(doc.original_filename)}')">⬇ Télécharger</button>
+          <button class="doc-btn" onclick="openDocModal('${doc._id}')">👁 Détails</button>
+          <button class="doc-btn danger" onclick="deleteDoc('${doc._id}')">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  // Pagination
+  const pages  = data.pages;
+  const pagBtns = pages > 1 ? buildPagination(data.page, pages) : "";
+
+  body.innerHTML = `<div class="docs-grid">${grid}</div>${pagBtns}`;
+}
+
+function buildPagination(current, total) {
+  let btns = `<div class="pagination">
+    <button class="page-btn" onclick="loadLibrary(${current - 1})" ${current <= 1 ? "disabled" : ""}>← Préc.</button>`;
+
+  const range = [];
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - current) <= 2) range.push(i);
+    else if (range[range.length - 1] !== "…") range.push("…");
+  }
+  range.forEach(p => {
+    if (p === "…") btns += `<span class="page-info">…</span>`;
+    else btns += `<button class="page-btn ${p === current ? "active" : ""}" onclick="loadLibrary(${p})">${p}</button>`;
+  });
+
+  btns += `<button class="page-btn" onclick="loadLibrary(${current + 1})" ${current >= total ? "disabled" : ""}>Suiv. →</button>
+    <span class="page-info">${current} / ${total}</span>
+  </div>`;
+  return btns;
+}
+
+function renderLibError(msg) {
+  document.getElementById("lib-body").innerHTML = `
+    <div class="lib-empty">
+      <div class="em-icon">⚠️</div>
+      <p>Erreur de connexion</p>
+      <div class="sub" style="font-family:var(--mono)">${msg}</div>
+    </div>`;
+}
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+function filterCategory(cat) {
+  currentCat = cat;
+  currentPage = 1;
+  loadLibrary(1);
+}
+
+function onSearchInput(val) {
+  clearTimeout(searchTimer);
+  const clearBtn = document.getElementById("clear-search");
+  clearBtn.style.display = val ? "block" : "none";
+  searchTimer = setTimeout(() => {
+    currentQuery = val;
+    currentPage  = 1;
+    loadLibrary(1);
+  }, 350);
+}
+
+function clearSearch() {
+  document.getElementById("lib-search").value = "";
+  document.getElementById("clear-search").style.display = "none";
+  currentQuery = "";
+  loadLibrary(1);
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+async function downloadDoc(docId, filename) {
+  try {
+    const url = `${API}/documents/${docId}/download`;
+    const a   = document.createElement("a");
+    a.href    = url;
+    a.download = filename;
+    a.click();
+    showToast("⬇ Téléchargement démarré", "success");
+  } catch (e) {
+    showToast("Erreur de téléchargement : " + e.message, "error");
+  }
+}
+
+async function deleteDoc(docId) {
+  if (!confirm("Supprimer ce document de MongoDB et du disque ?")) return;
+  try {
+    const r = await fetch(`${API}/documents/${docId}`, { method: "DELETE" });
+    const d = await r.json();
+    if (d.success) {
+      showToast("🗑 Document supprimé", "success");
+      closeModalDirect();
+      loadLibrary(currentPage);
+    } else {
+      showToast("Erreur : " + (d.error || "inconnue"), "error");
+    }
+  } catch (e) {
+    showToast("Erreur : " + e.message, "error");
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+async function openDocModal(docId) {
+  const overlay = document.getElementById("doc-modal");
+  const body    = document.getElementById("modal-body");
+  overlay.classList.add("open");
+  body.innerHTML = `<div class="loading-overlay"><div class="loading-spinner"></div></div>`;
+
+  try {
+    const r   = await fetch(`${API}/documents/${docId}`);
+    const doc = await r.json();
+
+    document.getElementById("modal-title").textContent = doc.original_filename || "Document";
+
+    const confC = confClass(doc.confidence);
+    const storedPath = doc.stored_path || "";
+
+    body.innerHTML = `
+      <div class="modal-grid">
+        <div class="modal-field">
+          <div class="modal-label">Catégorie prédite</div>
+          <div class="modal-val" style="font-size:16px;font-weight:600">${catEmoji(doc.prediction)} ${doc.prediction}</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">Confiance</div>
+          <div class="modal-val ${confC}" style="font-size:16px;font-weight:600">${doc.confidence?.toFixed(1)}%</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">Date de dépôt</div>
+          <div class="modal-val">${formatDateFull(doc.uploaded_at)}</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">Taille</div>
+          <div class="modal-val">${formatSize(doc.file_size_bytes)}</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">Pipeline</div>
+          <div class="modal-val">${doc.path || "—"}</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">Temps de traitement</div>
+          <div class="modal-val">${doc.time_ms ? doc.time_ms + " ms" : "—"}</div>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <div class="modal-label">📁 Emplacement sur le disque</div>
+        <div class="modal-path">
+          <span class="folder-icon">📂</span>
+          <span>${storedPath || "Chemin non disponible"}</span>
+        </div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text2);margin-top:4px">
+          Dossier : …/stored_documents/<strong>${doc.prediction || "inconnu"}</strong>/${doc.stored_filename || ""}
+        </div>
+      </div>
+
+      ${doc.ocr_text ? `
+        <div class="modal-field">
+          <div class="modal-label">Texte OCR extrait</div>
+          <div class="ocr-modal">${doc.ocr_text}</div>
+        </div>` : ""}
+
+      ${doc.qwen && doc.qwen.class ? `
+        <div class="modal-field">
+          <div class="modal-label">Analyse Qwen2.5-VL</div>
+          <div style="background:var(--bg3);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:10px;font-size:11px">
+            <span style="color:var(--purple);font-family:var(--mono)">${doc.qwen.class}</span>
+            <span style="color:var(--text2);font-family:var(--mono)"> · ${(doc.qwen.confidence*100).toFixed(0)}%</span>
+            ${doc.qwen.reasoning ? `<div style="font-size:9px;color:var(--text2);margin-top:5px;font-family:var(--mono)">${doc.qwen.reasoning.substring(0,150)}</div>` : ""}
+          </div>
+        </div>` : ""}
+
+      <div class="modal-field">
+        <div class="modal-label">ID MongoDB</div>
+        <div class="modal-val" style="font-size:10px;color:var(--text2)">${doc._id}</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn primary" onclick="downloadDoc('${doc._id}', '${escHtml(doc.original_filename)}')">⬇ Télécharger</button>
+        <button class="modal-btn danger" onclick="deleteDoc('${doc._id}')">🗑 Supprimer</button>
+      </div>
+    `;
+  } catch (e) {
+    body.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:12px">Erreur : ${e.message}</div>`;
+  }
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById("doc-modal")) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById("doc-modal").classList.remove("open");
+}
+
+// ══════════════════════════════════════════
+// RENDER CLASSIFY RESULT
+// ══════════════════════════════════════════
 function pathLabel(path) {
   return {
     direct_qwen_validated: { text: "Validé par Qwen ✓",   cls: "" },
@@ -488,7 +976,6 @@ function pathLabel(path) {
     direct:                { text: "Voie directe",         cls: "" },
   }[path] || { text: path, cls: "" };
 }
-
 function confColor(c) { return c < 60 ? "var(--red)" : c < 80 ? "var(--orange)" : "var(--green)"; }
 
 function renderResult(d) {
@@ -497,7 +984,6 @@ function renderResult(d) {
   const isLow = conf < 70;
   const pl    = pathLabel(d.path);
 
-  // ── Qwen block ──────────────────────────────────────────────────────────
   let qwenHTML = "";
   if (d.qwen && (d.qwen.class || d.qwen.reasoning)) {
     const agrees = d.qwen.class && d.qwen.class.toLowerCase() === d.prediction.toLowerCase();
@@ -506,18 +992,12 @@ function renderResult(d) {
         <div class="section-label">Analyse Qwen2.5-VL</div>
         <div class="qwen-card">
           <div class="qwen-header">
-            <span class="qwen-badge">🔮 qwen2.5vl:7b</span>
-            <span style="font-size:11px;color:var(--text2);font-family:var(--mono)">Vision multimodale</span>
+            <span class="qwen-badge">🔮 qwen2.5vl</span>
+            <span style="font-size:10px;color:var(--text2);font-family:var(--mono)">Vision multimodale</span>
           </div>
           <div class="qwen-grid">
-            <div class="qwen-field">
-              <label>Classification</label>
-              <div class="val">${d.qwen.class || "—"}</div>
-            </div>
-            <div class="qwen-field">
-              <label>Confiance Qwen</label>
-              <div class="val" style="color:${confColor(d.qwen.confidence*100)}">${d.qwen.confidence ? (d.qwen.confidence*100).toFixed(0)+"%" : "—"}</div>
-            </div>
+            <div class="qwen-field"><label>Classification</label><div class="val">${d.qwen.class || "—"}</div></div>
+            <div class="qwen-field"><label>Confiance Qwen</label><div class="val" style="color:${confColor(d.qwen.confidence*100)}">${d.qwen.confidence ? (d.qwen.confidence*100).toFixed(0)+"%" : "—"}</div></div>
           </div>
           ${d.qwen.reasoning ? `<div class="qwen-reasoning">${d.qwen.reasoning.substring(0,200)}</div>` : ""}
           <div class="compare-badge ${agrees ? 'agree' : 'disagree'}">
@@ -527,26 +1007,24 @@ function renderResult(d) {
       </div>`;
   }
 
-  // ── Votes block ──────────────────────────────────────────────────────────
   let votesHTML = "";
   if (d.votes && Object.keys(d.votes).length > 0) {
-    const vkeys = ["model", "keywords", "llm", "qwen"];
-    const vlbls = { model: "EfficientNet", keywords: "Mots-clés", llm: "llama3.2", qwen: "Qwen2.5-VL" };
+    const vkeys = ["model","keywords","llm","qwen"];
+    const vlbls = { model:"EfficientNet", keywords:"Mots-clés", llm:"llama3.2", qwen:"Qwen2.5-VL" };
     votesHTML = `
       <div>
-        <div class="section-label">Vote des agents (${Object.values(d.votes).filter(Boolean).length}/4)</div>
+        <div class="section-label">Vote des agents</div>
         <div class="votes-row">
           ${vkeys.map(k => `
-            <div class="vote-card ${k === 'qwen' ? 'qwen-vote' : ''}">
+            <div class="vote-card ${k==='qwen'?'qwen-vote':''}">
               <div class="vote-source">${vlbls[k]}</div>
               <div class="vote-val" style="${k==='qwen'?'color:var(--purple)':''}">${d.votes[k] || "—"}</div>
             </div>`).join("")}
         </div>
-        ${!d.agreement ? `<div style="margin-top:8px;font-size:11px;color:var(--orange);font-family:var(--mono)">⚠ Désaccord — révision humaine recommandée</div>` : ""}
+        ${!d.agreement ? `<div style="margin-top:7px;font-size:10px;color:var(--orange);font-family:var(--mono)">⚠ Révision humaine recommandée</div>` : ""}
       </div>`;
   }
 
-  // ── Scores ───────────────────────────────────────────────────────────────
   const maxScore = d.all_scores?.[0]?.score || 1;
   const scoresHTML = (d.all_scores || []).map((s, i) => `
     <div class="score-row">
@@ -555,7 +1033,6 @@ function renderResult(d) {
       <div class="score-pct">${(s.score*100).toFixed(1)}%</div>
     </div>`).join("");
 
-  // ── Steps ─────────────────────────────────────────────────────────────────
   const stepsHTML = (d.steps || []).map((s, i) => `
     <div class="step-item">
       <div class="step-left">
@@ -568,11 +1045,21 @@ function renderResult(d) {
       </div>
     </div>`).join("");
 
+  const mongoSaved = d.mongo_id ? `
+    <div style="background:rgba(45,212,160,.06);border:1px solid rgba(45,212,160,.2);border-radius:9px;padding:10px 14px;font-size:10px;font-family:var(--mono);display:flex;align-items:center;gap:8px">
+      <span style="color:var(--green)">✅ Sauvegardé dans MongoDB</span>
+      <span style="color:var(--text2)">ID : ${d.mongo_id}</span>
+      <button onclick="switchPage('library');document.querySelector('.nav-tab:nth-child(2)').classList.add('active');document.querySelector('.nav-tab:first-child').classList.remove('active');"
+        style="margin-left:auto;background:rgba(45,212,160,.1);border:1px solid rgba(45,212,160,.3);color:var(--green);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-family:var(--mono)">
+        Voir dans la bibliothèque →
+      </button>
+    </div>` : "";
+
   panel.innerHTML = `
     <div class="result-card path-${d.path}">
       <div class="result-header">
         <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:5px">CLASSIFICATION</div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px">CLASSIFICATION</div>
           <div class="result-class">${d.prediction}</div>
         </div>
         <div class="path-badge ${pl.cls}">${pl.text}</div>
@@ -586,6 +1073,7 @@ function renderResult(d) {
       </div>
     </div>
 
+    ${mongoSaved}
     ${qwenHTML}
     ${votesHTML}
 
@@ -601,7 +1089,7 @@ function renderResult(d) {
 
     <div>
       <div class="section-label">Texte OCR extrait</div>
-      <div class="ocr-box">${d.raw_text || "—"}</div>
+      <div class="ocr-box">${d.ocr_text || "—"}</div>
     </div>
 
     <div class="timing">⏱ ${d.time_ms} ms total</div>
@@ -612,11 +1100,49 @@ function renderError(msg) {
   document.getElementById("right-panel").innerHTML = `
     <div style="background:rgba(240,82,82,.08);border:1px solid rgba(240,82,82,.3);border-radius:12px;padding:22px">
       <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:8px">Erreur de connexion</div>
-      <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${msg}</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:10px">
-        Vérifiez que le serveur tourne : <code style="color:var(--accent)">python app.py</code>
-      </div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text2)">${msg}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px">Vérifiez : <code style="color:var(--accent)">python app.py</code></div>
     </div>`;
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function catEmoji(cat) {
+  const map = {
+    rib: "🏦", cheque: "💳", acte_naissance: "📜",
+    acte_heredite: "⚖️", tableau_amortissement: "📊",
+    assurance: "🛡️", attestation_solde: "📋",
+    carte_identite: "🪪", inconnu: "❓",
+  };
+  return map[cat] || "📄";
+}
+function confClass(c) { return c >= 80 ? "hi" : c >= 60 ? "mid" : "lo"; }
+function formatDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"2-digit" });
+}
+function formatDateFull(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+function formatSize(bytes) {
+  if (!bytes) return "—";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + " KB";
+  return (bytes/1024/1024).toFixed(1) + " MB";
+}
+function escHtml(s) { return (s || "").replace(/'/g, "\\'"); }
+
+function showToast(msg, type = "success") {
+  const c = document.getElementById("toast-container");
+  const t = document.createElement("div");
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .3s"; setTimeout(() => c.removeChild(t), 300); }, 3000);
 }
 </script>
 </body>
