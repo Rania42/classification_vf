@@ -25,7 +25,7 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 # MongoDB
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING, DESCENDING
 from bson import ObjectId
 from bson.json_util import dumps as bson_dumps
 import gridfs
@@ -40,16 +40,16 @@ OLLAMA_MODEL = "llama3.2"
 QWEN_MODEL   = "qwen2.5vl:3b"
 DEVICE       = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-OLLAMA_TIMEOUT      = 10
-OLLAMA_MAX_RETRIES  = 1
-QWEN_TIMEOUT        = 120
+OLLAMA_TIMEOUT      = 60      # Augmenté de 10 à 60 secondes
+OLLAMA_MAX_RETRIES  = 2
+QWEN_TIMEOUT        = 180     # Augmenté de 120 à 180 secondes
 USE_OLLAMA          = True
 USE_QWEN            = True
 
 # MongoDB config
 MONGO_URI    = "mongodb://localhost:27017/"
 MONGO_DB     = "bankdoc"
-DOCS_FOLDER  = "stored_documents"   # dossier local pour copies physiques
+DOCS_FOLDER  = "stored_documents"
 
 os.makedirs(DOCS_FOLDER, exist_ok=True)
 
@@ -105,14 +105,15 @@ def init_mongodb():
     global mongo_client, mongo_db, fs
     try:
         mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
-        mongo_client.server_info()  # force connection test
+        mongo_client.server_info()
         mongo_db = mongo_client[MONGO_DB]
         fs       = gridfs.GridFS(mongo_db)
 
-        # Index pour la recherche
+        # Indexes
         mongo_db.documents.create_index("prediction")
         mongo_db.documents.create_index("original_filename")
         mongo_db.documents.create_index("uploaded_at")
+        mongo_db.documents.create_index("confidence")
         mongo_db.documents.create_index([("ocr_text", "text"), ("original_filename", "text")])
 
         print("[MongoDB] ✅ Connecté — base : bankdoc")
@@ -125,10 +126,6 @@ MONGO_AVAILABLE = init_mongodb()
 
 
 def save_document_to_mongo(file_path: str, original_filename: str, result: dict) -> str | None:
-    """
-    Sauvegarde le document dans MongoDB (GridFS pour le fichier + collection documents pour les métadonnées).
-    Retourne l'ObjectId sous forme de string, ou None si erreur.
-    """
     if not MONGO_AVAILABLE:
         return None
     try:
@@ -136,14 +133,12 @@ def save_document_to_mongo(file_path: str, original_filename: str, result: dict)
         doc_id   = str(uuid.uuid4())
         category = result.get("prediction", "inconnu")
 
-        # ── Copie physique organisée par catégorie ──────────────────
         cat_folder = os.path.join(DOCS_FOLDER, category)
         os.makedirs(cat_folder, exist_ok=True)
         stored_filename = f"{doc_id}.{ext}"
         stored_path     = os.path.join(cat_folder, stored_filename)
         shutil.copy2(file_path, stored_path)
 
-        # ── GridFS : stockage binaire dans MongoDB ──────────────────
         with open(file_path, "rb") as f_bin:
             gridfs_id = fs.put(
                 f_bin,
@@ -152,7 +147,6 @@ def save_document_to_mongo(file_path: str, original_filename: str, result: dict)
                 metadata={"category": category, "doc_id": doc_id},
             )
 
-        # ── Collection documents : métadonnées ──────────────────────
         doc = {
             "doc_id":            doc_id,
             "original_filename": original_filename,
@@ -170,6 +164,7 @@ def save_document_to_mongo(file_path: str, original_filename: str, result: dict)
             "time_ms":           result.get("time_ms", 0),
             "uploaded_at":       datetime.utcnow(),
             "file_size_bytes":   os.path.getsize(file_path),
+            "corrected":         False,
         }
         insert_result = mongo_db.documents.insert_one(doc)
         mongo_id = str(insert_result.inserted_id)
@@ -338,7 +333,7 @@ class MultimodalBankClassifier(nn.Module):
 
 
 # ─────────────────────────────────────────────
-# CHARGEMENT
+# CHARGEMENT MODÈLE
 # ─────────────────────────────────────────────
 print(f"\n[INIT] Device : {DEVICE}")
 print("[INIT] Chargement du modèle...")
@@ -474,7 +469,268 @@ def agent_llm_texte(text: str, model_prediction: str) -> str:
 
 
 # ─────────────────────────────────────────────
-# FLASK API
+# SCHÉMAS ET EXTRACTION LLM CORRIGÉS
+# ─────────────────────────────────────────────
+
+# Schémas de champs attendus par type de document
+DOC_FIELD_SCHEMAS = {
+    "carte_identite": {
+        "label": "Carte Nationale d'Identité (CIN)",
+        "fields": {
+            "nom":              "Nom de famille (NOM)",
+            "prenom":           "Prénom(s)",
+            "cin_number":       "Numéro CIN (ex: AB123456)",
+            "date_naissance":   "Date de naissance (JJ/MM/AAAA)",
+            "lieu_naissance":   "Lieu / ville de naissance",
+            "date_delivrance":  "Date de délivrance de la carte",
+            "date_expiration":  "Date d'expiration / validité",
+            "adresse":          "Adresse complète",
+            "sexe":             "Sexe (M/F)",
+        }
+    },
+    "rib": {
+        "label": "Relevé d'Identité Bancaire (RIB)",
+        "fields": {
+            "titulaire":        "Nom complet du titulaire du compte",
+            "iban":             "IBAN complet",
+            "bic":              "Code BIC / SWIFT",
+            "code_banque":      "Code banque (3-5 chiffres)",
+            "code_guichet":     "Code guichet (3-5 chiffres)",
+            "num_compte":       "Numéro de compte",
+            "cle_rib":          "Clé RIB (2 chiffres)",
+            "domiciliation":    "Domiciliation / nom de l'agence",
+            "banque":           "Nom de la banque",
+        }
+    },
+    "cheque": {
+        "label": "Chèque bancaire",
+        "fields": {
+            "beneficiaire":       "Nom du bénéficiaire (à l'ordre de)",
+            "montant_chiffres":   "Montant en chiffres (avec devise)",
+            "montant_lettres":    "Montant en lettres",
+            "date_emission":      "Date d'émission du chèque",
+            "num_cheque":         "Numéro du chèque",
+            "tire_sur":           "Banque tirée (tiré sur)",
+            "emetteur":           "Nom de l'émetteur / signataire",
+            "endossable":         "Endossable ou Non Endossable",
+        }
+    },
+    "tableau_amortissement": {
+        "label": "Tableau d'amortissement",
+        "fields": {
+            "montant_pret":     "Montant total du prêt",
+            "taux_interet":     "Taux d'intérêt (annuel ou mensuel)",
+            "duree":            "Durée totale du prêt (mois ou années)",
+            "mensualite":       "Montant de la mensualité",
+            "capital_initial":  "Capital emprunté initial",
+            "date_debut":       "Date de début / première échéance",
+            "nombre_echeances": "Nombre total d'échéances",
+            "banque":           "Nom de la banque prêteuse",
+        }
+    },
+    "acte_naissance": {
+        "label": "Acte de naissance",
+        "fields": {
+            "nom":              "Nom de famille de l'enfant",
+            "prenom":           "Prénom(s) de l'enfant",
+            "date_naissance":   "Date de naissance (JJ/MM/AAAA)",
+            "heure_naissance":  "Heure de naissance",
+            "lieu_naissance":   "Commune / ville de naissance",
+            "sexe":             "Sexe (masculin / féminin)",
+            "pere":             "Nom complet du père",
+            "mere":             "Nom complet de la mère",
+            "num_acte":         "Numéro de l'acte",
+            "date_acte":        "Date de l'établissement de l'acte",
+        }
+    },
+    "acte_heredite": {
+        "label": "Acte d'hérédité / notoriété",
+        "fields": {
+            "defunt":           "Nom complet du défunt(e)",
+            "date_deces":       "Date de décès",
+            "lieu_deces":       "Lieu de décès",
+            "heritiers":        "Liste des héritiers",
+            "notaire":          "Nom du notaire",
+            "date_acte":        "Date de l'acte",
+            "lieu_acte":        "Lieu de l'acte",
+        }
+    },
+    "assurance": {
+        "label": "Contrat / attestation d'assurance",
+        "fields": {
+            "assure":           "Nom de l'assuré(e)",
+            "num_contrat":      "Numéro de contrat / police",
+            "type_garantie":    "Type de garantie / objet du contrat",
+            "date_effet":       "Date d'effet du contrat",
+            "date_echeance":    "Date d'échéance / expiration",
+            "prime":            "Montant de la prime / cotisation",
+            "assureur":         "Nom de la compagnie d'assurance",
+            "agence":           "Agence / courtier",
+        }
+    },
+    "attestation_solde": {
+        "label": "Attestation de solde bancaire",
+        "fields": {
+            "titulaire":        "Nom complet du titulaire",
+            "num_compte":       "Numéro de compte",
+            "solde":            "Solde du compte (avec devise)",
+            "arrete_au":        "Date d'arrêté du solde",
+            "banque":           "Nom de la banque",
+            "agence":           "Agence bancaire",
+            "type_compte":      "Type de compte (courant, épargne…)",
+        }
+    },
+}
+
+
+def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "") -> dict:
+    """
+    Utilise llama3.2 pour extraire les métadonnées structurées d'un document
+    """
+    import json
+    
+    print(f"\n[Extract LLM] === DÉBUT EXTRACTION ===")
+    print(f"[Extract LLM] Type: {doc_type}")
+    print(f"[Extract LLM] OCR length: {len(ocr_text)}")
+    
+    schema = DOC_FIELD_SCHEMAS.get(doc_type)
+    if not schema:
+        print(f"[Extract LLM] ❌ Schéma non trouvé pour {doc_type}")
+        return {"error": f"Type '{doc_type}' non supporté pour l'extraction"}
+    
+    field_keys = list(schema["fields"].keys())
+    
+    # RÉDUIRE LE TEXTE OCR POUR ACCÉLÉRER
+    max_chars = 1500
+    truncated_ocr = ocr_text[:max_chars]
+    if len(ocr_text) > max_chars:
+        truncated_ocr += "\n[...]\n" + ocr_text[-500:]
+    
+    # PROMPT SIMPLIFIÉ ET DIRECT
+    prompt = f"""Extrais les informations de ce document {schema['label']}.
+
+Texte OCR (peut contenir des erreurs):
+\"\"\"
+{truncated_ocr}
+\"\"\"
+
+Champs à extraire (réponds UNIQUEMENT en JSON, null si absent):
+{', '.join(field_keys)}
+
+Format JSON attendu:
+{{{', '.join([f'"{k}": null' for k in field_keys])}}}"""
+
+    print(f"[Extract LLM] Prompt length: {len(prompt)}")
+    
+    # Tentative avec llama3.2
+    if USE_OLLAMA:
+        try:
+            print(f"[Extract LLM] 📤 Envoi à llama3.2...")
+            
+            response = requests.post(
+                OLLAMA_URL,
+                json={
+                    "model": OLLAMA_MODEL,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.05,
+                        "num_predict": 500,
+                    },
+                },
+                timeout=OLLAMA_TIMEOUT
+            )
+            
+            print(f"[Extract LLM] Response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                raw = response.json().get("response", "").strip()
+                print(f"[Extract LLM] Réponse reçue ({len(raw)} chars)")
+                print(f"[Extract LLM] Réponse (500 premiers chars):\n{raw[:500]}")
+                
+                # Nettoyer la réponse
+                raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw)
+                
+                # Chercher un bloc JSON
+                m = re.search(r'\{[\s\S]*\}', raw)
+                if m:
+                    json_str = m.group()
+                    print(f"[Extract LLM] JSON trouvé")
+                    
+                    try:
+                        data = json.loads(json_str)
+                        result = {}
+                        for k in field_keys:
+                            val = data.get(k)
+                            if val and str(val).strip() not in ("", "null", "N/A", "None", "—"):
+                                result[k] = str(val).strip()
+                            else:
+                                result[k] = None
+                        
+                        filled = sum(1 for v in result.values() if v)
+                        print(f"[Extract LLM] ✅ SUCCÈS: {filled}/{len(field_keys)} champs extraits")
+                        return result
+                        
+                    except json.JSONDecodeError as e:
+                        print(f"[Extract LLM] ❌ JSON invalide: {e}")
+                        print(f"[Extract LLM] JSON string: {json_str[:200]}")
+                else:
+                    print(f"[Extract LLM] ❌ Aucun JSON trouvé")
+            else:
+                print(f"[Extract LLM] ❌ Erreur HTTP {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            print(f"[Extract LLM] ⏱️ TIMEOUT après {OLLAMA_TIMEOUT}s")
+        except Exception as e:
+            print(f"[Extract LLM] ❌ Exception: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"[Extract LLM] ❌ Ollama désactivé")
+    
+    # Tentative avec Qwen si disponible
+    if USE_QWEN and stored_path and os.path.exists(stored_path):
+        print(f"[Extract LLM] Tentative avec Qwen...")
+        try:
+            prompt_qwen = f"""Extrais ces champs du document: {', '.join(field_keys)}.
+Réponds UNIQUEMENT avec ce JSON (null si absent):
+{{{', '.join([f'"{k}": null' for k in field_keys])}}}"""
+            
+            img_b64 = image_to_base64(stored_path)
+            payload = {
+                "model": QWEN_MODEL,
+                "stream": False,
+                "options": {"temperature": 0.05, "num_predict": 500},
+                "messages": [{"role": "user", "content": prompt_qwen, "images": [img_b64]}],
+            }
+            
+            response = requests.post(OLLAMA_CHAT, json=payload, timeout=QWEN_TIMEOUT)
+            
+            if response.status_code == 200:
+                raw = response.json().get("message", {}).get("content", "").strip()
+                raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw)
+                m = re.search(r'\{[\s\S]*\}', raw)
+                if m:
+                    data = json.loads(m.group())
+                    result = {}
+                    for k in field_keys:
+                        val = data.get(k)
+                        if val and str(val).strip() not in ("", "null", "N/A", "None", "—"):
+                            result[k] = str(val).strip()
+                        else:
+                            result[k] = None
+                    filled = sum(1 for v in result.values() if v)
+                    print(f"[Extract LLM] ✅ Qwen: {filled} champs extraits")
+                    return result
+        except Exception as e:
+            print(f"[Extract LLM] ❌ Qwen erreur: {e}")
+    
+    print(f"[Extract LLM] ❌ ÉCHEC, retourne valeurs null")
+    return {k: None for k in field_keys}
+
+
+# ─────────────────────────────────────────────
+# FLASK APP
 # ─────────────────────────────────────────────
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
@@ -483,10 +739,22 @@ UPLOAD_TEMP = "uploads_temp"
 os.makedirs(UPLOAD_TEMP, exist_ok=True)
 
 
+# ── Serve static HTML pages ───────────────────────────────────────────────
+
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
 
+@app.route("/library")
+def library_page():
+    return app.send_static_file("library.html")
+
+@app.route("/batch")
+def batch_page():
+    return app.send_static_file("batch.html")
+
+
+# ── Classification ────────────────────────────────────────────────────────
 
 @app.route("/classify", methods=["POST"])
 def classify():
@@ -502,12 +770,12 @@ def classify():
     raw_text = ""
 
     try:
-        # ── Étape 1 : OCR ────────────────────────────────────────────
+        # Étape 1 : OCR
         raw_text = extract_text_ocr(tmp_path)
         steps.append({"step": "OCR bilingue", "status": "ok",
                       "detail": raw_text[:300] + ("…" if len(raw_text) > 300 else "")})
 
-        # ── Étape 2 : Modèle EfficientNet + mBERT ────────────────────
+        # Étape 2 : Modèle EfficientNet + mBERT
         pred_class, confidence, all_scores = classify_with_model(tmp_path, raw_text)
         steps.append({"step": "Modèle multimodal (EfficientNet+mBERT)", "status": "ok",
                       "detail": f"{pred_class} — confiance {confidence:.1%}"})
@@ -519,7 +787,7 @@ def classify():
                     steps.append({"step": "Règle métier CIN", "status": "warning",
                                   "detail": "Carte d'identité détectée — correction prioritaire"})
 
-        # ── Étape 3 : Qwen2.5-VL ─────────────────────────────────────
+        # Étape 3 : Qwen2.5-VL
         qwen_result = {"class": None, "confidence": 0.0, "reasoning": "Non activé"}
         if USE_QWEN:
             steps.append({"step": "Qwen2.5-VL (analyse visuelle)", "status": "ok",
@@ -543,7 +811,7 @@ def classify():
             and qwen_result["class"].lower() == pred_class.lower()
         )
 
-        # ── Résolution finale ─────────────────────────────────────────
+        # Résolution finale
         final_prediction = pred_class
         final_confidence = confidence
         final_scores     = all_scores
@@ -642,7 +910,7 @@ def classify():
             "ocr_text":   raw_text,
         }
 
-        # ── Sauvegarde MongoDB ────────────────────────────────────────
+        # Sauvegarde MongoDB
         mongo_id = save_document_to_mongo(
             tmp_path,
             file.filename,
@@ -673,23 +941,25 @@ def classify():
 
 
 # ─────────────────────────────────────────────
-# ROUTES MONGODB — RECHERCHE & GESTION
+# ROUTES MONGODB — DOCUMENTS
 # ─────────────────────────────────────────────
 
 def _serialize_doc(doc: dict) -> dict:
     """Sérialise un document MongoDB en JSON-safe dict."""
+    doc = dict(doc)
     doc["_id"]       = str(doc["_id"])
     doc["gridfs_id"] = str(doc.get("gridfs_id", ""))
-    if "uploaded_at" in doc:
+    if "uploaded_at" in doc and doc["uploaded_at"]:
         doc["uploaded_at"] = doc["uploaded_at"].isoformat() + "Z"
+    if "corrected_at" in doc and doc.get("corrected_at"):
+        doc["corrected_at"] = doc["corrected_at"].isoformat() + "Z"
     return doc
 
 
 @app.route("/documents", methods=["GET"])
 def list_documents():
     """
-    Liste les documents avec filtres optionnels.
-    Query params : category, q (recherche texte), page, per_page
+    Liste les documents avec filtres, tri et pagination.
     """
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible", "documents": [], "total": 0}), 200
@@ -697,12 +967,17 @@ def list_documents():
     category = request.args.get("category", "")
     q        = request.args.get("q", "").strip()
     page     = max(int(request.args.get("page", 1)), 1)
-    per_page = min(int(request.args.get("per_page", 20)), 100)
+    per_page = min(int(request.args.get("per_page", 24)), 100)
     skip     = (page - 1) * per_page
+    sort     = request.args.get("sort", "date_desc")
+    conf_min = float(request.args.get("conf_min", 0))
 
+    # Build query
     query = {}
     if category:
         query["prediction"] = category
+    if conf_min > 0:
+        query["confidence"] = {"$gte": conf_min}
     if q:
         query["$or"] = [
             {"original_filename": {"$regex": q, "$options": "i"}},
@@ -710,10 +985,20 @@ def list_documents():
             {"prediction":        {"$regex": q, "$options": "i"}},
         ]
 
+    # Sort mapping
+    sort_map = {
+        "date_desc": [("uploaded_at", DESCENDING)],
+        "date_asc":  [("uploaded_at", ASCENDING)],
+        "conf_desc": [("confidence",  DESCENDING)],
+        "conf_asc":  [("confidence",  ASCENDING)],
+        "name_asc":  [("original_filename", ASCENDING)],
+    }
+    mongo_sort = sort_map.get(sort, [("uploaded_at", DESCENDING)])
+
     total = mongo_db.documents.count_documents(query)
     docs  = list(
         mongo_db.documents.find(query, {"ocr_text": 0})
-        .sort("uploaded_at", -1)
+        .sort(mongo_sort)
         .skip(skip)
         .limit(per_page)
     )
@@ -723,13 +1008,13 @@ def list_documents():
         "total":     total,
         "page":      page,
         "per_page":  per_page,
-        "pages":     (total + per_page - 1) // per_page,
+        "pages":     max((total + per_page - 1) // per_page, 1),
     })
 
 
 @app.route("/documents/stats", methods=["GET"])
 def documents_stats():
-    """Statistiques par catégorie."""
+    """Statistiques agrégées par catégorie."""
     if not MONGO_AVAILABLE:
         return jsonify({"stats": [], "total": 0, "mongodb": False})
 
@@ -746,10 +1031,15 @@ def documents_stats():
     total = mongo_db.documents.count_documents({})
 
     return jsonify({
-        "stats":   [{"category": s["_id"], "count": s["count"],
-                     "avg_confidence": round(s["avg_conf"] or 0, 1),
-                     "last_upload": s["last_at"].isoformat() + "Z" if s["last_at"] else None}
-                    for s in stats],
+        "stats": [
+            {
+                "category":       s["_id"],
+                "count":          s["count"],
+                "avg_confidence": round(s["avg_conf"] or 0, 1),
+                "last_upload":    s["last_at"].isoformat() + "Z" if s["last_at"] else None,
+            }
+            for s in stats
+        ],
         "total":   total,
         "mongodb": True,
     })
@@ -757,7 +1047,7 @@ def documents_stats():
 
 @app.route("/documents/<doc_id>", methods=["GET"])
 def get_document(doc_id: str):
-    """Détail d'un document."""
+    """Détail complet d'un document (incluant ocr_text et all_scores)."""
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible"}), 503
     try:
@@ -769,9 +1059,73 @@ def get_document(doc_id: str):
         return jsonify({"error": str(e)}), 400
 
 
+@app.route("/documents/<doc_id>/correct", methods=["PATCH"])
+def correct_document(doc_id: str):
+    """
+    Corrige la catégorie prédite d'un document.
+    """
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        data = request.json or {}
+        new_prediction = data.get("prediction", "").strip()
+        if not new_prediction:
+            return jsonify({"error": "Catégorie manquante"}), 400
+
+        doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
+        if not doc:
+            return jsonify({"error": "Document introuvable"}), 404
+
+        old_prediction = doc.get("prediction", "inconnu")
+
+        # Déplacer le fichier physique si nécessaire
+        old_stored_path = doc.get("stored_path", "")
+        new_stored_path = old_stored_path
+
+        if old_stored_path and os.path.exists(old_stored_path) and old_prediction != new_prediction:
+            stored_filename = doc.get("stored_filename", os.path.basename(old_stored_path))
+            new_cat_folder  = os.path.join(DOCS_FOLDER, new_prediction)
+            os.makedirs(new_cat_folder, exist_ok=True)
+            new_stored_path = os.path.join(new_cat_folder, stored_filename)
+            try:
+                shutil.move(old_stored_path, new_stored_path)
+                print(f"[Correct] Fichier déplacé : {old_stored_path} → {new_stored_path}")
+            except Exception as e:
+                print(f"[Correct] Avertissement déplacement fichier : {e}")
+                new_stored_path = old_stored_path
+
+        # Mise à jour MongoDB
+        update_fields = {
+            "prediction":          new_prediction,
+            "corrected":           True,
+            "original_prediction": old_prediction,
+            "corrected_at":        datetime.utcnow(),
+        }
+        if new_stored_path != old_stored_path:
+            update_fields["stored_path"] = new_stored_path
+
+        mongo_db.documents.update_one(
+            {"_id": ObjectId(doc_id)},
+            {"$set": update_fields}
+        )
+
+        print(f"[Correct] {doc_id} : {old_prediction} → {new_prediction}")
+        return jsonify({
+            "success":  True,
+            "old":      old_prediction,
+            "new":      new_prediction,
+            "new_path": new_stored_path,
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"[Correct ERROR] {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 400
+
+
 @app.route("/documents/<doc_id>/download", methods=["GET"])
 def download_document(doc_id: str):
-    """Télécharge le fichier depuis GridFS."""
+    """Télécharge le fichier depuis le disque ou GridFS."""
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible"}), 503
     try:
@@ -779,7 +1133,6 @@ def download_document(doc_id: str):
         if not doc:
             return jsonify({"error": "Document introuvable"}), 404
 
-        # Essayer d'abord le fichier physique
         stored_path = doc.get("stored_path", "")
         if stored_path and os.path.exists(stored_path):
             return send_file(
@@ -788,7 +1141,6 @@ def download_document(doc_id: str):
                 download_name=doc["original_filename"],
             )
 
-        # Fallback : GridFS
         gridfs_id = doc.get("gridfs_id")
         if gridfs_id:
             grid_file = fs.get(gridfs_id)
@@ -807,7 +1159,7 @@ def download_document(doc_id: str):
 
 @app.route("/documents/<doc_id>", methods=["DELETE"])
 def delete_document(doc_id: str):
-    """Supprime un document (MongoDB + fichier physique)."""
+    """Supprime un document (MongoDB + fichier physique + GridFS)."""
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible"}), 503
     try:
@@ -815,12 +1167,10 @@ def delete_document(doc_id: str):
         if not doc:
             return jsonify({"error": "Document introuvable"}), 404
 
-        # Supprimer fichier physique
         stored_path = doc.get("stored_path", "")
         if stored_path and os.path.exists(stored_path):
             os.remove(stored_path)
 
-        # Supprimer GridFS
         gridfs_id = doc.get("gridfs_id")
         if gridfs_id:
             try:
@@ -828,7 +1178,6 @@ def delete_document(doc_id: str):
             except Exception:
                 pass
 
-        # Supprimer document MongoDB
         mongo_db.documents.delete_one({"_id": ObjectId(doc_id)})
 
         return jsonify({"success": True, "deleted_id": doc_id})
@@ -836,6 +1185,93 @@ def delete_document(doc_id: str):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
+# ─────────────────────────────────────────────
+# ROUTE D'EXTRACTION CORRIGÉE
+# ─────────────────────────────────────────────
+
+@app.route("/documents/<doc_id>/extract", methods=["POST"])
+def extract_document_metadata(doc_id: str):
+    """
+    Extrait les métadonnées structurées d'un document via LLM
+    """
+    print(f"\n[Extract Route] === DÉBUT pour {doc_id} ===")
+    
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    
+    try:
+        doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
+        if not doc:
+            return jsonify({"error": "Document introuvable"}), 404
+        
+        doc_type = doc.get("prediction", "inconnu")
+        ocr_text = doc.get("ocr_text", "")
+        stored_path = doc.get("stored_path", "")
+        
+        print(f"[Extract Route] Type: {doc_type}")
+        print(f"[Extract Route] OCR length: {len(ocr_text)}")
+        
+        # Vérifier si déjà extrait
+        force = request.json.get("force", False) if request.json else False
+        if not force and doc.get("extracted_fields"):
+            print("[Extract Route] Utilisation du cache")
+            return jsonify({
+                "fields": doc["extracted_fields"],
+                "source": doc.get("extraction_source", "cache"),
+                "doc_type": doc_type,
+                "cached": True,
+            })
+        
+        if not ocr_text or ocr_text == "[NO_TEXT]":
+            return jsonify({"error": "Aucun texte OCR disponible pour ce document"}), 400
+        
+        if doc_type not in DOC_FIELD_SCHEMAS:
+            return jsonify({
+                "fields": {},
+                "source": "none",
+                "doc_type": doc_type,
+                "error": f"Type '{doc_type}' non supporté pour l'extraction",
+            })
+        
+        # Lancer l'extraction
+        t0 = time.time()
+        fields = extract_metadata_with_llm(ocr_text, doc_type, stored_path)
+        elapsed_ms = int((time.time() - t0) * 1000)
+        
+        # Déterminer la source
+        filled = sum(1 for v in fields.values() if v)
+        source = "llama3.2" if filled > 0 else "none"
+        
+        print(f"[Extract Route] Terminé en {elapsed_ms}ms, {filled} champs extraits")
+        
+        # Sauvegarder dans MongoDB
+        mongo_db.documents.update_one(
+            {"_id": ObjectId(doc_id)},
+            {"$set": {
+                "extracted_fields": fields,
+                "extraction_source": source,
+                "extracted_at": datetime.utcnow(),
+            }}
+        )
+        
+        return jsonify({
+            "fields": fields,
+            "source": source,
+            "doc_type": doc_type,
+            "elapsed_ms": elapsed_ms,
+            "cached": False,
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"[Extract Route] ERREUR: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────
+# ROUTES UTILITAIRES
+# ─────────────────────────────────────────────
 
 @app.route("/status", methods=["GET"])
 def status():
@@ -876,5 +1312,8 @@ def toggle_qwen():
     return jsonify({"qwen_enabled": USE_QWEN})
 
 
+# ─────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
