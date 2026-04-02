@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BankDoc — Ré-entraînement</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#080c14;--bg2:#0e1420;--bg3:#141c2e;--bg4:#1a2238;
+  --border:#1e2d4a;--border2:#253556;
+  --accent:#3b82f6;--accent2:#6366f1;
+  --cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;
+  --text:#e2e8f0;--text2:#64748b;--text3:#94a3b8;
+  --mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--display);min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;background:var(--bg)}
+.back-btn{display:flex;align-items:center;gap:7px;color:var(--text2);font-size:11px;font-family:var(--mono);text-decoration:none;padding:6px 12px;border-radius:8px;border:1px solid var(--border);transition:all .15s}
+.back-btn:hover{color:var(--text);border-color:var(--border2);background:var(--bg3)}
+.topbar-title{font-size:14px;font-weight:700}
+
+.main{max-width:900px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:24px;width:100%}
+
+.hero{background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(139,92,246,.06));border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:24px 28px}
+.hero-title{font-size:22px;font-weight:800;margin-bottom:8px;letter-spacing:-.03em}
+.hero-sub{font-size:12px;color:var(--text2);line-height:1.7}
+
+/* Alerts section */
+.alerts-section{display:flex;flex-direction:column;gap:8px}
+.alert-card{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.alert-left{display:flex;align-items:center;gap:12px}
+.alert-emoji{font-size:20px}
+.alert-info{font-size:12px}
+.alert-info strong{color:var(--green)}
+.alert-count{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:2px}
+.export-btn{padding:8px 16px;border-radius:8px;font-family:var(--mono);font-size:10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green);cursor:pointer;transition:all .15s;white-space:nowrap}
+.export-btn:hover{background:rgba(16,185,129,.2)}
+
+/* Steps */
+.steps-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.steps-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.steps-header-title{font-size:13px;font-weight:600}
+.steps-body{padding:20px}
+.step{display:flex;gap:14px;padding-bottom:20px;position:relative}
+.step:last-child{padding-bottom:0}
+.step-num{width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--accent);font-family:var(--mono);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-line{position:absolute;left:14px;top:28px;bottom:0;width:1px;background:var(--border)}
+.step:last-child .step-line{display:none}
+.step-content{flex:1;padding-top:4px}
+.step-title{font-size:12px;font-weight:600;margin-bottom:5px}
+.step-desc{font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:8px}
+.code-block{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:10px;color:var(--cyan);line-height:1.8;white-space:pre-wrap;word-break:break-word;position:relative}
+.copy-btn{position:absolute;top:8px;right:8px;padding:3px 9px;border-radius:5px;font-family:var(--mono);font-size:8px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .12s}
+.copy-btn:hover{border-color:var(--border2);color:var(--text)}
+.note{background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.2);border-radius:7px;padding:9px 12px;font-family:var(--mono);font-size:9px;color:var(--cyan);line-height:1.6;margin-top:8px}
+.warn-note{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:9px 12px;font-family:var(--mono);font-size:9px;color:var(--amber);line-height:1.6;margin-top:8px}
+
+/* Custom types table */
+.types-table{width:100%;border-collapse:collapse;font-size:11px}
+.types-table th{font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3)}
+.types-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px}
+.types-table tr:last-child td{border-bottom:none}
+.types-table tr:hover td{background:var(--bg3)}
+.ready-badge{padding:2px 8px;border-radius:4px;font-size:8px;background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.not-ready-badge{padding:2px 8px;border-radius:4px;font-size:8px;background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.progress-bar-wrap{display:flex;align-items:center;gap:8px}
+.mini-bar-bg{flex:1;height:4px;background:var(--bg4);border-radius:2px}
+.mini-bar-fill{height:4px;border-radius:2px;background:var(--accent);transition:width .4s}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" href="index.html">← Accueil</a>
+  <a class="back-btn" href="library.html">📚 Bibliothèque</a>
+  <div class="topbar-title">🚀 Ré-entraînement du modèle</div>
+</div>
+
+<div class="main">
+
+  <div class="hero">
+    <div class="hero-title">Entraîner le modèle sur de nouveaux types</div>
+    <div class="hero-sub">
+      Quand un type de document personnalisé atteint <strong style="color:var(--amber)">50 images</strong>,
+      le modèle peut être ré-entraîné pour le reconnaître automatiquement.
+      Suivez les étapes ci-dessous pour lancer l'entraînement sur Google Colab.
+    </div>
+  </div>
+
+  <!-- Alerts for ready types -->
+  <div id="alerts-section" style="display:none">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Types prêts pour l'entraînement</div>
+    <div class="alerts-section" id="alerts-list"></div>
+  </div>
+
+  <!-- All custom types progress -->
+  <div class="steps-card">
+    <div class="steps-header">
+      <span style="font-size:18px">📊</span>
+      <div class="steps-header-title">Progression des types personnalisés</div>
+    </div>
+    <div style="padding:16px 20px">
+      <table class="types-table" id="types-table">
+        <thead><tr>
+          <th>Type</th>
+          <th>Images</th>
+          <th>Progression (seuil: 50)</th>
+          <th>Statut</th>
+        </tr></thead>
+        <tbody id="types-tbody">
+          <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text2)">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Step by step guide -->
+  <div class="steps-card">
+    <div class="steps-header">
+      <span style="font-size:18px">📋</span>
+      <div class="steps-header-title">Guide de ré-entraînement (Google Colab)</div>
+    </div>
+    <div class="steps-body">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-line"></div>
+        <div class="step-content">
+          <div class="step-title">Exporter les images classifiées manuellement</div>
+          <div class="step-desc">
+            Téléchargez les images de chaque type depuis la bibliothèque.
+            Les images sont stockées dans <code style="color:var(--cyan)">stored_documents/&lt;nom_type&gt;/</code>.
+            Créez une archive ZIP avec la structure suivante :
+          </div>
+          <div class="code-block">dataset/
+├── rib/              ← images existantes
+├── cheque/
+├── acte_naissance/
+├── ...
+└── certificat_vie/   ← nouveau type (50+ images)
+    ├── img001.jpg
+    ├── img002.jpg
+    └── ...</div>
+          <div class="note">💡 Copiez simplement le dossier <code>stored_documents/</code> en renommant les sous-dossiers si nécessaire.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-line"></div>
+        <div class="step-content">
+          <div class="step-title">Ouvrir le notebook Colab et uploader le dataset</div>
+          <div class="step-desc">
+            Ouvrez votre notebook <code style="color:var(--cyan)">multimodale.ipynb</code> dans Google Colab.
+            Modifiez uniquement la cellule de configuration (CELLULE 4) pour ajouter le nouveau type :
+          </div>
+          <div class="code-block" id="classes-code"><button class="copy-btn" onclick="copyCode('classes-code')">Copier</button>CLASSES = [
+    "rib",
+    "cheque",
+    "acte_de_naissance",
+    "tableau_amortissement",
+    "assurance",
+    "attestation_de_solde",
+    "acte_heredite",
+    "certificat_vie",     # ← Nouveau type ajouté ici
+    # Ajoutez d'autres nouveaux types ici
+]</div>
+          <div class="warn-note">⚠ C'est le <strong>seul changement</strong> à faire dans le code. Toutes les autres cellules restent identiques.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-line"></div>
+        <div class="step-content">
+          <div class="step-title">Lancer l'entraînement complet</div>
+          <div class="step-desc">
+            Exécutez toutes les cellules du notebook dans l'ordre.
+            L'entraînement prend environ <strong style="color:var(--amber)">20-30 minutes</strong> sur GPU Colab.
+          </div>
+          <div class="code-block"><button class="copy-btn" onclick="copyCode('this')">Copier</button># Dans Colab, exécuter toutes les cellules :
+# Menu → Runtime → Run all (Ctrl+F9)
+
+# Vérifier que le GPU est disponible :
+import torch
+print(torch.cuda.is_available())  # Doit afficher True</div>
+          <div class="note">💡 Activez le GPU dans Colab : Runtime → Change runtime type → GPU (T4).</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-line"></div>
+        <div class="step-content">
+          <div class="step-title">Télécharger et remplacer le modèle</div>
+          <div class="step-desc">
+            Après l'entraînement, la dernière cellule télécharge automatiquement
+            <code style="color:var(--cyan)">bank_doc_classifier_multimodal.pth</code>.
+            Remplacez l'ancien fichier dans votre dossier <code style="color:var(--cyan)">model/</code> :
+          </div>
+          <div class="code-block">classification_vf/
+└── model/
+    └── bank_doc_classifier_multimodal.pth   ← Remplacer ce fichier</div>
+          <div class="warn-note">⚠ Arrêtez le serveur Flask (<code>Ctrl+C</code>) avant de remplacer le fichier, puis relancez avec <code>python app.py</code>.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-line"></div>
+        <div class="step-content">
+          <div class="step-title">Vérifier que le nouveau type est reconnu</div>
+          <div class="step-desc">
+            Après redémarrage, vérifiez dans le statut que le nouveau type apparaît dans les classes :
+          </div>
+          <div class="code-block"><button class="copy-btn" onclick="copyCode('this')">Copier</button># Vérification via l'API
+curl http://localhost:5000/status | python -m json.tool | grep classes
+
+# Le nouveau type doit apparaître dans la liste des classes
+# ex: "certificat_vie" doit être présent</div>
+          <div class="note">💡 Vous pouvez aussi tester directement dans l'interface en uploadant une image du nouveau type.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "http://localhost:5000";
+
+async function loadStats() {
+  try {
+    const r = await fetch(`${API}/types/stats`);
+    const d = await r.json();
+
+    // Alerts
+    const alertsSection = document.getElementById("alerts-section");
+    const alertsList    = document.getElementById("alerts-list");
+    if (d.alerts && d.alerts.length > 0) {
+      alertsSection.style.display = "block";
+      alertsList.innerHTML = d.alerts.map(a => `
+        <div class="alert-card">
+          <div class="alert-left">
+            <span class="alert-emoji">🚀</span>
+            <div class="alert-info">
+              <strong>${esc(a.label)}</strong> est prêt pour le ré-entraînement
+              <div class="alert-count">${a.count} images classifiées manuellement</div>
+            </div>
+          </div>
+          <button class="export-btn" onclick="exportType('${esc(a.type)}')">⬇ Exporter les images</button>
+        </div>`).join("");
+    }
+
+    // Types table
+    const tbody = document.getElementById("types-tbody");
+    if (!d.custom_types || !d.custom_types.length) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text2);font-family:var(--mono);font-size:10px">Aucun type personnalisé créé. Classifiez manuellement des documents pour en créer.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = d.custom_types.map(t => {
+      const pct = Math.min((t.count / (d.threshold||50)) * 100, 100).toFixed(0);
+      return `<tr>
+        <td style="font-weight:500">${esc(t.label||t.name)}<br><span style="color:var(--text2);font-size:8px">${esc(t.name)}</span></td>
+        <td style="color:var(--cyan)">${t.count}</td>
+        <td>
+          <div class="progress-bar-wrap">
+            <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${pct}%"></div></div>
+            <span style="font-size:9px;color:var(--text2);white-space:nowrap">${t.count}/${d.threshold||50}</span>
+          </div>
+        </td>
+        <td>
+          ${t.ready_for_training
+            ? `<span class="ready-badge">✅ Prêt</span>`
+            : `<span class="not-ready-badge">⏳ ${Math.max(0,(d.threshold||50)-t.count)} restants</span>`}
+        </td>
+      </tr>`;
+    }).join("");
+
+    // Also update the classes code block
+    updateClassesCode(d.custom_types);
+  } catch (e) {
+    document.getElementById("types-tbody").innerHTML =
+      `<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--red);font-family:var(--mono);font-size:10px">Erreur : ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function updateClassesCode(customTypes) {
+  const block = document.getElementById("classes-code");
+  const baseClasses = ["rib","cheque","acte_de_naissance","tableau_amortissement","assurance","attestation_de_solde","acte_heredite"];
+  const customNames = customTypes.map(t => t.name);
+  const allClasses  = [...baseClasses, ...customNames];
+  const linesBase   = baseClasses.map(c => `    "${c}",`);
+  const linesCustom = customNames.map(c => `    "${c}",     # ← Nouveau type`);
+  const code = `CLASSES = [\n${linesBase.join("\n")}\n${linesCustom.join("\n")}\n]`;
+  // Keep the copy button, update text content
+  const btn = block.querySelector(".copy-btn");
+  block.textContent = code;
+  block.prepend(btn);
+}
+
+async function exportType(typeName) {
+  // Just redirect to library filtered by type
+  window.location.href = `library.html?cat=${encodeURIComponent(typeName)}`;
+}
+
+function copyCode(id) {
+  const el = id === "this" ? event.target.parentElement : document.getElementById(id);
+  const text = el.textContent.replace(/Copier/g,"").trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = id === "this" ? event.target : el.querySelector(".copy-btn");
+    if (btn) { btn.textContent = "✓ Copié"; setTimeout(()=>btn.textContent="Copier",1500); }
+  });
+}
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+loadStats();
+</script>
+</body>
+</html>

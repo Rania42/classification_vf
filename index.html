@@ -383,6 +383,9 @@ function handleFile(file) {
   reader.readAsDataURL(file);
 }
 
+// Seuil de confiance en dessous duquel on déclenche la classification manuelle
+const MANUAL_THRESHOLD = 70.0;
+
 document.getElementById("btn-classify").addEventListener("click", async () => {
   if (!selectedFile) return;
   const btn = document.getElementById("btn-classify");
@@ -394,7 +397,17 @@ document.getElementById("btn-classify").addEventListener("click", async () => {
     fd.append("file", selectedFile);
     const r = await fetch(`${API}/classify`, { method: "POST", body: fd });
     const d = await r.json();
-    renderResult(d);
+
+    // ── Vérifier si classification manuelle requise ──────────────
+    const conf = parseFloat(d.confidence || 0);
+    const needsManual = conf < MANUAL_THRESHOLD || d.prediction === "inconnu" || !d.agreement;
+
+    if (needsManual && !d.error) {
+      // Afficher le résultat partiel
+      renderResult(d, true);
+    } else {
+      renderResult(d, false);
+    }
   } catch (err) {
     renderError(err.message);
   } finally {
@@ -413,11 +426,31 @@ function pathLabel(path) {
 }
 function confColor(c) { return c < 60 ? "var(--red)" : c < 80 ? "var(--orange)" : "var(--green)"; }
 
-function renderResult(d) {
+function renderResult(d, needsManual=false) {
   const panel = document.getElementById("right-panel");
   const conf  = parseFloat(d.confidence);
   const isLow = conf < 70;
   const pl    = pathLabel(d.path);
+
+  // ── Bandeau classification manuelle ─────────────────────────
+  const manualBanner = needsManual ? `
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px">
+      <div style="font-size:24px;flex-shrink:0">⚠️</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:5px">Classification manuelle requise</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);line-height:1.6;margin-bottom:12px">
+          Confiance <strong style="color:var(--orange)">${conf.toFixed(1)}%</strong> — en dessous du seuil de 70%.
+          Le modèle ne reconnaît pas ce type de document avec certitude.
+          ${d.prediction === "inconnu" ? "Document classé comme <strong>inconnu</strong>." : ""}
+          ${!d.agreement ? "Les agents sont en <strong>désaccord</strong>." : ""}
+        </div>
+        <a href="manual_classify.html?doc_id=${encodeURIComponent(d.mongo_id||'')}&filename=${encodeURIComponent(d.original_filename||selectedFile?.name||'')}&confidence=${conf.toFixed(1)}&prediction=${encodeURIComponent(d.prediction||'')}&ocr=${encodeURIComponent((d.ocr_text||'').substring(0,500))}&scores=${encodeURIComponent(JSON.stringify(d.all_scores||[]))}"
+           style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:9px;color:var(--orange);font-family:var(--mono);font-size:11px;font-weight:500;text-decoration:none;transition:all .15s"
+           onmouseover="this.style.background='rgba(245,158,11,.22)'" onmouseout="this.style.background='rgba(245,158,11,.12)'">
+          🏷 Classifier manuellement →
+        </a>
+      </div>
+    </div>` : "";
 
   let qwenHTML = "";
   if (d.qwen && (d.qwen.class || d.qwen.reasoning)) {
@@ -488,6 +521,7 @@ function renderResult(d) {
     </div>` : "";
 
   panel.innerHTML = `
+    ${manualBanner}
     <div class="result-card path-${d.path}">
       <div class="result-header">
         <div>

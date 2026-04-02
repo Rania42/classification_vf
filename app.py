@@ -40,16 +40,16 @@ OLLAMA_MODEL = "llama3.2"
 QWEN_MODEL   = "qwen2.5vl:3b"
 DEVICE       = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-OLLAMA_TIMEOUT      = 60      # Augmenté de 10 à 60 secondes
-OLLAMA_MAX_RETRIES  = 2
-QWEN_TIMEOUT        = 180     # Augmenté de 120 à 180 secondes
+OLLAMA_TIMEOUT      = 10
+OLLAMA_MAX_RETRIES  = 1
+QWEN_TIMEOUT        = 120
 USE_OLLAMA          = True
 USE_QWEN            = True
 
 # MongoDB config
 MONGO_URI    = "mongodb://localhost:27017/"
 MONGO_DB     = "bankdoc"
-DOCS_FOLDER  = "stored_documents"
+DOCS_FOLDER  = "stored_documents"   # dossier local pour copies physiques
 
 os.makedirs(DOCS_FOLDER, exist_ok=True)
 
@@ -383,13 +383,18 @@ print("=" * 60 + "\n")
 # ─────────────────────────────────────────────
 
 def extract_text_ocr(img_path: str) -> str:
+    """
+    Extrait le texte OCR COMPLET de l image.
+    La troncature a max_text se fait UNIQUEMENT dans classify_with_model()
+    pour le tokenizer BERT. Le texte complet est conserve pour le LLM.
+    """
     text_latin = " ".join(ocr_latin.readtext(img_path, detail=0, paragraph=True))
     if len(text_latin.strip()) < 30:
         text_arabic = " ".join(ocr_arabic.readtext(img_path, detail=0, paragraph=True))
         text = (text_latin + " " + text_arabic).strip()
     else:
         text = text_latin
-    return text[:max_text] or "[NO_TEXT]"
+    return text or "[NO_TEXT]"  # PAS de [:max_text] ici — texte complet pour le LLM
 
 
 def classify_with_model(img_path: str, text: str):
@@ -466,267 +471,6 @@ def agent_llm_texte(text: str, model_prediction: str) -> str:
                 if cls.lower() in result.lower():
                     return cls
     return model_prediction
-
-
-# ─────────────────────────────────────────────
-# SCHÉMAS ET EXTRACTION LLM CORRIGÉS
-# ─────────────────────────────────────────────
-
-# Schémas de champs attendus par type de document
-DOC_FIELD_SCHEMAS = {
-    "carte_identite": {
-        "label": "Carte Nationale d'Identité (CIN)",
-        "fields": {
-            "nom":              "Nom de famille (NOM)",
-            "prenom":           "Prénom(s)",
-            "cin_number":       "Numéro CIN (ex: AB123456)",
-            "date_naissance":   "Date de naissance (JJ/MM/AAAA)",
-            "lieu_naissance":   "Lieu / ville de naissance",
-            "date_delivrance":  "Date de délivrance de la carte",
-            "date_expiration":  "Date d'expiration / validité",
-            "adresse":          "Adresse complète",
-            "sexe":             "Sexe (M/F)",
-        }
-    },
-    "rib": {
-        "label": "Relevé d'Identité Bancaire (RIB)",
-        "fields": {
-            "titulaire":        "Nom complet du titulaire du compte",
-            "iban":             "IBAN complet",
-            "bic":              "Code BIC / SWIFT",
-            "code_banque":      "Code banque (3-5 chiffres)",
-            "code_guichet":     "Code guichet (3-5 chiffres)",
-            "num_compte":       "Numéro de compte",
-            "cle_rib":          "Clé RIB (2 chiffres)",
-            "domiciliation":    "Domiciliation / nom de l'agence",
-            "banque":           "Nom de la banque",
-        }
-    },
-    "cheque": {
-        "label": "Chèque bancaire",
-        "fields": {
-            "beneficiaire":       "Nom du bénéficiaire (à l'ordre de)",
-            "montant_chiffres":   "Montant en chiffres (avec devise)",
-            "montant_lettres":    "Montant en lettres",
-            "date_emission":      "Date d'émission du chèque",
-            "num_cheque":         "Numéro du chèque",
-            "tire_sur":           "Banque tirée (tiré sur)",
-            "emetteur":           "Nom de l'émetteur / signataire",
-            "endossable":         "Endossable ou Non Endossable",
-        }
-    },
-    "tableau_amortissement": {
-        "label": "Tableau d'amortissement",
-        "fields": {
-            "montant_pret":     "Montant total du prêt",
-            "taux_interet":     "Taux d'intérêt (annuel ou mensuel)",
-            "duree":            "Durée totale du prêt (mois ou années)",
-            "mensualite":       "Montant de la mensualité",
-            "capital_initial":  "Capital emprunté initial",
-            "date_debut":       "Date de début / première échéance",
-            "nombre_echeances": "Nombre total d'échéances",
-            "banque":           "Nom de la banque prêteuse",
-        }
-    },
-    "acte_naissance": {
-        "label": "Acte de naissance",
-        "fields": {
-            "nom":              "Nom de famille de l'enfant",
-            "prenom":           "Prénom(s) de l'enfant",
-            "date_naissance":   "Date de naissance (JJ/MM/AAAA)",
-            "heure_naissance":  "Heure de naissance",
-            "lieu_naissance":   "Commune / ville de naissance",
-            "sexe":             "Sexe (masculin / féminin)",
-            "pere":             "Nom complet du père",
-            "mere":             "Nom complet de la mère",
-            "num_acte":         "Numéro de l'acte",
-            "date_acte":        "Date de l'établissement de l'acte",
-        }
-    },
-    "acte_heredite": {
-        "label": "Acte d'hérédité / notoriété",
-        "fields": {
-            "defunt":           "Nom complet du défunt(e)",
-            "date_deces":       "Date de décès",
-            "lieu_deces":       "Lieu de décès",
-            "heritiers":        "Liste des héritiers",
-            "notaire":          "Nom du notaire",
-            "date_acte":        "Date de l'acte",
-            "lieu_acte":        "Lieu de l'acte",
-        }
-    },
-    "assurance": {
-        "label": "Contrat / attestation d'assurance",
-        "fields": {
-            "assure":           "Nom de l'assuré(e)",
-            "num_contrat":      "Numéro de contrat / police",
-            "type_garantie":    "Type de garantie / objet du contrat",
-            "date_effet":       "Date d'effet du contrat",
-            "date_echeance":    "Date d'échéance / expiration",
-            "prime":            "Montant de la prime / cotisation",
-            "assureur":         "Nom de la compagnie d'assurance",
-            "agence":           "Agence / courtier",
-        }
-    },
-    "attestation_solde": {
-        "label": "Attestation de solde bancaire",
-        "fields": {
-            "titulaire":        "Nom complet du titulaire",
-            "num_compte":       "Numéro de compte",
-            "solde":            "Solde du compte (avec devise)",
-            "arrete_au":        "Date d'arrêté du solde",
-            "banque":           "Nom de la banque",
-            "agence":           "Agence bancaire",
-            "type_compte":      "Type de compte (courant, épargne…)",
-        }
-    },
-}
-
-
-def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "") -> dict:
-    """
-    Utilise llama3.2 pour extraire les métadonnées structurées d'un document
-    """
-    import json
-    
-    print(f"\n[Extract LLM] === DÉBUT EXTRACTION ===")
-    print(f"[Extract LLM] Type: {doc_type}")
-    print(f"[Extract LLM] OCR length: {len(ocr_text)}")
-    
-    schema = DOC_FIELD_SCHEMAS.get(doc_type)
-    if not schema:
-        print(f"[Extract LLM] ❌ Schéma non trouvé pour {doc_type}")
-        return {"error": f"Type '{doc_type}' non supporté pour l'extraction"}
-    
-    field_keys = list(schema["fields"].keys())
-    
-    # RÉDUIRE LE TEXTE OCR POUR ACCÉLÉRER
-    max_chars = 1500
-    truncated_ocr = ocr_text[:max_chars]
-    if len(ocr_text) > max_chars:
-        truncated_ocr += "\n[...]\n" + ocr_text[-500:]
-    
-    # PROMPT SIMPLIFIÉ ET DIRECT
-    prompt = f"""Extrais les informations de ce document {schema['label']}.
-
-Texte OCR (peut contenir des erreurs):
-\"\"\"
-{truncated_ocr}
-\"\"\"
-
-Champs à extraire (réponds UNIQUEMENT en JSON, null si absent):
-{', '.join(field_keys)}
-
-Format JSON attendu:
-{{{', '.join([f'"{k}": null' for k in field_keys])}}}"""
-
-    print(f"[Extract LLM] Prompt length: {len(prompt)}")
-    
-    # Tentative avec llama3.2
-    if USE_OLLAMA:
-        try:
-            print(f"[Extract LLM] 📤 Envoi à llama3.2...")
-            
-            response = requests.post(
-                OLLAMA_URL,
-                json={
-                    "model": OLLAMA_MODEL,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": 0.05,
-                        "num_predict": 500,
-                    },
-                },
-                timeout=OLLAMA_TIMEOUT
-            )
-            
-            print(f"[Extract LLM] Response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                raw = response.json().get("response", "").strip()
-                print(f"[Extract LLM] Réponse reçue ({len(raw)} chars)")
-                print(f"[Extract LLM] Réponse (500 premiers chars):\n{raw[:500]}")
-                
-                # Nettoyer la réponse
-                raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw)
-                
-                # Chercher un bloc JSON
-                m = re.search(r'\{[\s\S]*\}', raw)
-                if m:
-                    json_str = m.group()
-                    print(f"[Extract LLM] JSON trouvé")
-                    
-                    try:
-                        data = json.loads(json_str)
-                        result = {}
-                        for k in field_keys:
-                            val = data.get(k)
-                            if val and str(val).strip() not in ("", "null", "N/A", "None", "—"):
-                                result[k] = str(val).strip()
-                            else:
-                                result[k] = None
-                        
-                        filled = sum(1 for v in result.values() if v)
-                        print(f"[Extract LLM] ✅ SUCCÈS: {filled}/{len(field_keys)} champs extraits")
-                        return result
-                        
-                    except json.JSONDecodeError as e:
-                        print(f"[Extract LLM] ❌ JSON invalide: {e}")
-                        print(f"[Extract LLM] JSON string: {json_str[:200]}")
-                else:
-                    print(f"[Extract LLM] ❌ Aucun JSON trouvé")
-            else:
-                print(f"[Extract LLM] ❌ Erreur HTTP {response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            print(f"[Extract LLM] ⏱️ TIMEOUT après {OLLAMA_TIMEOUT}s")
-        except Exception as e:
-            print(f"[Extract LLM] ❌ Exception: {e}")
-            import traceback
-            traceback.print_exc()
-    else:
-        print(f"[Extract LLM] ❌ Ollama désactivé")
-    
-    # Tentative avec Qwen si disponible
-    if USE_QWEN and stored_path and os.path.exists(stored_path):
-        print(f"[Extract LLM] Tentative avec Qwen...")
-        try:
-            prompt_qwen = f"""Extrais ces champs du document: {', '.join(field_keys)}.
-Réponds UNIQUEMENT avec ce JSON (null si absent):
-{{{', '.join([f'"{k}": null' for k in field_keys])}}}"""
-            
-            img_b64 = image_to_base64(stored_path)
-            payload = {
-                "model": QWEN_MODEL,
-                "stream": False,
-                "options": {"temperature": 0.05, "num_predict": 500},
-                "messages": [{"role": "user", "content": prompt_qwen, "images": [img_b64]}],
-            }
-            
-            response = requests.post(OLLAMA_CHAT, json=payload, timeout=QWEN_TIMEOUT)
-            
-            if response.status_code == 200:
-                raw = response.json().get("message", {}).get("content", "").strip()
-                raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw)
-                m = re.search(r'\{[\s\S]*\}', raw)
-                if m:
-                    data = json.loads(m.group())
-                    result = {}
-                    for k in field_keys:
-                        val = data.get(k)
-                        if val and str(val).strip() not in ("", "null", "N/A", "None", "—"):
-                            result[k] = str(val).strip()
-                        else:
-                            result[k] = None
-                    filled = sum(1 for v in result.values() if v)
-                    print(f"[Extract LLM] ✅ Qwen: {filled} champs extraits")
-                    return result
-        except Exception as e:
-            print(f"[Extract LLM] ❌ Qwen erreur: {e}")
-    
-    print(f"[Extract LLM] ❌ ÉCHEC, retourne valeurs null")
-    return {k: None for k in field_keys}
 
 
 # ─────────────────────────────────────────────
@@ -960,6 +704,13 @@ def _serialize_doc(doc: dict) -> dict:
 def list_documents():
     """
     Liste les documents avec filtres, tri et pagination.
+    Query params :
+        category    – filtre par catégorie exacte
+        q           – recherche texte libre (nom fichier, OCR, catégorie)
+        page        – numéro de page (défaut 1)
+        per_page    – docs par page (défaut 24, max 100)
+        sort        – date_desc | date_asc | conf_desc | conf_asc | name_asc
+        conf_min    – confiance minimum 0-100 (défaut 0)
     """
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible", "documents": [], "total": 0}), 200
@@ -1063,6 +814,8 @@ def get_document(doc_id: str):
 def correct_document(doc_id: str):
     """
     Corrige la catégorie prédite d'un document.
+    Body JSON : {"prediction": "nouvelle_categorie"}
+    Déplace aussi le fichier physique dans le bon sous-dossier.
     """
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible"}), 503
@@ -1092,7 +845,7 @@ def correct_document(doc_id: str):
                 print(f"[Correct] Fichier déplacé : {old_stored_path} → {new_stored_path}")
             except Exception as e:
                 print(f"[Correct] Avertissement déplacement fichier : {e}")
-                new_stored_path = old_stored_path
+                new_stored_path = old_stored_path  # garder l'ancien chemin si échec
 
         # Mise à jour MongoDB
         update_fields = {
@@ -1133,6 +886,7 @@ def download_document(doc_id: str):
         if not doc:
             return jsonify({"error": "Document introuvable"}), 404
 
+        # Fichier physique en priorité
         stored_path = doc.get("stored_path", "")
         if stored_path and os.path.exists(stored_path):
             return send_file(
@@ -1141,6 +895,7 @@ def download_document(doc_id: str):
                 download_name=doc["original_filename"],
             )
 
+        # Fallback GridFS
         gridfs_id = doc.get("gridfs_id")
         if gridfs_id:
             grid_file = fs.get(gridfs_id)
@@ -1167,10 +922,12 @@ def delete_document(doc_id: str):
         if not doc:
             return jsonify({"error": "Document introuvable"}), 404
 
+        # Supprimer fichier physique
         stored_path = doc.get("stored_path", "")
         if stored_path and os.path.exists(stored_path):
             os.remove(stored_path)
 
+        # Supprimer GridFS
         gridfs_id = doc.get("gridfs_id")
         if gridfs_id:
             try:
@@ -1178,6 +935,7 @@ def delete_document(doc_id: str):
             except Exception:
                 pass
 
+        # Supprimer document MongoDB
         mongo_db.documents.delete_one({"_id": ObjectId(doc_id)})
 
         return jsonify({"success": True, "deleted_id": doc_id})
@@ -1187,87 +945,691 @@ def delete_document(doc_id: str):
 
 
 # ─────────────────────────────────────────────
-# ROUTE D'EXTRACTION CORRIGÉE
+# EXTRACTION LLM DES MÉTADONNÉES PAR TYPE
 # ─────────────────────────────────────────────
+
+# Schémas de champs attendus par type de document
+DOC_FIELD_SCHEMAS = {
+    "carte_identite": {
+        "label": "Carte Nationale d'Identité (CIN)",
+        "fields": {
+            "nom":              "Nom de famille (NOM)",
+            "prenom":           "Prénom(s)",
+            "cin_number":       "Numéro CIN (ex: AB123456)",
+            "date_naissance":   "Date de naissance (JJ/MM/AAAA)",
+            "lieu_naissance":   "Lieu / ville de naissance",
+            "date_delivrance":  "Date de délivrance de la carte",
+            "date_expiration":  "Date d'expiration / validité",
+            "adresse":          "Adresse complète",
+            "sexe":             "Sexe (M/F)",
+        }
+    },
+    "rib": {
+        "label": "Relevé d'Identité Bancaire (RIB)",
+        "fields": {
+            "titulaire":        "Nom complet du titulaire du compte",
+            "iban":             "IBAN complet",
+            "bic":              "Code BIC / SWIFT",
+            "code_banque":      "Code banque (3-5 chiffres)",
+            "code_guichet":     "Code guichet (3-5 chiffres)",
+            "num_compte":       "Numéro de compte",
+            "cle_rib":          "Clé RIB (2 chiffres)",
+            "domiciliation":    "Domiciliation / nom de l'agence",
+            "banque":           "Nom de la banque",
+        }
+    },
+    "cheque": {
+        "label": "Chèque bancaire",
+        "fields": {
+            "beneficiaire":       "Nom du bénéficiaire (à l'ordre de)",
+            "montant_chiffres":   "Montant en chiffres (avec devise)",
+            "montant_lettres":    "Montant en lettres",
+            "date_emission":      "Date d'émission du chèque",
+            "num_cheque":         "Numéro du chèque",
+            "tire_sur":           "Banque tirée (tiré sur)",
+            "emetteur":           "Nom de l'émetteur / signataire",
+            "endossable":         "Endossable ou Non Endossable",
+        }
+    },
+    "tableau_amortissement": {
+        "label": "Tableau d'amortissement",
+        "fields": {
+            "montant_pret":     "Montant total du prêt",
+            "taux_interet":     "Taux d'intérêt (annuel ou mensuel)",
+            "duree":            "Durée totale du prêt (mois ou années)",
+            "mensualite":       "Montant de la mensualité",
+            "capital_initial":  "Capital emprunté initial",
+            "date_debut":       "Date de début / première échéance",
+            "nombre_echeances": "Nombre total d'échéances",
+            "banque":           "Nom de la banque prêteuse",
+        }
+    },
+    "acte_naissance": {
+        "label": "Acte de naissance",
+        "fields": {
+            "nom":              "Nom de famille de l'enfant",
+            "prenom":           "Prénom(s) de l'enfant",
+            "date_naissance":   "Date de naissance (JJ/MM/AAAA)",
+            "heure_naissance":  "Heure de naissance",
+            "lieu_naissance":   "Commune / ville de naissance",
+            "sexe":             "Sexe (masculin / féminin)",
+            "pere":             "Nom complet du père",
+            "mere":             "Nom complet de la mère",
+            "num_acte":         "Numéro de l'acte",
+            "date_acte":        "Date de l'établissement de l'acte",
+        }
+    },
+    "acte_heredite": {
+        "label": "Acte d'hérédité / notoriété",
+        "fields": {
+            "defunt":           "Nom complet du défunt(e)",
+            "date_deces":       "Date de décès",
+            "lieu_deces":       "Lieu de décès",
+            "heritiers":        "Liste des héritiers",
+            "notaire":          "Nom du notaire",
+            "date_acte":        "Date de l'acte",
+            "lieu_acte":        "Lieu de l'acte",
+        }
+    },
+    "assurance": {
+        "label": "Contrat / attestation d'assurance",
+        "fields": {
+            "assure":           "Nom de l'assuré(e)",
+            "num_contrat":      "Numéro de contrat / police",
+            "type_garantie":    "Type de garantie / objet du contrat",
+            "date_effet":       "Date d'effet du contrat",
+            "date_echeance":    "Date d'échéance / expiration",
+            "prime":            "Montant de la prime / cotisation",
+            "assureur":         "Nom de la compagnie d'assurance",
+            "agence":           "Agence / courtier",
+        }
+    },
+    "attestation_solde": {
+        "label": "Attestation de solde bancaire",
+        "fields": {
+            "titulaire":        "Nom complet du titulaire",
+            "num_compte":       "Numéro de compte",
+            "solde":            "Solde du compte (avec devise)",
+            "arrete_au":        "Date d'arrêté du solde",
+            "banque":           "Nom de la banque",
+            "agence":           "Agence bancaire",
+            "type_compte":      "Type de compte (courant, épargne…)",
+        }
+    },
+}
+
+
+def _clean_llm_value(v):
+    """Nettoie une valeur retournée par le LLM."""
+    if v is None:
+        return None
+    s = str(v).strip()
+    if s.lower() in ("", "null", "none", "n/a", "na", "—", "-", "inconnu", "non disponible", "nd"):
+        return None
+    return s
+
+
+def _parse_llm_json(raw: str, field_keys: list) -> dict | None:
+    """
+    Parse la réponse JSON du LLM de façon robuste.
+    Gère : blocs markdown, JSON avec texte autour, JSON mal formé.
+    """
+    import json
+    if not raw:
+        return None
+
+    # Enlever les blocs markdown ```json ... ```
+    raw = re.sub(r"```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```", "", raw).strip()
+
+    # Stratégie 1 : trouver le bloc JSON le plus GRAND (greedy, de la première { à la dernière })
+    start = raw.find("{")
+    end   = raw.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        candidate = raw[start:end+1]
+        try:
+            data   = json.loads(candidate)
+            result = {k: _clean_llm_value(data.get(k)) for k in field_keys}
+            if any(v for v in result.values()):
+                return result
+        except json.JSONDecodeError:
+            pass
+
+    # Stratégie 2 : json.loads direct sur tout le texte nettoyé
+    try:
+        data   = json.loads(raw)
+        result = {k: _clean_llm_value(data.get(k)) for k in field_keys}
+        return result
+    except Exception:
+        pass
+
+    # Stratégie 3 : extraction champ par champ avec regex (LLM trop bavard)
+    result = {}
+    for k in field_keys:
+        # Cherche "nom_champ": "valeur" ou "nom_champ": null
+        m = re.search(rf'"{re.escape(k)}"\s*:\s*(?:"([^"]*?)"|null|None)', raw, re.IGNORECASE)
+        if m:
+            result[k] = _clean_llm_value(m.group(1)) if m.group(1) else None
+        else:
+            result[k] = None
+    if any(v for v in result.values()):
+        return result
+
+    return None
+
+
+def _call_ollama_streaming(prompt: str, model: str, timeout_no_token: int = 30) -> str:
+    """
+    Appelle Ollama en mode streaming pour éviter le timeout HTTP global.
+    Lit les tokens au fur et à mesure — pas de timeout sur la durée totale,
+    seulement un timeout si aucun token n'arrive pendant `timeout_no_token` secondes.
+    Compatible CPU lent (llama3.2 peut prendre 5-10 min sur CPU).
+    """
+    import json as _json
+    payload = {
+        "model":   model,
+        "prompt":  prompt,
+        "stream":  True,
+        "options": {"temperature": 0.05, "num_predict": 600},
+    }
+    chunks = []
+    try:
+        with requests.post(
+            OLLAMA_URL, json=payload,
+            stream=True,
+            timeout=(10, timeout_no_token),   # (connect_timeout, read_timeout entre tokens)
+        ) as resp:
+            if resp.status_code != 200:
+                print(f"[Extract] Ollama HTTP {resp.status_code}")
+                return ""
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                try:
+                    obj = _json.loads(line)
+                    token = obj.get("response", "")
+                    chunks.append(token)
+                    if obj.get("done"):
+                        break
+                except Exception:
+                    continue
+    except requests.exceptions.ReadTimeout:
+        print(f"[Extract] Streaming interrompu — pas de token depuis {timeout_no_token}s")
+    except Exception as e:
+        print(f"[Extract] Erreur streaming : {e}")
+    return "".join(chunks)
+
+
+def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) -> str:
+    """Idem pour Qwen2.5-VL en mode vision."""
+    import json as _json
+    payload = {
+        "model":    QWEN_MODEL,
+        "stream":   True,
+        "options":  {"temperature": 0.05, "num_predict": 600},
+        "messages": [{"role": "user", "content": prompt, "images": [img_b64]}],
+    }
+    chunks = []
+    try:
+        with requests.post(
+            OLLAMA_CHAT, json=payload,
+            stream=True,
+            timeout=(10, timeout_no_token),
+        ) as resp:
+            if resp.status_code != 200:
+                print(f"[Extract Qwen] HTTP {resp.status_code}")
+                return ""
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                try:
+                    obj   = _json.loads(line)
+                    token = obj.get("message", {}).get("content", "")
+                    chunks.append(token)
+                    if obj.get("done"):
+                        break
+                except Exception:
+                    continue
+    except requests.exceptions.ReadTimeout:
+        print(f"[Extract Qwen] Streaming interrompu — pas de token depuis {timeout_no_token}s")
+    except Exception as e:
+        print(f"[Extract Qwen] Erreur streaming : {e}")
+    return "".join(chunks)
+
+
+def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "") -> dict:
+    """
+    Extrait les métadonnées via LLM en utilisant le streaming Ollama.
+    Le streaming évite les timeouts HTTP : on lit token par token,
+    sans délai global, même sur CPU lent.
+
+    Stratégie :
+      1. llama3.2 en streaming sur le texte OCR (prompt court et ciblé)
+      2. Qwen2.5-VL en streaming sur l'image si llama échoue
+    """
+    import json
+
+    schema = DOC_FIELD_SCHEMAS.get(doc_type)
+    if not schema:
+        return {"error": f"Type '{doc_type}' non supporté"}
+
+    field_keys   = list(schema["fields"].keys())
+    empty_result = {k: None for k in field_keys}
+
+    # Prompt minimal et ciblé — moins de tokens = plus rapide sur CPU
+    # On liste seulement les clés JSON, pas les descriptions verbeuses
+    keys_inline = ", ".join(f'"{k}"' for k in field_keys)
+    ocr_short   = ocr_text[:2000]   # 2000 chars suffisent
+
+    prompt = (
+        f"Texte OCR d'un document '{doc_type}' (marocain, peut être bruité) :\n"
+        f"{ocr_short}\n\n"
+        f"Extrais en JSON les champs : {keys_inline}\n"
+        f"null si absent. Corrige les erreurs OCR. JSON uniquement :"
+    )
+
+    # ── Tentative 1 : llama3.2 streaming ──────────────────────────────────
+    if USE_OLLAMA:
+        print(f"[Extract] llama3.2 streaming pour {doc_type} ({len(ocr_short)} chars)...")
+        t0  = time.time()
+        raw = _call_ollama_streaming(prompt, OLLAMA_MODEL, timeout_no_token=30)
+        print(f"[Extract] llama3.2 → {len(raw)} chars en {time.time()-t0:.0f}s : {raw[:150]}")
+
+        if raw:
+            result = _parse_llm_json(raw, field_keys)
+            if result and any(v for v in result.values()):
+                n = sum(1 for v in result.values() if v)
+                print(f"[Extract LLM] ✅ llama3.2 → {n}/{len(field_keys)} champs")
+                result["_source"] = "llama3.2"
+                return result
+            else:
+                print(f"[Extract LLM] ⚠ llama3.2 répondu mais 0 champ — raw: {raw[:200]}")
+
+    # ── Tentative 2 : Qwen vision streaming ───────────────────────────────
+    if USE_QWEN and stored_path and os.path.exists(stored_path):
+        prompt_qwen = (
+            f"Document type: {doc_type}. Extract JSON fields: {keys_inline}. "
+            f"null if absent. JSON only:"
+        )
+        try:
+            print(f"[Extract] Qwen streaming pour {doc_type}...")
+            img_b64 = image_to_base64(stored_path)
+            t0  = time.time()
+            raw = _call_qwen_streaming(prompt_qwen, img_b64, timeout_no_token=60)
+            print(f"[Extract] Qwen → {len(raw)} chars en {time.time()-t0:.0f}s : {raw[:150]}")
+
+            if raw:
+                result = _parse_llm_json(raw, field_keys)
+                if result and any(v for v in result.values()):
+                    n = sum(1 for v in result.values() if v)
+                    print(f"[Extract Qwen] ✅ Qwen → {n}/{len(field_keys)} champs")
+                    result["_source"] = "qwen"
+                    return result
+                else:
+                    print(f"[Extract Qwen] ⚠ Qwen répondu mais 0 champ — raw: {raw[:200]}")
+        except Exception as e:
+            print(f"[Extract Qwen] ❌ {e}")
+
+    print(f"[Extract LLM] ❌ ÉCHEC — retourne null")
+    return empty_result
+
 
 @app.route("/documents/<doc_id>/extract", methods=["POST"])
 def extract_document_metadata(doc_id: str):
     """
-    Extrait les métadonnées structurées d'un document via LLM
+    Extrait les métadonnées structurées d'un document via LLM (llama3.2 ou Qwen).
+    Lance l'extraction et sauvegarde le résultat dans MongoDB.
+    Retourne : {"fields": {...}, "source": "llama3.2"|"qwen"|"none", "doc_type": "..."}
     """
-    print(f"\n[Extract Route] === DÉBUT pour {doc_id} ===")
-    
     if not MONGO_AVAILABLE:
         return jsonify({"error": "MongoDB non disponible"}), 503
-    
     try:
         doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
         if not doc:
             return jsonify({"error": "Document introuvable"}), 404
-        
-        doc_type = doc.get("prediction", "inconnu")
-        ocr_text = doc.get("ocr_text", "")
+
+        doc_type    = doc.get("prediction", "inconnu")
+        ocr_text    = doc.get("ocr_text", "")
         stored_path = doc.get("stored_path", "")
-        
-        print(f"[Extract Route] Type: {doc_type}")
-        print(f"[Extract Route] OCR length: {len(ocr_text)}")
-        
-        # Vérifier si déjà extrait
         force = request.json.get("force", False) if request.json else False
+
+        # ── Regénérer l OCR si tronqué (anciens docs avec max_text=128) ──
+        OCR_MIN_LENGTH = 200
+        if stored_path and os.path.exists(stored_path) and len(ocr_text) < OCR_MIN_LENGTH:
+            print(f"[Extract] OCR trop court ({len(ocr_text)} chars) — re-OCR depuis {stored_path}")
+            try:
+                fresh_ocr = extract_text_ocr(stored_path)
+                if len(fresh_ocr) > len(ocr_text):
+                    ocr_text = fresh_ocr
+                    # Mettre à jour l OCR dans MongoDB
+                    mongo_db.documents.update_one(
+                        {"_id": ObjectId(doc_id)},
+                        {"$set": {"ocr_text": ocr_text}}
+                    )
+                    print(f"[Extract] OCR mis à jour : {len(ocr_text)} chars")
+            except Exception as e:
+                print(f"[Extract] Avertissement re-OCR : {e}")
+
+        # ── Cache : si déjà extrait et non forcé, retourner le résultat ──
         if not force and doc.get("extracted_fields"):
-            print("[Extract Route] Utilisation du cache")
-            return jsonify({
-                "fields": doc["extracted_fields"],
-                "source": doc.get("extraction_source", "cache"),
-                "doc_type": doc_type,
-                "cached": True,
-            })
-        
+            cached = doc["extracted_fields"]
+            if any(v for v in cached.values()):
+                return jsonify({
+                    "fields":    cached,
+                    "source":    doc.get("extraction_source", "cache"),
+                    "doc_type":  doc_type,
+                    "cached":    True,
+                })
+
         if not ocr_text or ocr_text == "[NO_TEXT]":
             return jsonify({"error": "Aucun texte OCR disponible pour ce document"}), 400
-        
+
+        print(f"[Extract] Texte OCR disponible : {len(ocr_text)} chars")
+
         if doc_type not in DOC_FIELD_SCHEMAS:
             return jsonify({
-                "fields": {},
-                "source": "none",
+                "fields":   {},
+                "source":   "none",
                 "doc_type": doc_type,
-                "error": f"Type '{doc_type}' non supporté pour l'extraction",
+                "error":    f"Type '{doc_type}' non supporté pour l'extraction",
             })
-        
+
         # Lancer l'extraction
-        t0 = time.time()
+        t0     = time.time()
         fields = extract_metadata_with_llm(ocr_text, doc_type, stored_path)
         elapsed_ms = int((time.time() - t0) * 1000)
-        
-        # Déterminer la source
-        filled = sum(1 for v in fields.values() if v)
-        source = "llama3.2" if filled > 0 else "none"
-        
-        print(f"[Extract Route] Terminé en {elapsed_ms}ms, {filled} champs extraits")
-        
+
+        # Récupérer la source réelle depuis le champ _source injecté par la fonction
+        source = fields.pop("_source", "none")
+        if source == "none" and any(v for v in fields.values() if v):
+            source = "llama3.2"  # fallback
+
         # Sauvegarder dans MongoDB
         mongo_db.documents.update_one(
             {"_id": ObjectId(doc_id)},
             {"$set": {
-                "extracted_fields": fields,
-                "extraction_source": source,
-                "extracted_at": datetime.utcnow(),
+                "extracted_fields":   fields,
+                "extraction_source":  source,
+                "extracted_at":       datetime.utcnow(),
             }}
         )
-        
+
+        print(f"[Extract] {doc_id} ({doc_type}) → {source} → {elapsed_ms}ms")
         return jsonify({
-            "fields": fields,
-            "source": source,
-            "doc_type": doc_type,
-            "elapsed_ms": elapsed_ms,
-            "cached": False,
+            "fields":      fields,
+            "source":      source,
+            "doc_type":    doc_type,
+            "elapsed_ms":  elapsed_ms,
+            "cached":      False,
         })
-        
+
     except Exception as e:
         import traceback
-        print(f"[Extract Route] ERREUR: {traceback.format_exc()}")
+        print(f"[Extract ERROR] {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
+
+
+# ─────────────────────────────────────────────
+# GESTION DES TYPES PERSONNALISÉS
+# ─────────────────────────────────────────────
+
+TRAINING_THRESHOLD = 50   # Nombre d images pour déclencher l alerte de ré-entraînement
+
+def _init_custom_types_collection():
+    """Crée les index sur la collection doc_types si MongoDB est disponible."""
+    if not MONGO_AVAILABLE:
+        return
+    try:
+        mongo_db.doc_types.create_index("name", unique=True)
+        mongo_db.doc_types.create_index("is_custom")
+        mongo_db.doc_types.create_index("count")
+        # Insérer les types natifs s ils n existent pas encore
+        native_types = [
+            "carte_identite","rib","cheque","tableau_amortissement",
+            "acte_naissance","acte_heredite","assurance","attestation_solde",
+        ]
+        for t in native_types:
+            mongo_db.doc_types.update_one(
+                {"name": t},
+                {"$setOnInsert": {
+                    "name": t, "label": t.replace("_", " ").title(),
+                    "is_custom": False, "count": 0,
+                    "ready_for_training": False,
+                    "created_at": datetime.utcnow(),
+                }},
+                upsert=True,
+            )
+    except Exception as e:
+        print(f"[DocTypes] Init erreur : {e}")
+
+_init_custom_types_collection()
+
+
+@app.route("/types", methods=["GET"])
+def list_types():
+    """Liste tous les types de documents (natifs + personnalisés)."""
+    if not MONGO_AVAILABLE:
+        # Retourner les types natifs par défaut
+        native = ["carte_identite","rib","cheque","tableau_amortissement",
+                  "acte_naissance","acte_heredite","assurance","attestation_solde"]
+        return jsonify({"types": [{"name": t, "label": t.replace("_"," ").title(),
+                                   "is_custom": False, "count": 0} for t in native]})
+    try:
+        types = list(mongo_db.doc_types.find({}, {"_id": 0}).sort("name", 1))
+        # Enrichir avec le count réel depuis la collection documents
+        for t in types:
+            real_count = mongo_db.documents.count_documents({"prediction": t["name"]})
+            t["count"] = real_count
+            t["ready_for_training"] = real_count >= TRAINING_THRESHOLD
+            if "created_at" in t and t["created_at"]:
+                t["created_at"] = t["created_at"].isoformat() + "Z"
+        return jsonify({"types": types, "training_threshold": TRAINING_THRESHOLD})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/types", methods=["POST"])
+def create_type():
+    """
+    Crée un nouveau type de document personnalisé.
+    Body JSON : {"name": "certificat_vie", "label": "Certificat de vie"}
+    """
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        data  = request.json or {}
+        name  = data.get("name", "").strip().lower().replace(" ", "_").replace("-", "_")
+        label = data.get("label", "").strip() or name.replace("_", " ").title()
+
+        if not name:
+            return jsonify({"error": "Le nom du type est requis"}), 400
+        if not re.match(r"^[a-z][a-z0-9_]{1,49}$", name):
+            return jsonify({"error": "Nom invalide (lettres minuscules, chiffres, underscores, 2-50 chars)"}), 400
+
+        # Vérifier si existe déjà
+        existing = mongo_db.doc_types.find_one({"name": name})
+        if existing:
+            return jsonify({"error": f"Le type '{name}' existe déjà"}), 409
+
+        doc_type = {
+            "name":               name,
+            "label":              label,
+            "is_custom":          True,
+            "count":              0,
+            "ready_for_training": False,
+            "created_at":         datetime.utcnow(),
+            "description":        data.get("description", ""),
+        }
+        mongo_db.doc_types.insert_one(doc_type)
+
+        # Créer le dossier physique pour les images de ce type
+        type_folder = os.path.join(DOCS_FOLDER, name)
+        os.makedirs(type_folder, exist_ok=True)
+
+        print(f"[DocTypes] ✅ Nouveau type créé : {name} ({label})")
+        return jsonify({
+            "success": True,
+            "type": {
+                "name": name, "label": label,
+                "is_custom": True, "count": 0,
+                "ready_for_training": False,
+                "folder": os.path.abspath(type_folder),
+            }
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/types/<type_name>", methods=["DELETE"])
+def delete_type(type_name: str):
+    """Supprime un type personnalisé (uniquement si is_custom=True et count=0)."""
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        doc_type = mongo_db.doc_types.find_one({"name": type_name})
+        if not doc_type:
+            return jsonify({"error": "Type introuvable"}), 404
+        if not doc_type.get("is_custom"):
+            return jsonify({"error": "Les types natifs ne peuvent pas être supprimés"}), 403
+        count = mongo_db.documents.count_documents({"prediction": type_name})
+        if count > 0:
+            return jsonify({"error": f"Ce type contient {count} document(s) — videz-le d abord"}), 409
+        mongo_db.doc_types.delete_one({"name": type_name})
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/documents/<doc_id>/classify_manual", methods=["POST"])
+def classify_manual(doc_id: str):
+    """
+    Classifie manuellement un document.
+    Body JSON :
+      {"type_name": "certificat_vie", "create_new": false}
+      ou {"type_name": "nouveau_type", "label": "Nouveau Type", "create_new": true}
+
+    Sauvegarde le document dans MongoDB avec le nouveau type,
+    déplace le fichier physique dans le bon dossier,
+    et met à jour le compteur du type.
+    """
+    if not MONGO_AVAILABLE:
+        return jsonify({"error": "MongoDB non disponible"}), 503
+    try:
+        data       = request.json or {}
+        type_name  = data.get("type_name", "").strip().lower().replace(" ", "_")
+        create_new = data.get("create_new", False)
+        label      = data.get("label", type_name.replace("_", " ").title())
+
+        if not type_name:
+            return jsonify({"error": "type_name requis"}), 400
+
+        # Créer le type si demandé
+        if create_new:
+            existing = mongo_db.doc_types.find_one({"name": type_name})
+            if not existing:
+                if not re.match(r"^[a-z][a-z0-9_]{1,49}$", type_name):
+                    return jsonify({"error": "Nom de type invalide"}), 400
+                mongo_db.doc_types.insert_one({
+                    "name": type_name, "label": label,
+                    "is_custom": True, "count": 0,
+                    "ready_for_training": False,
+                    "created_at": datetime.utcnow(),
+                    "description": data.get("description", ""),
+                })
+                os.makedirs(os.path.join(DOCS_FOLDER, type_name), exist_ok=True)
+                print(f"[Manual] Nouveau type créé : {type_name}")
+        else:
+            # Vérifier que le type existe
+            if not mongo_db.doc_types.find_one({"name": type_name}):
+                return jsonify({"error": f"Type '{type_name}' introuvable — utilisez create_new=true pour le créer"}), 404
+
+        # Récupérer le document
+        doc = mongo_db.documents.find_one({"_id": ObjectId(doc_id)})
+        if not doc:
+            return jsonify({"error": "Document introuvable"}), 404
+
+        old_type = doc.get("prediction", "inconnu")
+
+        # Déplacer le fichier physique
+        old_path = doc.get("stored_path", "")
+        new_path = old_path
+        if old_path and os.path.exists(old_path) and old_type != type_name:
+            stored_filename = doc.get("stored_filename", os.path.basename(old_path))
+            new_folder      = os.path.join(DOCS_FOLDER, type_name)
+            os.makedirs(new_folder, exist_ok=True)
+            new_path = os.path.join(new_folder, stored_filename)
+            try:
+                shutil.move(old_path, new_path)
+            except Exception as e:
+                print(f"[Manual] Avertissement déplacement : {e}")
+                new_path = old_path
+
+        # Mettre à jour MongoDB
+        update = {
+            "prediction":            type_name,
+            "manually_classified":   True,
+            "manual_classifier":     data.get("user", "human"),
+            "classified_at":         datetime.utcnow(),
+            "original_prediction":   old_type,
+            "original_confidence":   doc.get("confidence", 0),
+        }
+        if new_path != old_path:
+            update["stored_path"] = new_path
+
+        mongo_db.documents.update_one({"_id": ObjectId(doc_id)}, {"$set": update})
+
+        # Vérifier le seuil de ré-entraînement
+        new_count = mongo_db.documents.count_documents({"prediction": type_name})
+        ready     = new_count >= TRAINING_THRESHOLD
+
+        print(f"[Manual] {doc_id}: {old_type} → {type_name} | count={new_count}")
+        return jsonify({
+            "success":          True,
+            "old_type":         old_type,
+            "new_type":         type_name,
+            "doc_count":        new_count,
+            "ready_for_training": ready,
+            "training_threshold": TRAINING_THRESHOLD,
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"[Manual ERROR] {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/types/stats", methods=["GET"])
+def types_stats():
+    """Statistiques sur les types custom : compteurs et alertes de ré-entraînement."""
+    if not MONGO_AVAILABLE:
+        return jsonify({"custom_types": [], "alerts": []})
+    try:
+        custom_types = list(mongo_db.doc_types.find(
+            {"is_custom": True}, {"_id": 0}
+        ))
+        alerts = []
+        for t in custom_types:
+            count = mongo_db.documents.count_documents({"prediction": t["name"]})
+            t["count"] = count
+            t["ready_for_training"] = count >= TRAINING_THRESHOLD
+            if "created_at" in t and t["created_at"]:
+                t["created_at"] = t["created_at"].isoformat() + "Z"
+            if count >= TRAINING_THRESHOLD:
+                alerts.append({
+                    "type":    t["name"],
+                    "label":   t["label"],
+                    "count":   count,
+                    "message": f"✅ {t['label']} a {count} images — prêt pour le ré-entraînement !",
+                })
+        return jsonify({
+            "custom_types": custom_types,
+            "alerts":       alerts,
+            "threshold":    TRAINING_THRESHOLD,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────────
 # ROUTES UTILITAIRES
