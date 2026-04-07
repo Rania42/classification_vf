@@ -1,0 +1,105 @@
+/* BankDoc Design System — shared across all pages */
+:root {
+  /* Backgrounds */
+  --bg-base: #F4F6FA;
+  --bg-surface: #FFFFFF;
+  --bg-raised: #F8FAFF;
+  --bg-sunken: #EAEEF7;
+  --bg-overlay: rgba(255,255,255,0.92);
+
+  /* Brand */
+  --brand: #2255CC;
+  --brand-light: #4A7AEF;
+  --brand-dark: #1A3E99;
+  --brand-muted: rgba(34,85,204,0.10);
+  --brand-border: rgba(34,85,204,0.22);
+
+  /* Semantic */
+  --success: #0E7A5C;
+  --success-bg: rgba(14,122,92,0.09);
+  --success-border: rgba(14,122,92,0.25);
+  --warning: #B45309;
+  --warning-bg: rgba(180,83,9,0.09);
+  --warning-border: rgba(180,83,9,0.25);
+  --danger: #C0392B;
+  --danger-bg: rgba(192,57,43,0.09);
+  --danger-border: rgba(192,57,43,0.25);
+  --info: #1565C0;
+  --info-bg: rgba(21,101,192,0.09);
+
+  /* Purple accent */
+  --purple: #6B2EB5;
+  --purple-bg: rgba(107,46,181,0.09);
+  --purple-border: rgba(107,46,181,0.25);
+
+  /* Text */
+  --text-primary: #0F1628;
+  --text-secondary: #4A5568;
+  --text-muted: #8C97A8;
+  --text-disabled: #B8C2D0;
+  --text-on-brand: #FFFFFF;
+
+  /* Borders */
+  --border: #D1D9E6;
+  --border-focus: #2255CC;
+  --border-subtle: #E8EDF5;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(15,22,40,0.08), 0 1px 2px rgba(15,22,40,0.04);
+  --shadow-md: 0 4px 12px rgba(15,22,40,0.10), 0 2px 4px rgba(15,22,40,0.06);
+  --shadow-lg: 0 10px 30px rgba(15,22,40,0.12), 0 4px 8px rgba(15,22,40,0.06);
+  --shadow-focus: 0 0 0 3px rgba(34,85,204,0.20);
+
+  /* Typography */
+  --font-display: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-2xl: 24px;
+  --r-full: 9999px;
+
+  /* Spacing base */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+}
+
+[data-theme="dark"] {
+  --bg-base: #0C1220;
+  --bg-surface: #141E30;
+  --bg-raised: #1A2540;
+  --bg-sunken: #0A0F1A;
+  --bg-overlay: rgba(20,30,48,0.95);
+  --brand: #4A7AEF;
+  --brand-light: #6B97F5;
+  --brand-dark: #2255CC;
+  --brand-muted: rgba(74,122,239,0.12);
+  --brand-border: rgba(74,122,239,0.28);
+  --success: #2DD4A0;
+  --success-bg: rgba(45,212,160,0.10);
+  --success-border: rgba(45,212,160,0.28);
+  --warning: #F5A623;
+  --warning-bg: rgba(245,166,35,0.10);
+  --warning-border: rgba(245,166,35,0.28);
+  --danger: #F05252;
+  --danger-bg: rgba(240,82,82,0.10);
+  --danger-border: rgba(240,82,82,0.28);
+  --info: #60A5FA;
+  --info-bg: rgba(96,165,250,0.10);
+  --purple: #A78BFA;
+  --purple-bg: rgba(167,139,250,0.10);
+  --purple-border: rgba(167,139,250,0.28);
+  --text-primary: #E8EEF8;
+  --text-secondary: #8FA4C0;
+  --text-muted: #4E6480;
+  --text-disabled: #2E3F55;
+  --border: #1E2E45;
+  --border-subtle: #162035;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.30);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.40);
+}

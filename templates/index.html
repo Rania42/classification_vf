@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BankDoc Classifier</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM
+═══════════════════════════════════════════════ */
+:root{
+  --bg-base:#F2F5FB;--bg-surface:#FFFFFF;--bg-raised:#F8FAFF;--bg-sunken:#EBF0FA;
+  --brand:#2255CC;--brand-light:#4A7AEF;--brand-dark:#1A3E99;
+  --brand-muted:rgba(34,85,204,0.09);--brand-border:rgba(34,85,204,0.20);
+  --success:#0E7A5C;--success-bg:rgba(14,122,92,0.09);--success-border:rgba(14,122,92,0.22);
+  --warning:#B45309;--warning-bg:rgba(180,83,9,0.09);--warning-border:rgba(180,83,9,0.22);
+  --danger:#C0392B;--danger-bg:rgba(192,57,43,0.09);--danger-border:rgba(192,57,43,0.22);
+  --purple:#6B2EB5;--purple-bg:rgba(107,46,181,0.09);--purple-border:rgba(107,46,181,0.22);
+  --text:#0F1628;--text2:#4A5568;--text3:#8C97A8;--text4:#B8C2D0;
+  --border:#D1D9E6;--border-subtle:#E8EDF5;
+  --shadow-sm:0 1px 3px rgba(15,22,40,0.08),0 1px 2px rgba(15,22,40,0.04);
+  --shadow-md:0 4px 12px rgba(15,22,40,0.10),0 2px 4px rgba(15,22,40,0.05);
+  --shadow-lg:0 12px 32px rgba(15,22,40,0.13),0 4px 8px rgba(15,22,40,0.06);
+  --shadow-focus:0 0 0 3px rgba(34,85,204,0.18);
+  --font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
+}
+[data-theme="dark"]{
+  --bg-base:#0C1220;--bg-surface:#141E30;--bg-raised:#1A2540;--bg-sunken:#0A0F1A;
+  --brand:#4A7AEF;--brand-light:#6B97F5;--brand-dark:#2255CC;
+  --brand-muted:rgba(74,122,239,0.12);--brand-border:rgba(74,122,239,0.28);
+  --success:#2DD4A0;--success-bg:rgba(45,212,160,0.10);--success-border:rgba(45,212,160,0.28);
+  --warning:#F5A623;--warning-bg:rgba(245,166,35,0.10);--warning-border:rgba(245,166,35,0.28);
+  --danger:#F05252;--danger-bg:rgba(240,82,82,0.10);--danger-border:rgba(240,82,82,0.28);
+  --purple:#A78BFA;--purple-bg:rgba(167,139,250,0.10);--purple-border:rgba(167,139,250,0.28);
+  --text:#E8EEF8;--text2:#8FA4C0;--text3:#4E6480;--text4:#2E3F55;
+  --border:#1E2E45;--border-subtle:#162035;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.25);--shadow-md:0 4px 12px rgba(0,0,0,0.30);--shadow-lg:0 12px 32px rgba(0,0,0,0.40);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{background:var(--bg-base);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
+
+/* ── SCROLLBARS ── */
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-sunken);border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;border:2px solid var(--bg-sunken)}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* ── HEADER ── */
+header{
+  background:var(--bg-surface);border-bottom:1px solid var(--border);
+  padding:0 28px;height:60px;display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-light));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;
+  box-shadow:var(--shadow-sm);
+}
+.logo-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.logo-version{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:1px}
+
+.nav{display:flex;gap:4px;margin-left:24px}
+.nav-link{
+  padding:7px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;
+  color:var(--text2);text-decoration:none;transition:all .15s;border:1px solid transparent;
+  display:flex;align-items:center;gap:6px;
+}
+.nav-link:hover{background:var(--bg-raised);color:var(--text);border-color:var(--border-subtle)}
+.nav-link.active{background:var(--brand-muted);color:var(--brand);border-color:var(--brand-border)}
+.nav-link.accent{color:var(--success)}
+.nav-link.accent:hover{background:var(--success-bg);border-color:var(--success-border)}
+
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.status-chip{
+  display:flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:var(--r-full);border:1px solid var(--border);
+  background:var(--bg-raised);font-size:12px;font-family:var(--mono);
+}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-dot.ok{background:var(--success);box-shadow:0 0 0 2px var(--success-bg)}
+.status-dot.warn{background:var(--warning);box-shadow:0 0 0 2px var(--warning-bg)}
+.status-dot.err{background:var(--danger);box-shadow:0 0 0 2px var(--danger-bg)}
+.status-dot.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-txt{color:var(--text2)}
+
+.theme-btn{
+  width:36px;height:36px;border-radius:var(--r-md);border:1px solid var(--border);
+  background:var(--bg-raised);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.theme-btn:hover{background:var(--bg-sunken);border-color:var(--brand-border)}
+
+/* ── LAYOUT ── */
+#page-classify{
+  display:grid;grid-template-columns:400px 1fr;
+  flex:1;overflow:hidden;min-height:0;
+}
+.panel-left{
+  background:var(--bg-surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;
+  padding:24px;gap:20px;
+}
+.panel-right{
+  background:var(--bg-base);overflow-y:auto;padding:24px;
+  display:flex;flex-direction:column;gap:20px;
+}
+
+/* ── LABELS ── */
+.lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:block}
+
+/* ── DROPZONE ── */
+.dropzone{
+  border:2px dashed var(--border);border-radius:var(--r-lg);
+  padding:36px 24px;text-align:center;cursor:pointer;
+  transition:all .2s;position:relative;background:var(--bg-raised);
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--brand-muted)}
+.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.dz-icon{font-size:36px;margin-bottom:12px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.1))}
+.dz-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:5px}
+.dz-sub{font-size:13px;color:var(--text3)}
+
+/* ── PREVIEW ── */
+.preview-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.preview-card img{width:100%;max-height:220px;object-fit:contain;background:var(--bg-sunken);display:block}
+.preview-meta{padding:10px 14px;display:flex;gap:12px;font-size:12px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border-subtle);background:var(--bg-surface)}
+
+/* ── CLASSIFY BUTTON ── */
+.classify-btn{
+  width:100%;padding:14px 20px;border-radius:var(--r-lg);
+  background:linear-gradient(135deg,var(--brand),var(--brand-light));
+  color:#fff;border:none;font-family:var(--font);font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 4px 14px rgba(34,85,204,0.30);letter-spacing:-.01em;
+}
+.classify-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,85,204,0.38)}
+.classify-btn:active{transform:translateY(0)}
+.classify-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOGGLES ── */
+.toggles{display:flex;flex-direction:column;gap:8px}
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--r-md);transition:border-color .15s;
+}
+.toggle-row:hover{border-color:var(--brand-border)}
+.toggle-info{display:flex;align-items:center;gap:10px}
+.toggle-icon{font-size:18px;width:24px;text-align:center}
+.toggle-name{font-size:13px;font-weight:600;color:var(--text)}
+.toggle-desc{font-size:11px;color:var(--text3)}
+.sw{position:relative;width:34px;height:20px;display:inline-block;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sl{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:background .2s}
+.sl:before{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.sl{background:var(--brand)}
+input:checked+.sl:before{transform:translateX(14px)}
+
+/* ── PIPELINE INFO ── */
+.pipe-info{padding:12px 14px;background:var(--brand-muted);border:1px solid var(--brand-border);border-radius:var(--r-md);font-size:12px;color:var(--text2);line-height:1.7}
+.pipe-info strong{color:var(--brand);font-weight:600}
+
+/* ══════════════════════
+   RESULT CARDS
+══════════════════════ */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:80px 24px;color:var(--text3);text-align:center;
+}
+.empty-icon{font-size:56px;opacity:.25}
+.empty-title{font-size:17px;font-weight:600;color:var(--text3)}
+.empty-sub{font-size:13px}
+
+.result-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-md);transition:border-color .2s}
+.result-card.validated{border-color:var(--success-border);background:linear-gradient(180deg,var(--success-bg),transparent)}
+.result-card.disagreement{border-color:var(--warning-border)}
+.result-card.agents{border-color:var(--purple-border)}
+
+.result-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.result-class-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.result-class{font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+.path-pill{
+  padding:5px 12px;border-radius:var(--r-full);font-size:11px;font-weight:600;
+  font-family:var(--mono);
+}
+.path-pill.validated{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.path-pill.disagreement{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
+.path-pill.agents{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.path-pill.default{background:var(--bg-raised);color:var(--text3);border:1px solid var(--border)}
+
+.conf-row{margin-bottom:20px}
+.conf-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.conf-label-txt{font-size:13px;color:var(--text2);font-weight:500}
+.conf-value{font-size:18px;font-weight:700;font-family:var(--mono)}
+.conf-value.hi{color:var(--success)}
+.conf-value.mid{color:var(--warning)}
+.conf-value.lo{color:var(--danger)}
+.bar-bg{height:8px;background:var(--bg-sunken);border-radius:4px;overflow:hidden}
+.bar-fill{height:8px;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.bar-fill.hi{background:linear-gradient(90deg,var(--success),#34D399)}
+.bar-fill.mid{background:linear-gradient(90deg,var(--warning),#FBBF24)}
+.bar-fill.lo{background:linear-gradient(90deg,var(--danger),#F87171)}
+
+.manual-alert{
+  background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--r-lg);
+  padding:18px 20px;display:flex;align-items:flex-start;gap:14px;margin-bottom:8px;
+}
+.mal-icon{font-size:28px;flex-shrink:0}
+.mal-title{font-size:15px;font-weight:700;color:var(--warning);margin-bottom:6px}
+.mal-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.mal-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 18px;
+  background:var(--warning);color:#fff;border-radius:var(--r-md);border:none;
+  font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .15s;
+  box-shadow:0 2px 8px rgba(180,83,9,0.25);
+}
+.mal-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+.section-title{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:"";flex:1;height:1px;background:var(--border-subtle)}
+
+/* Qwen card */
+.qwen-card{background:var(--bg-raised);border:1px solid var(--purple-border);border-radius:var(--r-lg);padding:16px}
+.qw-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.qw-badge{padding:4px 10px;border-radius:var(--r-full);font-size:11px;font-weight:600;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.qw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.qw-field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:3px}
+.qw-field .val{font-size:14px;font-weight:600;color:var(--text)}
+.qw-reason{font-size:12px;color:var(--text2);line-height:1.5;font-family:var(--mono);background:var(--bg-sunken);padding:8px 10px;border-radius:var(--r-sm);margin-top:8px}
+.agree-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--r-full);font-size:11px;font-weight:600;margin-top:8px}
+.agree-chip.yes{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.agree-chip.no{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
+
+/* Votes */
+.votes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.vote-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-md);padding:11px;transition:border-color .15s}
+.vote-card.qwen{border-color:var(--purple-border)}
+.vote-source{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px}
+.vote-val{font-size:12px;font-weight:600;color:var(--text);word-break:break-word}
+
+/* Scores */
+.scores-list{display:flex;flex-direction:column;gap:7px}
+.score-row{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:8px}
+.score-name{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-bar-bg{height:5px;background:var(--bg-sunken);border-radius:3px}
+.score-bar{height:5px;border-radius:3px;background:var(--border);transition:width .6s}
+.score-bar.top{background:var(--brand)}
+.score-pct{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
+
+/* Steps */
+.steps{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:12px;position:relative;padding-bottom:14px}
+.step-item:last-child{padding-bottom:0}
+.step-side{display:flex;flex-direction:column;align-items:center}
+.step-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.step-dot.ok{background:var(--success-bg);color:var(--success);border:1.5px solid var(--success-border)}
+.step-dot.warning{background:var(--warning-bg);color:var(--warning);border:1.5px solid var(--warning-border)}
+.step-dot.info{background:var(--brand-muted);color:var(--brand);border:1.5px solid var(--brand-border)}
+.step-line{flex:1;width:1.5px;background:var(--border-subtle);margin-top:4px}
+.step-item:last-child .step-line{display:none}
+.step-body{padding-top:2px;flex:1;min-width:0}
+.step-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.step-detail{font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.5;word-break:break-word}
+
+/* OCR */
+.ocr-box{background:var(--bg-sunken);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.7;max-height:130px;overflow-y:auto;white-space:pre-wrap;scrollbar-width:thin}
+
+/* Mongo saved */
+.mongo-saved{background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:12px;font-family:var(--mono);flex-wrap:wrap}
+.mongo-saved .ms-label{color:var(--success);font-weight:600}
+.mongo-saved .ms-id{color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mongo-saved a{background:var(--success-bg);border:1px solid var(--success-border);color:var(--success);padding:5px 12px;border-radius:var(--r-sm);font-size:11px;text-decoration:none;transition:all .15s;white-space:nowrap}
+.mongo-saved a:hover{background:rgba(14,122,92,.18)}
+
+.timing{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  #page-classify{grid-template-columns:1fr;height:auto;overflow:visible}
+  .panel-left{max-height:none}
+  .votes-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-mark">BD</div>
+    <div>
+      <div class="logo-title">BankDoc</div>
+      <div class="logo-version">v3 · Qwen2.5-VL</div>
+    </div>
+  </a>
+  <nav class="nav">
+    <span class="nav-link active">🏷 Classifier</span>
+    <a class="nav-link" href="/library">📚 Bibliothèque</a>
+    <a class="nav-link accent" href="/batch">⚡ Upload batch</a>
+  </nav>
+  <div class="header-right">
+    <div class="status-chip">
+      <div class="status-dot pulse" id="dot-model"></div>
+      <span class="status-txt" id="txt-model">Modèle…</span>
+    </div>
+    <div class="status-chip">
+      <div class="status-dot pulse" id="dot-qwen"></div>
+      <span class="status-txt" id="txt-qwen">Qwen…</span>
+    </div>
+    <div class="status-chip">
+      <div class="status-dot pulse" id="dot-mongo"></div>
+      <span class="status-txt" id="txt-mongo">MongoDB…</span>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" title="Changer le thème">🌓</button>
+  </div>
+</header>
+
+<div id="page-classify">
+  <div class="panel-left">
+    <!-- Upload -->
+    <div>
+      <span class="lbl">Document bancaire</span>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept="image/*,.pdf"/>
+        <span class="dz-icon">🏦</span>
+        <div class="dz-title">Déposer un document ici</div>
+        <div class="dz-sub">JPG · PNG · PDF — traitement 100% local</div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-wrap" style="display:none">
+      <span class="lbl">Aperçu</span>
+      <div class="preview-card">
+        <img id="preview-img" src="" alt="Aperçu"/>
+        <div class="preview-meta">
+          <span id="file-name">—</span>
+          <span id="file-size">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <button id="btn-classify" class="classify-btn" disabled>
+      <div class="btn-spinner" id="spinner"></div>
+      <span id="btn-text">Sélectionner un document</span>
+    </button>
+
+    <!-- Agents -->
+    <div>
+      <span class="lbl">Agents d'analyse</span>
+      <div class="toggles">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="toggle-icon">🦙</span>
+            <div>
+              <div class="toggle-name">llama3.2</div>
+              <div class="toggle-desc">Agent LLM texte</div>
+            </div>
+          </div>
+          <label class="sw"><input type="checkbox" id="toggle-llama" checked onchange="setAgent('ollama',this.checked)"/><span class="sl"></span></label>
+        </div>
+        <div class="toggle-row" style="border-color:var(--purple-border)">
+          <div class="toggle-info">
+            <span class="toggle-icon">🔮</span>
+            <div>
+              <div class="toggle-name" style="color:var(--purple)">Qwen2.5-VL 7B</div>
+              <div class="toggle-desc">Vision multimodale</div>
+            </div>
+          </div>
+          <label class="sw"><input type="checkbox" id="toggle-qwen" checked onchange="setAgent('qwen',this.checked)"/><span class="sl"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline info -->
+    <div class="pipe-info">
+      <strong>Pipeline v3 :</strong> OCR bilingue →
+      <strong>EfficientNet+mBERT</strong> →
+      <strong style="color:var(--purple)">Qwen2.5-VL</strong> →
+      Vote croisé + Sauvegarde MongoDB
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel-right" id="right-panel">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">Prêt à classifier</div>
+      <p>Déposez un document bancaire pour démarrer l'analyse multimodale.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:5000";
+let selectedFile = null;
+
+/* Theme */
+function toggleTheme(){
+  const h=document.documentElement;
+  const dark=h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme',dark?'light':'dark');
+  localStorage.setItem('theme',dark?'light':'dark');
+}
+(()=>{const t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();
+
+/* Status */
+async function checkStatus(){
+  try{
+    const r=await fetch(`${API}/status`,{signal:AbortSignal.timeout(4000)});
+    const d=await r.json();
+    setStatus('model',d.device?'ok':'warn',`${(d.device||'cpu').toUpperCase()} · Acc. ${d.val_acc}%`);
+    setStatus('qwen',d.qwen?'ok':'warn',d.qwen?'Qwen2.5-VL ✓':'Qwen hors ligne');
+    setStatus('mongo',d.mongodb?'ok':'err',d.mongodb?'MongoDB ✓':'MongoDB ✗');
+    document.getElementById('toggle-llama').checked=d.ollama;
+    document.getElementById('toggle-qwen').checked=d.qwen;
+  }catch{
+    ['model','qwen','mongo'].forEach(k=>setStatus(k,'err','Hors ligne'));
+  }
+}
+function setStatus(key,st,txt){
+  const d=document.getElementById(`dot-${key}`);
+  const t=document.getElementById(`txt-${key}`);
+  d.className=`status-dot ${st}`;
+  t.textContent=txt;
+  t.style.color=st==='ok'?'var(--success)':st==='warn'?'var(--warning)':'var(--danger)';
+}
+checkStatus();setInterval(checkStatus,15000);
+
+async function setAgent(type,enabled){
+  const ep=type==='qwen'?'/toggle_qwen':'/toggle_ollama';
+  await fetch(`${API}${ep}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})}).catch(()=>{});
+}
+
+/* Upload */
+const dropzone=document.getElementById('dropzone');
+const fileInput=document.getElementById('file-input');
+dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleFile(fileInput.files[0]);});
+
+function handleFile(file){
+  selectedFile=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('preview-img').src=e.target.result;
+    document.getElementById('preview-wrap').style.display='block';
+    document.getElementById('file-name').textContent=file.name;
+    document.getElementById('file-size').textContent=(file.size/1024).toFixed(1)+' KB';
+    document.getElementById('btn-classify').disabled=false;
+    document.getElementById('btn-text').textContent='Classifier ce document';
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('btn-classify').addEventListener('click',async()=>{
+  if(!selectedFile)return;
+  const btn=document.getElementById('btn-classify');
+  const sp=document.getElementById('spinner');
+  const bt=document.getElementById('btn-text');
+  btn.disabled=true;sp.style.display='block';bt.textContent='Analyse en cours…';
+  try{
+    const fd=new FormData();fd.append('file',selectedFile);
+    const r=await fetch(`${API}/classify`,{method:'POST',body:fd});
+    const d=await r.json();
+    const conf=parseFloat(d.confidence||0);
+    const needsManual=conf<70||d.prediction==='inconnu'||!d.agreement;
+    renderResult(d,needsManual);
+  }catch(err){renderError(err.message);}
+  finally{btn.disabled=false;sp.style.display='none';bt.textContent='Classifier ce document';}
+});
+
+/* Render */
+function confClass(c){return c>=80?'hi':c>=60?'mid':'lo';}
+function pathInfo(p){
+  return{
+    direct_qwen_validated:{text:'Validé par Qwen ✓',cls:'validated'},
+    qwen_disagreement:{text:'Désaccord Qwen ⚠',cls:'disagreement'},
+    agents:{text:'Vote multi-agents',cls:'agents'},
+    direct:{text:'Voie directe',cls:'default'},
+  }[p]||{text:p,cls:'default'};
+}
+
+function renderResult(d,needsManual=false){
+  const panel=document.getElementById('right-panel');
+  const conf=parseFloat(d.confidence);
+  const cc=confClass(conf);
+  const pl=pathInfo(d.path);
+
+  const manualHTML=needsManual?`
+    <div class="manual-alert">
+      <div class="mal-icon">⚠️</div>
+      <div style="flex:1">
+        <div class="mal-title">Classification manuelle requise</div>
+        <div class="mal-desc">
+          Confiance <strong style="color:var(--warning)">${conf.toFixed(1)}%</strong> — en dessous du seuil de 70%.
+          ${d.prediction==='inconnu'?'Document classé <strong>inconnu</strong>.':''}
+          ${!d.agreement?'Les agents sont en <strong>désaccord</strong>.':''}
+        </div>
+        <a class="mal-btn" href="manual_classify.html?doc_id=${enc(d.mongo_id||'')}&filename=${enc(d.original_filename||selectedFile?.name||'')}&confidence=${conf.toFixed(1)}&prediction=${enc(d.prediction||'')}&ocr=${enc((d.ocr_text||'').substring(0,500))}&scores=${enc(JSON.stringify(d.all_scores||[]))}">
+          🏷 Classifier manuellement →
+        </a>
+      </div>
+    </div>`:''
+
+  let qwenHTML='';
+  if(d.qwen?.class||d.qwen?.reasoning){
+    const agrees=d.qwen.class&&d.qwen.class.toLowerCase()===d.prediction.toLowerCase();
+    qwenHTML=`<div>
+      <div class="section-title">🔮 Analyse Qwen2.5-VL</div>
+      <div class="qwen-card">
+        <div class="qw-header"><span class="qw-badge">qwen2.5vl</span><span style="font-size:12px;color:var(--text3)">Vision multimodale</span></div>
+        <div class="qw-grid">
+          <div class="qw-field"><label>Classification</label><div class="val">${d.qwen.class||'—'}</div></div>
+          <div class="qw-field"><label>Confiance</label><div class="val ${confClass((d.qwen.confidence||0)*100)}">${d.qwen.confidence?((d.qwen.confidence*100).toFixed(0)+'%'):'—'}</div></div>
+        </div>
+        ${d.qwen.reasoning?`<div class="qw-reason">${d.qwen.reasoning.substring(0,200)}</div>`:''}
+        <div class="agree-chip ${agrees?'yes':'no'}">${agrees?'✓ Accord EfficientNet':'⚠ Désaccord — EfficientNet: '+d.prediction+' | Qwen: '+d.qwen.class}</div>
+      </div>
+    </div>`;
+  }
+
+  let votesHTML='';
+  if(d.votes&&Object.keys(d.votes).length){
+    const vk=['model','keywords','llm','qwen'];
+    const vl={model:'EfficientNet',keywords:'Mots-clés',llm:'llama3.2',qwen:'Qwen2.5-VL'};
+    votesHTML=`<div>
+      <div class="section-title">🗳 Vote des agents</div>
+      <div class="votes-grid">
+        ${vk.map(k=>`<div class="vote-card ${k==='qwen'?'qwen':''}"><div class="vote-source">${vl[k]}</div><div class="vote-val" ${k==='qwen'?'style="color:var(--purple)"':''}>${d.votes[k]||'—'}</div></div>`).join('')}
+      </div>
+      ${!d.agreement?`<p style="margin-top:8px;font-size:12px;color:var(--warning);font-weight:600">⚠ Révision humaine recommandée</p>`:''}
+    </div>`;
+  }
+
+  const maxScore=d.all_scores?.[0]?.score||1;
+  const scoresHTML=`<div>
+    <div class="section-title">📊 Scores EfficientNet+mBERT</div>
+    <div class="scores-list">
+      ${(d.all_scores||[]).map((s,i)=>`<div class="score-row">
+        <div class="score-name">${s.class}</div>
+        <div class="score-bar-bg"><div class="score-bar ${i===0?'top':''}" style="width:${(s.score/maxScore*100).toFixed(1)}%"></div></div>
+        <div class="score-pct">${(s.score*100).toFixed(1)}%</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+
+  const stepsHTML=`<div>
+    <div class="section-title">🔄 Pipeline d'analyse</div>
+    <div class="steps">
+      ${(d.steps||[]).map((s,i)=>`<div class="step-item">
+        <div class="step-side"><div class="step-dot ${s.status||'ok'}">${i+1}</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-name">${s.step}</div>
+          <div class="step-detail">${s.detail}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+
+  const mongoHTML=d.mongo_id?`
+    <div class="mongo-saved">
+      <span class="ms-label">✅ Sauvegardé</span>
+      <span class="ms-id">${d.mongo_id}</span>
+      <a href="/library">Voir dans la bibliothèque →</a>
+    </div>`:'';
+
+  panel.innerHTML=`
+    ${manualHTML}
+    <div class="result-card ${pl.cls}">
+      <div class="result-top">
+        <div>
+          <div class="result-class-label">Classification</div>
+          <div class="result-class">${d.prediction}</div>
+        </div>
+        <span class="path-pill ${pl.cls}">${pl.text}</span>
+      </div>
+      <div class="conf-row">
+        <div class="conf-labels">
+          <span class="conf-label-txt">Confiance globale</span>
+          <span class="conf-value ${cc}">${conf.toFixed(1)}%</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill ${cc}" style="width:${conf}%"></div></div>
+      </div>
+    </div>
+    ${mongoHTML}
+    ${qwenHTML}
+    ${votesHTML}
+    ${scoresHTML}
+    ${stepsHTML}
+    <div>
+      <div class="section-title">📝 Texte OCR extrait</div>
+      <div class="ocr-box">${d.ocr_text||'—'}</div>
+    </div>
+    <div class="timing">⏱ ${d.time_ms} ms total</div>
+  `;
+}
+
+function renderError(msg){
+  document.getElementById('right-panel').innerHTML=`
+    <div style="background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--r-lg);padding:24px">
+      <div style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:8px">Erreur de connexion</div>
+      <div style="font-size:13px;font-family:var(--mono);color:var(--text2)">${msg}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:10px">Vérifiez : <code style="color:var(--brand)">python app.py</code></div>
+    </div>`;
+}
+
+function enc(s){return encodeURIComponent(s);}
+</script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BankDoc — Ré-entraînement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared_styles.css"/>
+<style>
+html,body{min-height:100%;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;box-shadow:var(--shadow-xs);flex-shrink:0}
+.topbar-right{margin-left:auto;display:flex;gap:8px}
+.nav-btn{display:flex;align-items:center;gap:6px;color:var(--text-3);font-size:12px;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface-2);transition:all .15s}
+.nav-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none}
+.nav-btn:hover{color:var(--brand);border-color:var(--brand-glow);background:var(--brand-tint)}
+
+/* ── CONTENT ── */
+.content{max-width:920px;margin:0 auto;padding:40px 24px;display:flex;flex-direction:column;gap:28px;width:100%;flex:1}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,var(--brand-tint),rgba(76,29,149,0.05));
+  border:1px solid var(--brand-glow);
+  border-radius:var(--r-2xl);
+  padding:32px 36px;
+  display:flex;align-items:flex-start;gap:24px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:240px;height:240px;
+  background:radial-gradient(circle,var(--brand-tint) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-icon-wrap{
+  width:56px;height:56px;
+  background:var(--brand);
+  border-radius:var(--r-lg);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  box-shadow:0 4px 14px rgba(26,58,107,0.28);
+}
+.hero-icon-wrap svg{width:26px;height:26px;stroke:#fff;stroke-width:1.5;fill:none}
+.hero-title{font-family:var(--font-serif);font-size:26px;font-weight:400;letter-spacing:-0.03em;margin-bottom:10px;color:var(--text)}
+.hero-sub{font-size:14px;color:var(--text-2);line-height:1.75}
+.hero-sub strong{color:var(--amber);font-weight:600}
+
+/* ── ALERTS ── */
+.alerts-section{display:flex;flex-direction:column;gap:8px}
+.alert-card{
+  background:var(--emerald-bg);border:1px solid var(--emerald-bd);
+  border-radius:var(--r-lg);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  box-shadow:var(--shadow-xs);
+}
+.ac-left{display:flex;align-items:center;gap:12px}
+.ac-icon{width:36px;height:36px;background:var(--emerald-bg);border:1px solid var(--emerald-bd);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
+.ac-icon svg{width:17px;height:17px;stroke:var(--emerald);stroke-width:1.8;fill:none}
+.ac-info strong{color:var(--emerald);font-weight:700;font-size:13px}
+.ac-info{font-size:13px}
+.ac-count{font-size:11px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px}
+.see-lib-btn{padding:8px 16px;border-radius:var(--r-sm);font-size:11px;font-weight:600;background:var(--emerald);border:none;color:#fff;cursor:pointer;transition:all .15s;white-space:nowrap}
+.see-lib-btn:hover{opacity:.9}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.card-header{padding:16px 22px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;gap:12px;background:var(--surface-2)}
+.card-header-icon{width:32px;height:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
+.card-header-icon svg{width:15px;height:15px;stroke:var(--text-3);stroke-width:1.8;fill:none}
+.card-header-title{font-size:14px;font-weight:600;letter-spacing:-0.01em;color:var(--text)}
+.card-body{padding:22px}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text-4);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface-2);font-family:var(--font-mono)}
+td{padding:12px 14px;border-bottom:1px solid var(--border-2);font-family:var(--font-mono);font-size:12px;color:var(--text-2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-2)}
+.ready-pill{padding:3px 10px;border-radius:var(--r-full);font-size:10px;font-weight:600;background:var(--emerald-bg);color:var(--emerald);border:1px solid var(--emerald-bd)}
+.notready-pill{padding:3px 10px;border-radius:var(--r-full);font-size:10px;font-weight:600;background:var(--surface-3);color:var(--text-4);border:1px solid var(--border-2)}
+.prog-wrap{display:flex;align-items:center;gap:8px}
+.mini-bg{flex:1;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.mini-fill{height:100%;border-radius:2px;background:var(--brand);transition:width .4s var(--ease)}
+
+/* ── STEP GUIDE ── */
+.steps-guide{display:flex;flex-direction:column;gap:0}
+.step-g{display:flex;gap:20px;padding-bottom:28px;position:relative}
+.step-g:last-child{padding-bottom:0}
+.step-num-circle{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--brand-tint);border:1.5px solid var(--brand-glow);
+  color:var(--brand);
+  font-family:var(--font-serif);font-size:18px;font-style:italic;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;z-index:1;
+}
+.step-line2{position:absolute;left:19px;top:38px;bottom:0;width:1.5px;background:var(--border-2)}
+.step-g:last-child .step-line2{display:none}
+.step-content{flex:1;padding-top:8px}
+.step-title{font-size:15px;font-weight:600;margin-bottom:7px;letter-spacing:-0.01em;color:var(--text)}
+.step-desc{font-size:13px;color:var(--text-2);line-height:1.75;margin-bottom:12px}
+.step-desc code{font-family:var(--font-mono);font-size:11px;color:var(--brand);background:var(--brand-tint);padding:2px 6px;border-radius:var(--r-xs)}
+
+.code-block{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:14px 16px;
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  color:var(--brand);
+  line-height:1.8;
+  white-space:pre-wrap;
+  word-break:break-word;
+  position:relative;
+  overflow-x:auto;
+}
+[data-theme="dark"] .code-block{color:#93C5FD}
+
+.copy-btn{
+  position:absolute;top:8px;right:8px;
+  padding:4px 10px;
+  border-radius:var(--r-xs);
+  font-family:var(--font-mono);font-size:9px;font-weight:600;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text-3);cursor:pointer;transition:all .12s;
+  letter-spacing:.03em;
+}
+.copy-btn:hover{border-color:var(--brand-glow);color:var(--brand);background:var(--brand-tint)}
+
+.note-block{padding:10px 14px;border-radius:var(--r-md);font-size:12px;line-height:1.65;margin-top:10px}
+.note-block.info{background:var(--brand-tint);border:1px solid var(--brand-glow);color:var(--brand)}
+.note-block.warn{background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber)}
+.note-block code{font-family:var(--font-mono);font-size:10px;background:rgba(0,0,0,0.05);padding:1px 5px;border-radius:3px}
+
+/* ── EMPTY TABLE ── */
+.empty-table{text-align:center;padding:32px;font-size:13px;color:var(--text-4);font-family:var(--font)!important}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="wordmark" href="index.html">
+    <div class="wordmark-icon">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+    </div>
+    <div class="wordmark-text">
+      <span class="wordmark-name">BankDoc</span>
+      <span class="wordmark-sub">Ré-entraînement</span>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <a class="nav-btn" href="index.html">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Accueil
+    </a>
+    <a class="nav-btn" href="library.html">
+      <svg viewBox="0 0 24 24"><path d="M4 19V7l7-4 7 4v12"/><path d="M4 19h16"/><rect x="9" y="12" width="6" height="7"/></svg>
+      Bibliothèque
+    </a>
+    <button class="icon-btn" onclick="toggleTheme()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-icon-wrap">
+      <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="1"/><path d="M2 12a10 10 0 1 0 10-10"/></svg>
+    </div>
+    <div>
+      <div class="hero-title">Entraîner le modèle sur de nouveaux types</div>
+      <div class="hero-sub">
+        Quand un type personnalisé atteint <strong>50 images</strong> classifiées, le modèle peut être ré-entraîné pour le reconnaître automatiquement. Suivez ce guide pour lancer l'entraînement sur Google Colab.
+      </div>
+    </div>
+  </div>
+
+  <!-- Ready alerts -->
+  <div id="alerts-section" style="display:none">
+    <span class="lbl">Types prêts pour l'entraînement</span>
+    <div class="alerts-section" id="alerts-list"></div>
+  </div>
+
+  <!-- Progress table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      </div>
+      <span class="card-header-title">Progression des types personnalisés</span>
+    </div>
+    <div style="padding:0">
+      <table>
+        <thead>
+          <tr>
+            <th>Type de document</th>
+            <th>Images</th>
+            <th>Progression (seuil : 50)</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="types-tbody">
+          <tr><td colspan="4" class="empty-table">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Step guide -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <span class="card-header-title">Guide de ré-entraînement — Google Colab</span>
+    </div>
+    <div class="card-body">
+      <div class="steps-guide">
+
+        <div class="step-g">
+          <div class="step-num-circle">1</div>
+          <div class="step-line2"></div>
+          <div class="step-content">
+            <div class="step-title">Exporter les images classifiées</div>
+            <div class="step-desc">Téléchargez les images depuis la bibliothèque. Elles sont stockées dans <code>stored_documents/&lt;nom_type&gt;/</code>. Créez une archive ZIP avec cette structure :</div>
+            <div class="code-block">dataset/
+├── rib/
+├── cheque/
+├── acte_naissance/
+├── …
+└── certificat_vie/     ← nouveau type (50+ images)
+    ├── img001.jpg
+    └── …</div>
+          </div>
+        </div>
+
+        <div class="step-g">
+          <div class="step-num-circle">2</div>
+          <div class="step-line2"></div>
+          <div class="step-content">
+            <div class="step-title">Modifier la liste des classes dans le notebook</div>
+            <div class="step-desc">Ouvrez <code>multimodale.ipynb</code> dans Google Colab. Modifiez uniquement la cellule de configuration (CELLULE 4) :</div>
+            <div class="code-block" id="classes-code"><button class="copy-btn" onclick="copyCode('classes-code')">Copier</button>CLASSES = [
+    "rib",
+    "cheque",
+    "acte_de_naissance",
+    "tableau_amortissement",
+    "assurance",
+    "attestation_de_solde",
+    "acte_heredite",
+    "certificat_vie",     # ← Nouveau type
+]</div>
+            <div class="note-block warn">C'est le seul changement à effectuer. Toutes les autres cellules restent identiques.</div>
+          </div>
+        </div>
+
+        <div class="step-g">
+          <div class="step-num-circle">3</div>
+          <div class="step-line2"></div>
+          <div class="step-content">
+            <div class="step-title">Lancer l'entraînement complet</div>
+            <div class="step-desc">Exécutez toutes les cellules (environ <strong style="color:var(--amber)">20–30 min</strong> sur GPU Colab T4).</div>
+            <div class="code-block"><button class="copy-btn" onclick="copyCodeEl(this)">Copier</button># Activer le GPU : Runtime → Change runtime type → T4
+# Puis lancer tout : Runtime → Run all (Ctrl+F9)
+
+import torch
+print(torch.cuda.is_available())  # Doit afficher True</div>
+            <div class="note-block info">Activez le GPU gratuit dans Colab : Runtime → Change runtime type → GPU (T4).</div>
+          </div>
+        </div>
+
+        <div class="step-g">
+          <div class="step-num-circle">4</div>
+          <div class="step-line2"></div>
+          <div class="step-content">
+            <div class="step-title">Télécharger et remplacer le modèle</div>
+            <div class="step-desc">Après entraînement, la dernière cellule exporte <code>bank_doc_classifier_multimodal.pth</code>. Remplacez l'ancien :</div>
+            <div class="code-block">classification_vf/
+└── model/
+    └── bank_doc_classifier_multimodal.pth  ← remplacer</div>
+            <div class="note-block warn">Arrêtez Flask (<code>Ctrl+C</code>) avant de remplacer, puis relancez : <code>python app.py</code></div>
+          </div>
+        </div>
+
+        <div class="step-g">
+          <div class="step-num-circle">5</div>
+          <div class="step-line2"></div>
+          <div class="step-content">
+            <div class="step-title">Vérifier que le nouveau type est reconnu</div>
+            <div class="step-desc">Après redémarrage, vérifiez que le type apparaît dans les classes reconnues :</div>
+            <div class="code-block"><button class="copy-btn" onclick="copyCodeEl(this)">Copier</button>curl http://localhost:5000/status | python -m json.tool | grep classes
+# "certificat_vie" doit apparaître dans la liste</div>
+            <div class="note-block info">Testez directement dans l'interface en uploadant une image du nouveau type.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const API="http://localhost:5000";
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark');localStorage.setItem('theme',h.getAttribute('data-theme'));}
+(()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
+
+async function loadStats(){
+  try{
+    const r=await fetch(`${API}/types/stats`);const d=await r.json();
+    const as=document.getElementById('alerts-section'),al=document.getElementById('alerts-list');
+    if(d.alerts?.length){
+      as.style.display='block';
+      al.innerHTML=d.alerts.map(a=>`<div class="alert-card">
+        <div class="ac-left">
+          <div class="ac-icon"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--emerald);stroke-width:1.8;fill:none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="ac-info">
+            <strong>${esc(a.label)}</strong> est prêt pour le ré-entraînement
+            <div class="ac-count">${a.count} images classifiées</div>
+          </div>
+        </div>
+        <button class="see-lib-btn" onclick="window.location='library.html'">Voir dans la bibliothèque</button>
+      </div>`).join('');
+    }
+    const tbody=document.getElementById('types-tbody');
+    if(!d.custom_types?.length){
+      tbody.innerHTML=`<tr><td colspan="4" class="empty-table">Aucun type personnalisé créé.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML=d.custom_types.map(t=>{
+      const pct=Math.min((t.count/(d.threshold||50))*100,100).toFixed(0);
+      return`<tr>
+        <td><span style="font-family:var(--font);font-size:13px;font-weight:600;color:var(--text)">${esc(t.label||t.name)}</span><br><span style="font-size:9px;color:var(--text-4)">${esc(t.name)}</span></td>
+        <td style="color:var(--brand);font-weight:600;font-size:14px">${t.count}</td>
+        <td><div class="prog-wrap"><div class="mini-bg"><div class="mini-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text-4);white-space:nowrap">${t.count}/${d.threshold||50}</span></div></td>
+        <td>${t.ready_for_training?`<span class="ready-pill">Prêt</span>`:`<span class="notready-pill">${Math.max(0,(d.threshold||50)-t.count)} restants</span>`}</td>
+      </tr>`;
+    }).join('');
+    updateClassesCode(d.custom_types);
+  }catch(e){
+    document.getElementById('types-tbody').innerHTML=`<tr><td colspan="4" class="empty-table" style="color:var(--crimson)">Erreur : ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function updateClassesCode(customTypes){
+  const block=document.getElementById('classes-code');
+  const base=["rib","cheque","acte_de_naissance","tableau_amortissement","assurance","attestation_de_solde","acte_heredite"];
+  const custom=customTypes.map(t=>t.name);
+  const code=`CLASSES = [\n${base.map(c=>`    "${c}",`).join('\n')}\n${custom.map(c=>`    "${c}",     # ← Nouveau type`).join('\n')}\n]`;
+  const btn=block.querySelector('.copy-btn');
+  block.textContent=code;
+  block.prepend(btn);
+}
+
+function copyCode(id){
+  const el=document.getElementById(id);
+  const text=el.textContent.replace(/Copier/g,'').trim();
+  copyToClipboard(text,el.querySelector('.copy-btn'));
+}
+function copyCodeEl(btn){
+  const el=btn.parentElement;
+  const text=el.textContent.replace(/Copier/g,'').trim();
+  copyToClipboard(text,btn);
+}
+function copyToClipboard(text,btn){
+  navigator.clipboard.writeText(text).then(()=>{
+    if(btn){const orig=btn.textContent;btn.textContent='Copié';setTimeout(()=>btn.textContent=orig,1800);}
+    toast('Copié dans le presse-papier','ok');
+  });
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},3000);}
+loadStats();
+</script>
+</body>
+</html>
