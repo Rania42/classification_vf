@@ -1,11 +1,10 @@
 """
-Agents d'analyse : llama3.2 (vrai appel Ollama), Qwen2.5-VL, Keywords, Nettoyeur.
+Agents d'analyse : llama3.2 (Ollama streaming), Qwen2.5-VL (streaming), Nettoyeur regex.
 """
 import re
 import io
 import base64
 import requests
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from PIL import Image
 
 from config import (
@@ -36,8 +35,12 @@ def check_ollama_available() -> dict:
     return {"ollama": USE_OLLAMA, "qwen": USE_QWEN}
 
 
-# ── Streaming Ollama (évite timeouts HTTP) ─────────────
+# ── Streaming Ollama ───────────────────────────────────
 def _call_ollama_streaming(prompt: str, model: str, timeout_no_token: int = 30) -> str:
+    """
+    Appel streaming Ollama /api/generate.
+    timeout_no_token : secondes sans recevoir de token avant d'abandonner.
+    """
     import json as _json
     payload = {
         "model": model, "prompt": prompt, "stream": True,
@@ -47,9 +50,10 @@ def _call_ollama_streaming(prompt: str, model: str, timeout_no_token: int = 30) 
     try:
         with requests.post(
             OLLAMA_URL, json=payload, stream=True,
-            timeout=(10, timeout_no_token),
+            timeout=(10, timeout_no_token),  # (connect, read)
         ) as resp:
             if resp.status_code != 200:
+                print(f"[llama3.2] HTTP {resp.status_code}")
                 return ""
             for line in resp.iter_lines():
                 if not line:
@@ -61,14 +65,22 @@ def _call_ollama_streaming(prompt: str, model: str, timeout_no_token: int = 30) 
                         break
                 except Exception:
                     continue
+    except requests.exceptions.ConnectTimeout:
+        print("[llama3.2] Timeout connexion")
     except requests.exceptions.ReadTimeout:
-        print(f"[llama3.2] Streaming interrompu (no token {timeout_no_token}s)")
+        print(f"[llama3.2] Timeout lecture ({timeout_no_token}s sans token)")
+    except requests.exceptions.ConnectionError:
+        print("[llama3.2] Ollama non joignable (service arrêté ?)")
     except Exception as e:
-        print(f"[llama3.2] Erreur streaming : {e}")
+        print(f"[llama3.2] Erreur inattendue : {e}")
     return "".join(chunks)
 
 
 def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) -> str:
+    """
+    Appel streaming Qwen2.5-VL via /api/chat.
+    timeout_no_token plus long car modèle vision plus lent.
+    """
     import json as _json
     payload = {
         "model": QWEN_MODEL, "stream": True,
@@ -82,6 +94,7 @@ def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) 
             timeout=(10, timeout_no_token),
         ) as resp:
             if resp.status_code != 200:
+                print(f"[Qwen] HTTP {resp.status_code}")
                 return ""
             for line in resp.iter_lines():
                 if not line:
@@ -93,10 +106,14 @@ def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) 
                         break
                 except Exception:
                     continue
+    except requests.exceptions.ConnectTimeout:
+        print("[Qwen] Timeout connexion")
     except requests.exceptions.ReadTimeout:
-        print(f"[Qwen] Streaming interrompu (no token {timeout_no_token}s)")
+        print(f"[Qwen] Timeout lecture ({timeout_no_token}s sans token)")
+    except requests.exceptions.ConnectionError:
+        print("[Qwen] Ollama non joignable")
     except Exception as e:
-        print(f"[Qwen] Erreur streaming : {e}")
+        print(f"[Qwen] Erreur inattendue : {e}")
     return "".join(chunks)
 
 
@@ -146,12 +163,12 @@ def _parse_classification_json(raw: str, valid_classes: list) -> dict:
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT LLAMA3.2 — VRAI appel Ollama (prompt classification)
+# AGENT LLAMA3.2 — Classification via texte OCR
 # ═══════════════════════════════════════════════════════
 def agent_llm_classification(ocr_text: str, doc_classes: list, context: str = "") -> str | None:
     """
-    Vrai appel llama3.2 pour classifier le document via son texte OCR.
-    Retourne la classe prédite ou None si échec/indisponible.
+    Appelle llama3.2 pour classifier le document via son texte OCR.
+    Retourne la classe prédite ou None si échec/timeout/indisponible.
     """
     if not USE_OLLAMA:
         return None
@@ -179,12 +196,12 @@ def agent_llm_classification(ocr_text: str, doc_classes: list, context: str = ""
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT QWEN2.5-VL — Vision multimodale
+# AGENT QWEN2.5-VL — Confirmation vision multimodale
 # ═══════════════════════════════════════════════════════
 def agent_qwen_vision(img_path: str, ocr_text: str, doc_classes: list,
                       timeout: int = QWEN_TIMEOUT, retry: bool = True) -> dict:
     """
-    Appelle Qwen2.5-VL en streaming.
+    Appelle Qwen2.5-VL en streaming pour analyser l'image.
     Retourne {"class": ..., "confidence": ..., "reasoning": ..., "available": bool}
     """
     if not USE_QWEN:
@@ -193,11 +210,11 @@ def agent_qwen_vision(img_path: str, ocr_text: str, doc_classes: list,
     classes_str = "\n".join(f"- {c}" for c in doc_classes)
     prompt = (
         f"Tu es un expert en documents bancaires marocains.\n"
-        f"Catégories : \n{classes_str}\n"
-        f"Texte OCR : {ocr_text[:600]}\n\n"
+        f"Catégories disponibles :\n{classes_str}\n"
+        f"Texte OCR (peut être bruité) : {ocr_text[:600]}\n\n"
         f"Analyse l'image et réponds UNIQUEMENT en JSON :\n"
-        f'{{ "class": "nom_categorie", "confidence": 0.95, "reasoning": "explication" }}\n'
-        f"Si inconnu : class = 'inconnu'."
+        f'{{ "class": "nom_categorie", "confidence": 0.95, "reasoning": "explication courte" }}\n'
+        f"Si le document ne correspond à aucune catégorie : class = 'inconnu'."
     )
 
     try:
@@ -209,7 +226,7 @@ def agent_qwen_vision(img_path: str, ocr_text: str, doc_classes: list,
             return result
 
         if retry:
-            print("[Qwen] Retry 1x...")
+            print("[Qwen] Retry 1x après échec...")
             raw = _call_qwen_streaming(prompt, img_b64, timeout_no_token=timeout)
             if raw:
                 result = _parse_classification_json(raw, doc_classes)
@@ -219,11 +236,12 @@ def agent_qwen_vision(img_path: str, ocr_text: str, doc_classes: list,
     except Exception as e:
         print(f"[Qwen] Erreur : {e}")
 
-    return {"class": None, "confidence": 0.0, "reasoning": "Qwen timeout/erreur", "available": False}
+    return {"class": None, "confidence": 0.0, "reasoning": "Timeout ou erreur", "available": False}
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT KEYWORDS — Règles rapides sans LLM
+# AGENT KEYWORDS — Détection rapide par règles lexicales
+# (utilisé uniquement pour information / debug, non décisionnel)
 # ═══════════════════════════════════════════════════════
 def agent_keywords(text: str) -> dict:
     text_lower = text.lower()
@@ -245,19 +263,14 @@ def agent_keywords(text: str) -> dict:
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT NETTOYEUR — Regex + optionnel llama
+# AGENT NETTOYEUR — Regex uniquement (pas de LLM)
+# Appel LLM supprimé : trop coûteux en latence pour ce rôle
 # ═══════════════════════════════════════════════════════
 def agent_nettoyeur(raw_text: str) -> str:
+    """
+    Nettoie le texte OCR par regex.
+    Pas d'appel LLM ici — la latence doit rester minimale.
+    """
     cleaned = re.sub(r"[^\w\s\-\.,;:éèêëàâäôöùûüçæœ]", " ", raw_text)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
-    if len(cleaned) > 50 and cleaned.count(" ") > 5:
-        return cleaned
-    # Fallback llama uniquement si texte très court/bruité
-    if USE_OLLAMA:
-        result = _call_ollama_streaming(
-            f"Nettoie ce texte OCR bruité en corrigeant les erreurs :\n{raw_text}\nTexte nettoyé :",
-            OLLAMA_MODEL, timeout_no_token=15,
-        )
-        if result and len(result) > 10:
-            return result
-    return cleaned
+    return cleaned if cleaned else raw_text

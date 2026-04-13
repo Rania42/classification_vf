@@ -3,437 +3,328 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BankDoc Classifier</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<title>BankDoc — Analyse unitaire</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@300;400;600&display=swap" rel="stylesheet"/>
 <style>
-/* ═══════════════════════════════════════════════
-   DESIGN SYSTEM
-═══════════════════════════════════════════════ */
-:root{
-  --bg-base:#F2F5FB;--bg-surface:#FFFFFF;--bg-raised:#F8FAFF;--bg-sunken:#EBF0FA;
-  --brand:#2255CC;--brand-light:#4A7AEF;--brand-dark:#1A3E99;
-  --brand-muted:rgba(34,85,204,0.09);--brand-border:rgba(34,85,204,0.20);
-  --success:#0E7A5C;--success-bg:rgba(14,122,92,0.09);--success-border:rgba(14,122,92,0.22);
-  --warning:#B45309;--warning-bg:rgba(180,83,9,0.09);--warning-border:rgba(180,83,9,0.22);
-  --danger:#C0392B;--danger-bg:rgba(192,57,43,0.09);--danger-border:rgba(192,57,43,0.22);
-  --purple:#6B2EB5;--purple-bg:rgba(107,46,181,0.09);--purple-border:rgba(107,46,181,0.22);
-  --text:#0F1628;--text2:#4A5568;--text3:#8C97A8;--text4:#B8C2D0;
-  --border:#D1D9E6;--border-subtle:#E8EDF5;
-  --shadow-sm:0 1px 3px rgba(15,22,40,0.08),0 1px 2px rgba(15,22,40,0.04);
-  --shadow-md:0 4px 12px rgba(15,22,40,0.10),0 2px 4px rgba(15,22,40,0.05);
-  --shadow-lg:0 12px 32px rgba(15,22,40,0.13),0 4px 8px rgba(15,22,40,0.06);
-  --shadow-focus:0 0 0 3px rgba(34,85,204,0.18);
-  --font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;
-  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
+:root {
+  --bg:#F5F6F8;--surface:#FFFFFF;--surface2:#F0F2F7;--surface3:#E8EBF2;
+  --brand:#1A2E6B;--brand2:#253D8A;--brand-accent:#2D52B8;--brand-light:rgba(26,46,107,0.08);--brand-border:rgba(26,46,107,0.2);
+  --success:#0C6B4E;--success-bg:rgba(12,107,78,0.07);--success-border:rgba(12,107,78,0.18);
+  --warning:#7A4500;--warning-bg:rgba(122,69,0,0.07);--warning-border:rgba(122,69,0,0.18);
+  --danger:#8B1A1A;--danger-bg:rgba(139,26,26,0.07);--danger-border:rgba(139,26,26,0.18);
+  --purple:#3D1F7A;--purple-bg:rgba(61,31,122,0.07);--purple-border:rgba(61,31,122,0.18);
+  --text:#0D1117;--text2:#3D4A5C;--text3:#6B7A8D;--text4:#9AAAB8;
+  --border:#D8DDE8;--border-subtle:#EDF0F7;
+  --shadow-md:0 4px 16px rgba(13,17,23,0.08),0 2px 4px rgba(13,17,23,0.04);
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;--serif:'IBM Plex Serif',serif;
 }
-[data-theme="dark"]{
-  --bg-base:#0C1220;--bg-surface:#141E30;--bg-raised:#1A2540;--bg-sunken:#0A0F1A;
-  --brand:#4A7AEF;--brand-light:#6B97F5;--brand-dark:#2255CC;
-  --brand-muted:rgba(74,122,239,0.12);--brand-border:rgba(74,122,239,0.28);
-  --success:#2DD4A0;--success-bg:rgba(45,212,160,0.10);--success-border:rgba(45,212,160,0.28);
-  --warning:#F5A623;--warning-bg:rgba(245,166,35,0.10);--warning-border:rgba(245,166,35,0.28);
-  --danger:#F05252;--danger-bg:rgba(240,82,82,0.10);--danger-border:rgba(240,82,82,0.28);
-  --purple:#A78BFA;--purple-bg:rgba(167,139,250,0.10);--purple-border:rgba(167,139,250,0.28);
-  --text:#E8EEF8;--text2:#8FA4C0;--text3:#4E6480;--text4:#2E3F55;
-  --border:#1E2E45;--border-subtle:#162035;
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.25);--shadow-md:0 4px 12px rgba(0,0,0,0.30);--shadow-lg:0 12px 32px rgba(0,0,0,0.40);
+[data-theme="dark"] {
+  --bg:#0A0D14;--surface:#111520;--surface2:#171C2B;--surface3:#1D2336;
+  --brand:#4A6ED4;--brand2:#5A80E0;--brand-accent:#6B91F0;--brand-light:rgba(74,110,212,0.12);--brand-border:rgba(74,110,212,0.25);
+  --success:#1DB87A;--success-bg:rgba(29,184,122,0.08);--success-border:rgba(29,184,122,0.2);
+  --warning:#D4870A;--warning-bg:rgba(212,135,10,0.08);--warning-border:rgba(212,135,10,0.2);
+  --danger:#E05050;--danger-bg:rgba(224,80,80,0.08);--danger-border:rgba(224,80,80,0.2);
+  --purple:#8B6BD4;--purple-bg:rgba(139,107,212,0.08);--purple-border:rgba(139,107,212,0.2);
+  --text:#E4EAF4;--text2:#8A9BB8;--text3:#5A6B84;--text4:#384456;
+  --border:#1E2840;--border-subtle:#141A28;
 }
-
 *{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px}
-body{background:var(--bg-base);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
-
-/* ── SCROLLBARS ── */
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh;display:flex;flex-direction:column;overflow:hidden}
 *{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:var(--bg-sunken);border-radius:4px}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;border:2px solid var(--bg-sunken)}
-::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-/* ── HEADER ── */
-header{
-  background:var(--bg-surface);border-bottom:1px solid var(--border);
-  padding:0 28px;height:60px;display:flex;align-items:center;gap:16px;
-  position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);
-}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-mark{
-  width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,var(--brand),var(--brand-light));
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;
-  box-shadow:var(--shadow-sm);
-}
-.logo-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.02em}
-.logo-version{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:1px}
+.nav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:0;flex-shrink:0}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:32px}
+.nav-logo{width:28px;height:28px;background:var(--brand);display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;fill:#fff}
+.nav-title{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--text);letter-spacing:.01em}
+.nav-sep{width:1px;height:16px;background:var(--border);margin:0 20px}
+.nav-links{display:flex;gap:2px}
+.nav-link{padding:6px 12px;font-size:13px;color:var(--text3);text-decoration:none;letter-spacing:.01em;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;transition:color .15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.status-chip{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);background:var(--surface2)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--success)}.dot.warn{background:var(--warning)}.dot.err{background:var(--danger)}
+.dot.pulse{animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.theme-toggle{width:28px;height:28px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;transition:all .15s}
+.theme-toggle:hover{color:var(--text);border-color:var(--brand)}
+.workspace{flex:1;display:grid;grid-template-columns:360px 1fr;overflow:hidden;min-height:0}
 
-.nav{display:flex;gap:4px;margin-left:24px}
-.nav-link{
-  padding:7px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;
-  color:var(--text2);text-decoration:none;transition:all .15s;border:1px solid transparent;
-  display:flex;align-items:center;gap:6px;
-}
-.nav-link:hover{background:var(--bg-raised);color:var(--text);border-color:var(--border-subtle)}
-.nav-link.active{background:var(--brand-muted);color:var(--brand);border-color:var(--brand-border)}
-.nav-link.accent{color:var(--success)}
-.nav-link.accent:hover{background:var(--success-bg);border-color:var(--success-border)}
-
-.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.status-chip{
-  display:flex;align-items:center;gap:6px;padding:5px 12px;
-  border-radius:var(--r-full);border:1px solid var(--border);
-  background:var(--bg-raised);font-size:12px;font-family:var(--mono);
-}
-.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.status-dot.ok{background:var(--success);box-shadow:0 0 0 2px var(--success-bg)}
-.status-dot.warn{background:var(--warning);box-shadow:0 0 0 2px var(--warning-bg)}
-.status-dot.err{background:var(--danger);box-shadow:0 0 0 2px var(--danger-bg)}
-.status-dot.pulse{animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.status-txt{color:var(--text2)}
-
-.theme-btn{
-  width:36px;height:36px;border-radius:var(--r-md);border:1px solid var(--border);
-  background:var(--bg-raised);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;
-}
-.theme-btn:hover{background:var(--bg-sunken);border-color:var(--brand-border)}
-
-/* ── LAYOUT ── */
-#page-classify{
-  display:grid;grid-template-columns:400px 1fr;
-  flex:1;overflow:hidden;min-height:0;
-}
-.panel-left{
-  background:var(--bg-surface);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;overflow-y:auto;
-  padding:24px;gap:20px;
-}
-.panel-right{
-  background:var(--bg-base);overflow-y:auto;padding:24px;
-  display:flex;flex-direction:column;gap:20px;
-}
-
-/* ── LABELS ── */
-.lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:block}
-
-/* ── DROPZONE ── */
-.dropzone{
-  border:2px dashed var(--border);border-radius:var(--r-lg);
-  padding:36px 24px;text-align:center;cursor:pointer;
-  transition:all .2s;position:relative;background:var(--bg-raised);
-}
-.dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--brand-muted)}
-.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
-.dz-icon{font-size:36px;margin-bottom:12px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.1))}
-.dz-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:5px}
-.dz-sub{font-size:13px;color:var(--text3)}
-
-/* ── PREVIEW ── */
-.preview-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
-.preview-card img{width:100%;max-height:220px;object-fit:contain;background:var(--bg-sunken);display:block}
-.preview-meta{padding:10px 14px;display:flex;gap:12px;font-size:12px;font-family:var(--mono);color:var(--text3);border-top:1px solid var(--border-subtle);background:var(--bg-surface)}
-
-/* ── CLASSIFY BUTTON ── */
-.classify-btn{
-  width:100%;padding:14px 20px;border-radius:var(--r-lg);
-  background:linear-gradient(135deg,var(--brand),var(--brand-light));
-  color:#fff;border:none;font-family:var(--font);font-size:15px;font-weight:700;
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;
-  box-shadow:0 4px 14px rgba(34,85,204,0.30);letter-spacing:-.01em;
-}
-.classify-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,85,204,0.38)}
-.classify-btn:active{transform:translateY(0)}
-.classify-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+/* LEFT */
+.left-panel{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.panel-section{padding:20px;border-bottom:1px solid var(--border-subtle)}
+.section-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-label::before{content:"";width:3px;height:10px;background:var(--brand)}
+.dropzone{border:1px dashed var(--border);padding:32px 20px;text-align:center;cursor:pointer;position:relative;transition:all .2s;background:var(--surface2)}
+.dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--brand-light)}
+.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{width:40px;height:40px;margin:0 auto 12px;background:var(--surface3);display:flex;align-items:center;justify-content:center}
+.dz-icon svg{width:20px;height:20px;stroke:var(--text3);fill:none;stroke-width:1.5}
+.dz-title{font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text)}
+.dz-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.preview-img-box{background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;height:160px;overflow:hidden}
+.preview-img-box img{max-height:160px;max-width:100%;object-fit:contain}
+.preview-meta{display:flex;gap:12px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-top:none;font-family:var(--mono);font-size:11px;color:var(--text3)}
+.agent-list{display:flex;flex-direction:column;gap:6px}
+.agent-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);background:var(--surface2);transition:border-color .15s}
+.agent-row:hover{border-color:var(--brand-border)}
+.agent-info{display:flex;align-items:center;gap:8px}
+.agent-dot{width:6px;height:6px;border-radius:50%}
+.agent-dot.active{background:var(--success)}
+.agent-dot.inactive{background:var(--border)}
+.agent-name{font-size:12px;font-weight:500}
+.agent-type{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.sw{position:relative;width:32px;height:18px;display:inline-block;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sw-track{position:absolute;inset:0;background:var(--border);cursor:pointer;transition:background .2s}
+.sw-track:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+input:checked+.sw-track{background:var(--brand)}
+input:checked+.sw-track:before{transform:translateX(14px)}
+.pipeline-badge{padding:10px 12px;background:var(--brand-light);border:1px solid var(--brand-border);font-size:11px;color:var(--text2);line-height:1.7}
+.pipeline-badge strong{color:var(--brand);font-weight:600}
+.analyze-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.03em;text-transform:uppercase;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.analyze-btn:hover{background:var(--brand2)}
+.analyze-btn:disabled{opacity:.4;cursor:not-allowed}
+.analyze-btn .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── TOGGLES ── */
-.toggles{display:flex;flex-direction:column;gap:8px}
-.toggle-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 14px;background:var(--bg-raised);border:1px solid var(--border);
-  border-radius:var(--r-md);transition:border-color .15s;
-}
-.toggle-row:hover{border-color:var(--brand-border)}
-.toggle-info{display:flex;align-items:center;gap:10px}
-.toggle-icon{font-size:18px;width:24px;text-align:center}
-.toggle-name{font-size:13px;font-weight:600;color:var(--text)}
-.toggle-desc{font-size:11px;color:var(--text3)}
-.sw{position:relative;width:34px;height:20px;display:inline-block;flex-shrink:0}
-.sw input{opacity:0;width:0;height:0}
-.sl{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:background .2s}
-.sl:before{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-input:checked+.sl{background:var(--brand)}
-input:checked+.sl:before{transform:translateX(14px)}
+/* RIGHT */
+.right-panel{overflow-y:auto;background:var(--bg);display:flex;flex-direction:column}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);padding:60px 24px;text-align:center}
+.empty-icon{width:48px;height:48px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.empty-icon svg{width:24px;height:24px;stroke:var(--text4);fill:none;stroke-width:1.5}
+.empty-title{font-family:var(--serif);font-size:16px;font-weight:400;color:var(--text3)}
+.empty-sub{font-size:12px;color:var(--text4)}
+.results-container{padding:24px;display:flex;flex-direction:column;gap:18px}
 
-/* ── PIPELINE INFO ── */
-.pipe-info{padding:12px 14px;background:var(--brand-muted);border:1px solid var(--brand-border);border-radius:var(--r-md);font-size:12px;color:var(--text2);line-height:1.7}
-.pipe-info strong{color:var(--brand);font-weight:600}
+/* RESULT HEADER */
+.result-header{background:var(--surface);border:1px solid var(--border);padding:20px 24px}
+.result-header-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.result-class-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.result-class{font-family:var(--serif);font-size:28px;font-weight:400;color:var(--text);letter-spacing:-.01em}
+.result-path-badge{padding:4px 10px;border:1px solid var(--border);font-family:var(--mono);font-size:10px;font-weight:500}
+.result-path-badge.validated{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.result-path-badge.disagreement{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-border)}
+.result-path-badge.default{background:var(--surface2);color:var(--text3)}
+.conf-block{display:flex;flex-direction:column;gap:6px}
+.conf-labels{display:flex;justify-content:space-between;font-size:12px}
+.conf-label{color:var(--text3)}
+.conf-val{font-family:var(--mono);font-weight:500}
+.conf-val.hi{color:var(--success)}.conf-val.mid{color:var(--warning)}.conf-val.lo{color:var(--danger)}
+.conf-bar{height:4px;background:var(--surface3)}
+.conf-fill{height:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.conf-fill.hi{background:var(--success)}.conf-fill.mid{background:var(--warning)}.conf-fill.lo{background:var(--danger)}
 
-/* ══════════════════════
-   RESULT CARDS
-══════════════════════ */
-.empty-state{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:12px;padding:80px 24px;color:var(--text3);text-align:center;
-}
-.empty-icon{font-size:56px;opacity:.25}
-.empty-title{font-size:17px;font-weight:600;color:var(--text3)}
-.empty-sub{font-size:13px}
+/* MANUAL ALERT */
+.manual-alert{background:var(--warning-bg);border:1px solid var(--warning-border);border-left:3px solid var(--warning);padding:16px 18px;display:flex;gap:16px;align-items:flex-start}
+.alert-content{flex:1}
+.alert-title{font-size:13px;font-weight:600;color:var(--warning);margin-bottom:5px}
+.alert-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.alert-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--warning);color:#fff;font-family:var(--font);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;border:none;letter-spacing:.02em;transition:opacity .15s}
+.alert-btn:hover{opacity:.85}
 
-.result-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-md);transition:border-color .2s}
-.result-card.validated{border-color:var(--success-border);background:linear-gradient(180deg,var(--success-bg),transparent)}
-.result-card.disagreement{border-color:var(--warning-border)}
-.result-card.agents{border-color:var(--purple-border)}
+/* SECTION CARDS */
+.result-section{background:var(--surface);border:1px solid var(--border)}
+.rs-header{padding:12px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.rs-title{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px}
+.rs-title::before{content:"";width:2px;height:10px;background:var(--brand)}
+.rs-body{padding:14px 16px}
 
-.result-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
-.result-class-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.result-class{font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
-.path-pill{
-  padding:5px 12px;border-radius:var(--r-full);font-size:11px;font-weight:600;
-  font-family:var(--mono);
-}
-.path-pill.validated{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
-.path-pill.disagreement{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
-.path-pill.agents{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
-.path-pill.default{background:var(--bg-raised);color:var(--text3);border:1px solid var(--border)}
+/* VERDICT BANNER */
+.verdict-banner{padding:14px 18px;display:flex;align-items:center;gap:12px;border:1px solid}
+.verdict-banner.ok{background:var(--success-bg);border-color:var(--success-border)}
+.verdict-banner.warn{background:var(--warning-bg);border-color:var(--warning-border);border-left:3px solid var(--warning)}
+.verdict-icon{font-size:18px;flex-shrink:0}
+.verdict-text{flex:1}
+.verdict-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.verdict-banner.ok .verdict-title{color:var(--success)}
+.verdict-banner.warn .verdict-title{color:var(--warning)}
+.verdict-sub{font-size:11px;color:var(--text2);line-height:1.5}
 
-.conf-row{margin-bottom:20px}
-.conf-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
-.conf-label-txt{font-size:13px;color:var(--text2);font-weight:500}
-.conf-value{font-size:18px;font-weight:700;font-family:var(--mono)}
-.conf-value.hi{color:var(--success)}
-.conf-value.mid{color:var(--warning)}
-.conf-value.lo{color:var(--danger)}
-.bar-bg{height:8px;background:var(--bg-sunken);border-radius:4px;overflow:hidden}
-.bar-fill{height:8px;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
-.bar-fill.hi{background:linear-gradient(90deg,var(--success),#34D399)}
-.bar-fill.mid{background:linear-gradient(90deg,var(--warning),#FBBF24)}
-.bar-fill.lo{background:linear-gradient(90deg,var(--danger),#F87171)}
+/* MODEL COMPARISON TABLE */
+.model-table{width:100%;border-collapse:collapse;font-size:12px}
+.model-table th{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.model-table td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.model-table tr:last-child td{border-bottom:none}
+.model-row-name{font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px}
+.model-badge{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 6px;border:1px solid}
+.model-badge.principal{background:var(--brand-light);color:var(--brand);border-color:var(--brand-border)}
+.model-badge.llm{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.model-badge.vision{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
+.model-badge.unavail{background:var(--surface3);color:var(--text3);border-color:var(--border)}
+.verdict-cell{font-family:var(--mono);font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px}
+.verdict-cell.agree{color:var(--success)}
+.verdict-cell.disagree{color:var(--danger)}
+.verdict-cell.unavail{color:var(--text4)}
+.pred-cell{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text)}
+.conf-cell{font-family:var(--mono);font-size:11px}
+.conf-cell.hi{color:var(--success)}.conf-cell.mid{color:var(--warning)}.conf-cell.lo{color:var(--danger)}
 
-.manual-alert{
-  background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--r-lg);
-  padding:18px 20px;display:flex;align-items:flex-start;gap:14px;margin-bottom:8px;
-}
-.mal-icon{font-size:28px;flex-shrink:0}
-.mal-title{font-size:15px;font-weight:700;color:var(--warning);margin-bottom:6px}
-.mal-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px}
-.mal-btn{
-  display:inline-flex;align-items:center;gap:8px;padding:10px 18px;
-  background:var(--warning);color:#fff;border-radius:var(--r-md);border:none;
-  font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .15s;
-  box-shadow:0 2px 8px rgba(180,83,9,0.25);
-}
-.mal-btn:hover{opacity:.9;transform:translateY(-1px)}
+/* QWEN REASONING */
+.qw-reasoning{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;background:var(--surface2);padding:8px 10px;border:1px solid var(--border-subtle);margin-top:10px}
+.qw-reasoning-label{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:4px}
 
-.section-title{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.section-title::after{content:"";flex:1;height:1px;background:var(--border-subtle)}
-
-/* Qwen card */
-.qwen-card{background:var(--bg-raised);border:1px solid var(--purple-border);border-radius:var(--r-lg);padding:16px}
-.qw-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-.qw-badge{padding:4px 10px;border-radius:var(--r-full);font-size:11px;font-weight:600;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
-.qw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.qw-field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:3px}
-.qw-field .val{font-size:14px;font-weight:600;color:var(--text)}
-.qw-reason{font-size:12px;color:var(--text2);line-height:1.5;font-family:var(--mono);background:var(--bg-sunken);padding:8px 10px;border-radius:var(--r-sm);margin-top:8px}
-.agree-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--r-full);font-size:11px;font-weight:600;margin-top:8px}
-.agree-chip.yes{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
-.agree-chip.no{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
-
-/* Votes */
-.votes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.vote-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-md);padding:11px;transition:border-color .15s}
-.vote-card.qwen{border-color:var(--purple-border)}
-.vote-source{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px}
-.vote-val{font-size:12px;font-weight:600;color:var(--text);word-break:break-word}
-
-/* Scores */
-.scores-list{display:flex;flex-direction:column;gap:7px}
-.score-row{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:8px}
+/* SCORES */
+.scores-list{display:flex;flex-direction:column;gap:6px}
+.score-row{display:grid;grid-template-columns:160px 1fr 50px;align-items:center;gap:8px}
 .score-name{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.score-bar-bg{height:5px;background:var(--bg-sunken);border-radius:3px}
-.score-bar{height:5px;border-radius:3px;background:var(--border);transition:width .6s}
-.score-bar.top{background:var(--brand)}
+.score-bar-bg{height:4px;background:var(--surface3)}
+.score-bar-fill{height:4px;background:var(--border);transition:width .5s}
+.score-bar-fill.top{background:var(--brand)}
 .score-pct{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
 
-/* Steps */
-.steps{display:flex;flex-direction:column;gap:0}
-.step-item{display:flex;gap:12px;position:relative;padding-bottom:14px}
-.step-item:last-child{padding-bottom:0}
-.step-side{display:flex;flex-direction:column;align-items:center}
-.step-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
-.step-dot.ok{background:var(--success-bg);color:var(--success);border:1.5px solid var(--success-border)}
-.step-dot.warning{background:var(--warning-bg);color:var(--warning);border:1.5px solid var(--warning-border)}
-.step-dot.info{background:var(--brand-muted);color:var(--brand);border:1.5px solid var(--brand-border)}
-.step-line{flex:1;width:1.5px;background:var(--border-subtle);margin-top:4px}
-.step-item:last-child .step-line{display:none}
-.step-body{padding-top:2px;flex:1;min-width:0}
-.step-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
-.step-detail{font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.5;word-break:break-word}
+/* PIPELINE STEPS */
+.steps-list{display:flex;flex-direction:column}
+.step-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+.step-item:last-child{border-bottom:none;padding-bottom:0}
+.step-num{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500}
+.step-num.ok{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.step-num.warning{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
+.step-num.info{background:var(--brand-light);color:var(--brand);border:1px solid var(--brand-border)}
+.step-body{flex:1;min-width:0;padding-top:2px}
+.step-name{font-size:12px;font-weight:500;margin-bottom:2px}
+.step-detail{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.5;word-break:break-word}
 
-/* OCR */
-.ocr-box{background:var(--bg-sunken);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.7;max-height:130px;overflow-y:auto;white-space:pre-wrap;scrollbar-width:thin}
+/* OCR & MONGO */
+.ocr-text{background:var(--surface2);border:1px solid var(--border);padding:12px;font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.7;max-height:120px;overflow-y:auto;white-space:pre-wrap}
+.mongo-badge{background:var(--success-bg);border:1px solid var(--success-border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:11px}
+.mongo-badge-label{color:var(--success);font-weight:500}
+.mongo-badge-id{color:var(--text3)}
+.mongo-badge a{color:var(--success);font-size:11px;text-decoration:underline}
+.timing{font-family:var(--mono);font-size:11px;color:var(--text4);text-align:right}
 
-/* Mongo saved */
-.mongo-saved{background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:12px;font-family:var(--mono);flex-wrap:wrap}
-.mongo-saved .ms-label{color:var(--success);font-weight:600}
-.mongo-saved .ms-id{color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mongo-saved a{background:var(--success-bg);border:1px solid var(--success-border);color:var(--success);padding:5px 12px;border-radius:var(--r-sm);font-size:11px;text-decoration:none;transition:all .15s;white-space:nowrap}
-.mongo-saved a:hover{background:rgba(14,122,92,.18)}
-
-.timing{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
-
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  #page-classify{grid-template-columns:1fr;height:auto;overflow:visible}
-  .panel-left{max-height:none}
-  .votes-grid{grid-template-columns:repeat(2,1fr)}
-}
+@media(max-width:900px){.workspace{grid-template-columns:1fr;height:auto;overflow:visible}body{height:auto;overflow:auto}.right-panel{min-height:60vh}}
 </style>
 </head>
 <body>
 
-<header>
-  <a class="logo" href="/">
-    <div class="logo-mark">BD</div>
-    <div>
-      <div class="logo-title">BankDoc</div>
-      <div class="logo-version">v3 · Qwen2.5-VL</div>
-    </div>
+<nav class="nav">
+  <a class="nav-brand" href="dashboard.html">
+    <div class="nav-logo"><svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg></div>
+    <span class="nav-title">BankDoc</span>
   </a>
-  <nav class="nav">
-    <span class="nav-link active">🏷 Classifier</span>
-    <a class="nav-link" href="/library">📚 Bibliothèque</a>
-    <a class="nav-link accent" href="/batch">⚡ Upload batch</a>
-  </nav>
-  <div class="header-right">
-    <div class="status-chip">
-      <div class="status-dot pulse" id="dot-model"></div>
-      <span class="status-txt" id="txt-model">Modèle…</span>
-    </div>
-    <div class="status-chip">
-      <div class="status-dot pulse" id="dot-qwen"></div>
-      <span class="status-txt" id="txt-qwen">Qwen…</span>
-    </div>
-    <div class="status-chip">
-      <div class="status-dot pulse" id="dot-mongo"></div>
-      <span class="status-txt" id="txt-mongo">MongoDB…</span>
-    </div>
-    <button class="theme-btn" onclick="toggleTheme()" title="Changer le thème">🌓</button>
+  <div class="nav-sep"></div>
+  <div class="nav-links">
+    <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+    <a class="nav-link" href="queue.html">Traitement par lot</a>
+    <a class="nav-link active" href="index.html">Analyse unitaire</a>
+    <a class="nav-link" href="library.html">Bibliothèque</a>
+    <a class="nav-link" href="retrain.html">Modèle</a>
   </div>
-</header>
+  <div class="nav-right">
+    <div class="status-chip"><span class="dot pulse" id="dot-model"></span><span id="txt-model">Modèle…</span></div>
+    <div class="status-chip"><span class="dot pulse" id="dot-qwen"></span><span id="txt-qwen">Qwen…</span></div>
+    <div class="status-chip"><span class="dot pulse" id="dot-mongo"></span><span id="txt-mongo">MongoDB…</span></div>
+    <button class="theme-toggle" onclick="toggleTheme()">◐</button>
+  </div>
+</nav>
 
-<div id="page-classify">
-  <div class="panel-left">
-    <!-- Upload -->
-    <div>
-      <span class="lbl">Document bancaire</span>
+<div class="workspace">
+  <!-- LEFT -->
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="section-label">Document source</div>
       <div class="dropzone" id="dropzone">
         <input type="file" id="file-input" accept="image/*,.pdf"/>
-        <span class="dz-icon">🏦</span>
-        <div class="dz-title">Déposer un document ici</div>
-        <div class="dz-sub">JPG · PNG · PDF — traitement 100% local</div>
+        <div class="dz-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+        <div class="dz-title">Déposer un document bancaire</div>
+        <div class="dz-sub">JPG · PNG · PDF</div>
       </div>
     </div>
 
-    <!-- Preview -->
-    <div id="preview-wrap" style="display:none">
-      <span class="lbl">Aperçu</span>
-      <div class="preview-card">
-        <img id="preview-img" src="" alt="Aperçu"/>
-        <div class="preview-meta">
-          <span id="file-name">—</span>
-          <span id="file-size">—</span>
-        </div>
+    <div class="panel-section" id="preview-section" style="display:none">
+      <div class="section-label">Aperçu</div>
+      <div class="preview-img-box"><img id="preview-img" src="" alt="Aperçu"/></div>
+      <div class="preview-meta">
+        <span id="file-name">—</span>
+        <span id="file-size">—</span>
       </div>
     </div>
 
-    <!-- CTA -->
-    <button id="btn-classify" class="classify-btn" disabled>
-      <div class="btn-spinner" id="spinner"></div>
-      <span id="btn-text">Sélectionner un document</span>
-    </button>
-
-    <!-- Agents -->
-    <div>
-      <span class="lbl">Agents d'analyse</span>
-      <div class="toggles">
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span class="toggle-icon">🦙</span>
+    <div class="panel-section">
+      <div class="section-label">Agents de confirmation</div>
+      <div class="agent-list">
+        <div class="agent-row">
+          <div class="agent-info">
+            <span class="agent-dot active" id="agent-dot-llama"></span>
             <div>
-              <div class="toggle-name">llama3.2</div>
-              <div class="toggle-desc">Agent LLM texte</div>
+              <div class="agent-name">llama3.2</div>
+              <div class="agent-type">Confirmation texte (OCR)</div>
             </div>
           </div>
-          <label class="sw"><input type="checkbox" id="toggle-llama" checked onchange="setAgent('ollama',this.checked)"/><span class="sl"></span></label>
+          <label class="sw"><input type="checkbox" id="toggle-llama" checked onchange="setAgent('ollama',this.checked)"/><span class="sw-track"></span></label>
         </div>
-        <div class="toggle-row" style="border-color:var(--purple-border)">
-          <div class="toggle-info">
-            <span class="toggle-icon">🔮</span>
+        <div class="agent-row" style="border-color:var(--purple-border)">
+          <div class="agent-info">
+            <span class="agent-dot active" id="agent-dot-qwen"></span>
             <div>
-              <div class="toggle-name" style="color:var(--purple)">Qwen2.5-VL 7B</div>
-              <div class="toggle-desc">Vision multimodale</div>
+              <div class="agent-name" style="color:var(--purple)">Qwen2.5-VL</div>
+              <div class="agent-type">Confirmation vision (image)</div>
             </div>
           </div>
-          <label class="sw"><input type="checkbox" id="toggle-qwen" checked onchange="setAgent('qwen',this.checked)"/><span class="sl"></span></label>
+          <label class="sw"><input type="checkbox" id="toggle-qwen" checked onchange="setAgent('qwen',this.checked)"/><span class="sw-track"></span></label>
         </div>
       </div>
     </div>
 
-    <!-- Pipeline info -->
-    <div class="pipe-info">
-      <strong>Pipeline v3 :</strong> OCR bilingue →
-      <strong>EfficientNet+mBERT</strong> →
-      <strong style="color:var(--purple)">Qwen2.5-VL</strong> →
-      Vote croisé + Sauvegarde MongoDB
+    <div class="panel-section">
+      <div class="pipeline-badge">
+        <strong>Principe bancaire</strong> : EfficientNet+mBERT prédit → <strong>llama3.2</strong> confirme via OCR → <strong style="color:var(--purple)">Qwen2.5-VL</strong> confirme via image<br>
+        <strong>Les deux doivent confirmer</strong> pour valider automatiquement. Tout désaccord → révision humaine.
+      </div>
+    </div>
+
+    <div class="panel-section" style="border-bottom:none;flex:1;display:flex;flex-direction:column;justify-content:flex-end">
+      <button id="btn-analyze" class="analyze-btn" disabled onclick="runAnalysis()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btn-text">Sélectionner un document</span>
+      </button>
     </div>
   </div>
 
   <!-- RIGHT -->
-  <div class="panel-right" id="right-panel">
+  <div class="right-panel">
     <div class="empty-state" id="empty-state">
-      <div class="empty-icon">📄</div>
-      <div class="empty-title">Prêt à classifier</div>
-      <p>Déposez un document bancaire pour démarrer l'analyse multimodale.</p>
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+      <div class="empty-title">Prêt pour l'analyse</div>
+      <div class="empty-sub">Déposez un document — les deux LLM devront confirmer le résultat du modèle</div>
     </div>
+    <div id="results-area"></div>
   </div>
 </div>
 
 <script>
-const API = "http://localhost:5000";
-let selectedFile = null;
+const API='http://localhost:5000';
+let selectedFile=null;
 
-/* Theme */
-function toggleTheme(){
-  const h=document.documentElement;
-  const dark=h.getAttribute('data-theme')==='dark';
-  h.setAttribute('data-theme',dark?'light':'dark');
-  localStorage.setItem('theme',dark?'light':'dark');
-}
-(()=>{const t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();
+const TYPE_LABELS={carte_identite:"Carte d'Identité",rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
 
-/* Status */
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
+(()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function confClass(c){return c>=80?'hi':c>=60?'mid':'lo';}
+
 async function checkStatus(){
   try{
     const r=await fetch(`${API}/status`,{signal:AbortSignal.timeout(4000)});
     const d=await r.json();
-    setStatus('model',d.device?'ok':'warn',`${(d.device||'cpu').toUpperCase()} · Acc. ${d.val_acc}%`);
-    setStatus('qwen',d.qwen?'ok':'warn',d.qwen?'Qwen2.5-VL ✓':'Qwen hors ligne');
-    setStatus('mongo',d.mongodb?'ok':'err',d.mongodb?'MongoDB ✓':'MongoDB ✗');
-    document.getElementById('toggle-llama').checked=d.ollama;
-    document.getElementById('toggle-qwen').checked=d.qwen;
-  }catch{
-    ['model','qwen','mongo'].forEach(k=>setStatus(k,'err','Hors ligne'));
-  }
+    setDot('dot-model',d.device?'ok':'warn',`${(d.device||'CPU').toUpperCase()} · ${d.val_acc}%`);
+    setDot('dot-qwen',d.qwen?'ok':'warn',d.qwen?'Qwen disponible':'Qwen hors ligne');
+    setDot('dot-mongo',d.mongodb?'ok':'err',d.mongodb?'MongoDB':'MongoDB hors ligne');
+    document.getElementById('toggle-llama').checked=!!d.ollama;
+    document.getElementById('toggle-qwen').checked=!!d.qwen;
+    document.getElementById('agent-dot-llama').className=`agent-dot ${d.ollama?'active':'inactive'}`;
+    document.getElementById('agent-dot-qwen').className=`agent-dot ${d.qwen?'active':'inactive'}`;
+  }catch{['dot-model','dot-qwen','dot-mongo'].forEach(k=>setDot(k,'err','Hors ligne'));}
 }
-function setStatus(key,st,txt){
-  const d=document.getElementById(`dot-${key}`);
-  const t=document.getElementById(`txt-${key}`);
-  d.className=`status-dot ${st}`;
-  t.textContent=txt;
-  t.style.color=st==='ok'?'var(--success)':st==='warn'?'var(--warning)':'var(--danger)';
+function setDot(id,state,txt){
+  const d=document.getElementById(id);d.className=`dot ${state}`;
+  const t=document.getElementById(id.replace('dot-','txt-'));
+  if(t){t.textContent=txt;t.style.color=state==='ok'?'var(--success)':state==='warn'?'var(--warning)':'var(--danger)';}
 }
 checkStatus();setInterval(checkStatus,15000);
 
@@ -442,181 +333,210 @@ async function setAgent(type,enabled){
   await fetch(`${API}${ep}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})}).catch(()=>{});
 }
 
-/* Upload */
-const dropzone=document.getElementById('dropzone');
-const fileInput=document.getElementById('file-input');
+const dropzone=document.getElementById('dropzone'),fi=document.getElementById('file-input');
 dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('drag');});
 dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('drag'));
 dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
-fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleFile(fileInput.files[0]);});
+fi.addEventListener('change',()=>{if(fi.files[0])handleFile(fi.files[0]);});
 
 function handleFile(file){
   selectedFile=file;
   const reader=new FileReader();
   reader.onload=e=>{
     document.getElementById('preview-img').src=e.target.result;
-    document.getElementById('preview-wrap').style.display='block';
+    document.getElementById('preview-section').style.display='block';
     document.getElementById('file-name').textContent=file.name;
     document.getElementById('file-size').textContent=(file.size/1024).toFixed(1)+' KB';
-    document.getElementById('btn-classify').disabled=false;
-    document.getElementById('btn-text').textContent='Classifier ce document';
+    document.getElementById('btn-analyze').disabled=false;
+    document.getElementById('btn-text').textContent="Lancer l'analyse";
   };
   reader.readAsDataURL(file);
 }
 
-document.getElementById('btn-classify').addEventListener('click',async()=>{
+async function runAnalysis(){
   if(!selectedFile)return;
-  const btn=document.getElementById('btn-classify');
-  const sp=document.getElementById('spinner');
-  const bt=document.getElementById('btn-text');
+  const btn=document.getElementById('btn-analyze'),sp=document.getElementById('spinner'),bt=document.getElementById('btn-text');
   btn.disabled=true;sp.style.display='block';bt.textContent='Analyse en cours…';
+  document.getElementById('empty-state').style.display='none';
+  document.getElementById('results-area').innerHTML='';
   try{
     const fd=new FormData();fd.append('file',selectedFile);
     const r=await fetch(`${API}/classify`,{method:'POST',body:fd});
     const d=await r.json();
-    const conf=parseFloat(d.confidence||0);
-    const needsManual=conf<70||d.prediction==='inconnu'||!d.agreement;
-    renderResult(d,needsManual);
+    renderResult(d);
   }catch(err){renderError(err.message);}
-  finally{btn.disabled=false;sp.style.display='none';bt.textContent='Classifier ce document';}
-});
-
-/* Render */
-function confClass(c){return c>=80?'hi':c>=60?'mid':'lo';}
-function pathInfo(p){
-  return{
-    direct_qwen_validated:{text:'Validé par Qwen ✓',cls:'validated'},
-    qwen_disagreement:{text:'Désaccord Qwen ⚠',cls:'disagreement'},
-    agents:{text:'Vote multi-agents',cls:'agents'},
-    direct:{text:'Voie directe',cls:'default'},
-  }[p]||{text:p,cls:'default'};
+  finally{btn.disabled=false;sp.style.display='none';bt.textContent='Nouvelle analyse';}
 }
 
-function renderResult(d,needsManual=false){
-  const panel=document.getElementById('right-panel');
-  const conf=parseFloat(d.confidence);
+/* ── pathInfo : mappé sur les nouveaux cas du pipeline ── */
+function pathInfo(p){
+  const map={
+    dual_llm_confirmed:     {text:'Double confirmation',cls:'validated',desc:'llama3.2 + Qwen confirment'},
+    qwen_disagrees:         {text:'Désaccord Qwen',cls:'disagreement',desc:'Qwen désaccorde le modèle'},
+    llama_disagrees:        {text:'Désaccord llama3.2',cls:'disagreement',desc:'llama3.2 désaccorde le modèle'},
+    dual_llm_rejected:      {text:'Double rejet',cls:'disagreement',desc:'Les deux LLM rejettent le modèle'},
+    no_llm_available:       {text:'Aucun LLM',cls:'disagreement',desc:'Ni llama ni Qwen disponibles'},
+    qwen_confirms_model:    {text:'Qwen confirme',cls:'validated',desc:'Accord modèle + Qwen'},
+    model_qwen_disagreement:{text:'Désaccord Qwen',cls:'disagreement',desc:'Modèle et Qwen en désaccord'},
+    model_only_very_high:   {text:'Modèle seul',cls:'default',desc:'Confiance ≥ 90%, aucun LLM'},
+    model_only_medium:      {text:'Modèle seul',cls:'disagreement',desc:'Confiance 70-90%, sans LLM'},
+    model_only_low:         {text:'Confiance faible',cls:'disagreement',desc:'Confiance < 70%, sans LLM'},
+  };
+  return map[p]||{text:p||'—',cls:'default',desc:'Résultat pipeline'};
+}
+
+function renderResult(d){
+  const conf=parseFloat(d.confidence||0);
   const cc=confClass(conf);
   const pl=pathInfo(d.path);
+  const predLabel=TYPE_LABELS[d.prediction]||d.prediction;
+  const validated=d.agreement&&!d.needs_manual;
 
-  const manualHTML=needsManual?`
-    <div class="manual-alert">
-      <div class="mal-icon">⚠️</div>
-      <div style="flex:1">
-        <div class="mal-title">Classification manuelle requise</div>
-        <div class="mal-desc">
-          Confiance <strong style="color:var(--warning)">${conf.toFixed(1)}%</strong> — en dessous du seuil de 70%.
-          ${d.prediction==='inconnu'?'Document classé <strong>inconnu</strong>.':''}
-          ${!d.agreement?'Les agents sont en <strong>désaccord</strong>.':''}
+  /* ── 1. VERDICT GLOBAL ── */
+  const verdictHTML=validated
+    ?`<div class="verdict-banner ok">
+        <div class="verdict-icon">✅</div>
+        <div class="verdict-text">
+          <div class="verdict-title">Classification validée automatiquement</div>
+          <div class="verdict-sub">llama3.2 et Qwen2.5-VL confirment tous les deux la prédiction du modèle. Aucune révision humaine requise.</div>
         </div>
-        <a class="mal-btn" href="manual_classify.html?doc_id=${enc(d.mongo_id||'')}&filename=${enc(d.original_filename||selectedFile?.name||'')}&confidence=${conf.toFixed(1)}&prediction=${enc(d.prediction||'')}&ocr=${enc((d.ocr_text||'').substring(0,500))}&scores=${enc(JSON.stringify(d.all_scores||[]))}">
-          🏷 Classifier manuellement →
-        </a>
-      </div>
-    </div>`:''
-
-  let qwenHTML='';
-  if(d.qwen?.class||d.qwen?.reasoning){
-    const agrees=d.qwen.class&&d.qwen.class.toLowerCase()===d.prediction.toLowerCase();
-    qwenHTML=`<div>
-      <div class="section-title">🔮 Analyse Qwen2.5-VL</div>
-      <div class="qwen-card">
-        <div class="qw-header"><span class="qw-badge">qwen2.5vl</span><span style="font-size:12px;color:var(--text3)">Vision multimodale</span></div>
-        <div class="qw-grid">
-          <div class="qw-field"><label>Classification</label><div class="val">${d.qwen.class||'—'}</div></div>
-          <div class="qw-field"><label>Confiance</label><div class="val ${confClass((d.qwen.confidence||0)*100)}">${d.qwen.confidence?((d.qwen.confidence*100).toFixed(0)+'%'):'—'}</div></div>
+      </div>`
+    :`<div class="verdict-banner warn">
+        <div class="verdict-icon">⚠️</div>
+        <div class="verdict-text">
+          <div class="verdict-title">Révision humaine obligatoire</div>
+          <div class="verdict-sub">${buildManualReason(d)} — <a href="manual_classify.html?doc_id=${enc(d.mongo_id||'')}&filename=${enc(selectedFile?.name||'')}&confidence=${conf.toFixed(1)}&prediction=${enc(d.prediction||'')}&ocr=${enc((d.ocr_text||'').substring(0,500))}&scores=${enc(JSON.stringify(d.all_scores||[]))}" style="color:var(--warning);font-weight:600">Classifier manuellement →</a></div>
         </div>
-        ${d.qwen.reasoning?`<div class="qw-reason">${d.qwen.reasoning.substring(0,200)}</div>`:''}
-        <div class="agree-chip ${agrees?'yes':'no'}">${agrees?'✓ Accord EfficientNet':'⚠ Désaccord — EfficientNet: '+d.prediction+' | Qwen: '+d.qwen.class}</div>
-      </div>
-    </div>`;
-  }
+      </div>`;
 
-  let votesHTML='';
-  if(d.votes&&Object.keys(d.votes).length){
-    const vk=['model','keywords','llm','qwen'];
-    const vl={model:'EfficientNet',keywords:'Mots-clés',llm:'llama3.2',qwen:'Qwen2.5-VL'};
-    votesHTML=`<div>
-      <div class="section-title">🗳 Vote des agents</div>
-      <div class="votes-grid">
-        ${vk.map(k=>`<div class="vote-card ${k==='qwen'?'qwen':''}"><div class="vote-source">${vl[k]}</div><div class="vote-val" ${k==='qwen'?'style="color:var(--purple)"':''}>${d.votes[k]||'—'}</div></div>`).join('')}
-      </div>
-      ${!d.agreement?`<p style="margin-top:8px;font-size:12px;color:var(--warning);font-weight:600">⚠ Révision humaine recommandée</p>`:''}
-    </div>`;
-  }
+  /* ── 2. TABLEAU DES MODÈLES ── */
+  const llama=d.llama_result||{};
+  const qwen=d.qwen||{};
+  const modelConf=(d.all_scores?.[0]?.score||0)*100;
 
+  const llamaAgrees=llama.available&&llama.agrees===true;
+  const llamaDisagrees=llama.available&&llama.agrees===false;
+  const llamaUnavail=!llama.available;
+  const qwenAgrees=qwen.available&&qwen.class&&qwen.class.toLowerCase()===d.prediction.toLowerCase();
+  const qwenDisagrees=qwen.available&&qwen.class&&qwen.class.toLowerCase()!==d.prediction.toLowerCase();
+  const qwenUnavail=!qwen.available;
+
+  const modelsHTML=`<div class="result-section">
+    <div class="rs-header"><span class="rs-title">Résultats par modèle</span></div>
+    <div class="rs-body" style="padding:0">
+      <table class="model-table">
+        <thead><tr>
+          <th>Modèle</th><th>Prédiction</th><th>Confiance</th><th>Verdict</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="model-row-name">EfficientNet+mBERT <span class="model-badge principal">Principal</span></div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Vision + texte multimodal</div></td>
+            <td class="pred-cell">${esc(predLabel)}</td>
+            <td class="conf-cell ${cc}">${conf.toFixed(1)}%</td>
+            <td><div class="verdict-cell agree">✓ Référence</div></td>
+          </tr>
+          <tr style="${llamaUnavail?'opacity:.6':''}">
+            <td><div class="model-row-name">llama3.2 <span class="model-badge ${llamaUnavail?'unavail':'llm'}">${llamaUnavail?'Indisponible':'LLM texte'}</span></div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Analyse OCR</div></td>
+            <td class="pred-cell">${llamaUnavail?'—':esc(TYPE_LABELS[llama.class]||llama.class||'—')}</td>
+            <td class="conf-cell" style="color:var(--text4)">${llamaUnavail?'—':'—'}</td>
+            <td><div class="verdict-cell ${llamaUnavail?'unavail':llamaAgrees?'agree':'disagree'}">${llamaUnavail?'⚠ Non disponible':llamaAgrees?'✓ Confirme':'✗ Désaccorde'}</div></td>
+          </tr>
+          <tr style="${qwenUnavail?'opacity:.6':''}">
+            <td><div class="model-row-name" style="color:var(--purple)">Qwen2.5-VL <span class="model-badge ${qwenUnavail?'unavail':'vision'}">${qwenUnavail?'Indisponible':'Vision'}</span></div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Analyse image</div></td>
+            <td class="pred-cell" style="color:var(--purple)">${qwenUnavail?'—':esc(TYPE_LABELS[qwen.class]||qwen.class||'—')}</td>
+            <td class="conf-cell ${confClass((qwen.confidence||0)*100)}">${qwenUnavail?'—':((qwen.confidence||0)*100).toFixed(0)+'%'}</td>
+            <td><div class="verdict-cell ${qwenUnavail?'unavail':qwenAgrees?'agree':'disagree'}">${qwenUnavail?'⚠ Non disponible':qwenAgrees?'✓ Confirme':'✗ Désaccorde'}</div></td>
+          </tr>
+        </tbody>
+      </table>
+      ${qwen.reasoning?`<div class="rs-body" style="border-top:1px solid var(--border-subtle)">
+        <div class="qw-reasoning-label">Raisonnement Qwen2.5-VL</div>
+        <div class="qw-reasoning">${esc(qwen.reasoning.substring(0,300))}</div>
+      </div>`:''}
+    </div>
+  </div>`;
+
+  /* ── 3. SCORES EfficientNet ── */
   const maxScore=d.all_scores?.[0]?.score||1;
-  const scoresHTML=`<div>
-    <div class="section-title">📊 Scores EfficientNet+mBERT</div>
-    <div class="scores-list">
-      ${(d.all_scores||[]).map((s,i)=>`<div class="score-row">
-        <div class="score-name">${s.class}</div>
-        <div class="score-bar-bg"><div class="score-bar ${i===0?'top':''}" style="width:${(s.score/maxScore*100).toFixed(1)}%"></div></div>
+  const scoresHTML=`<div class="result-section">
+    <div class="rs-header"><span class="rs-title">Distribution EfficientNet+mBERT</span></div>
+    <div class="rs-body"><div class="scores-list">${(d.all_scores||[]).map((s,i)=>`
+      <div class="score-row">
+        <div class="score-name">${esc(TYPE_LABELS[s.class]||s.class)}</div>
+        <div class="score-bar-bg"><div class="score-bar-fill ${i===0?'top':''}" style="width:${(s.score/maxScore*100).toFixed(0)}%"></div></div>
         <div class="score-pct">${(s.score*100).toFixed(1)}%</div>
-      </div>`).join('')}
-    </div>
+      </div>`).join('')}</div></div>
   </div>`;
 
-  const stepsHTML=`<div>
-    <div class="section-title">🔄 Pipeline d'analyse</div>
-    <div class="steps">
-      ${(d.steps||[]).map((s,i)=>`<div class="step-item">
-        <div class="step-side"><div class="step-dot ${s.status||'ok'}">${i+1}</div><div class="step-line"></div></div>
+  /* ── 4. PIPELINE STEPS ── */
+  const stepsHTML=`<div class="result-section">
+    <div class="rs-header"><span class="rs-title">Journal d'exécution du pipeline</span></div>
+    <div class="rs-body"><div class="steps-list">${(d.steps||[]).map((s,i)=>`
+      <div class="step-item">
+        <div class="step-num ${s.status||'ok'}">${i+1}</div>
         <div class="step-body">
-          <div class="step-name">${s.step}</div>
-          <div class="step-detail">${s.detail}</div>
+          <div class="step-name">${esc(s.step)}</div>
+          <div class="step-detail">${esc(s.detail)}</div>
         </div>
-      </div>`).join('')}
-    </div>
+      </div>`).join('')}</div></div>
   </div>`;
 
-  const mongoHTML=d.mongo_id?`
-    <div class="mongo-saved">
-      <span class="ms-label">✅ Sauvegardé</span>
-      <span class="ms-id">${d.mongo_id}</span>
-      <a href="/library">Voir dans la bibliothèque →</a>
-    </div>`:'';
+  /* ── 5. OCR ── */
+  const ocrHTML=`<div class="result-section">
+    <div class="rs-header"><span class="rs-title">Texte OCR extrait</span>${d.degraded_image?`<span style="font-family:var(--mono);font-size:10px;color:var(--warning)">⚠ Image dégradée</span>`:''}
+    </div>
+    <div class="rs-body"><div class="ocr-text">${esc(d.ocr_text||'—')}</div></div>
+  </div>`;
 
-  panel.innerHTML=`
-    ${manualHTML}
-    <div class="result-card ${pl.cls}">
-      <div class="result-top">
+  /* ── 6. MONGO ── */
+  const mongoHTML=d.mongo_id?`<div class="mongo-badge">
+    <span><span class="mongo-badge-label">Sauvegardé</span> <span class="mongo-badge-id">${esc(d.mongo_id)}</span></span>
+    <a href="library.html">Voir dans la bibliothèque →</a>
+  </div>`:'';
+
+  document.getElementById('results-area').innerHTML=`<div class="results-container">
+    <div class="result-header">
+      <div class="result-header-top">
         <div>
           <div class="result-class-label">Classification</div>
-          <div class="result-class">${d.prediction}</div>
+          <div class="result-class">${esc(predLabel)}</div>
         </div>
-        <span class="path-pill ${pl.cls}">${pl.text}</span>
+        <span class="result-path-badge ${pl.cls}">${pl.text}</span>
       </div>
-      <div class="conf-row">
-        <div class="conf-labels">
-          <span class="conf-label-txt">Confiance globale</span>
-          <span class="conf-value ${cc}">${conf.toFixed(1)}%</span>
-        </div>
-        <div class="bar-bg"><div class="bar-fill ${cc}" style="width:${conf}%"></div></div>
+      <div class="conf-block">
+        <div class="conf-labels"><span class="conf-label">Confiance EfficientNet</span><span class="conf-val ${cc}">${conf.toFixed(1)}%</span></div>
+        <div class="conf-bar"><div class="conf-fill ${cc}" style="width:${Math.min(conf,100)}%"></div></div>
       </div>
     </div>
+    ${verdictHTML}
     ${mongoHTML}
-    ${qwenHTML}
-    ${votesHTML}
+    ${modelsHTML}
     ${scoresHTML}
     ${stepsHTML}
-    <div>
-      <div class="section-title">📝 Texte OCR extrait</div>
-      <div class="ocr-box">${d.ocr_text||'—'}</div>
-    </div>
-    <div class="timing">⏱ ${d.time_ms} ms total</div>
-  `;
+    ${ocrHTML}
+    <div class="timing">Traitement total : ${d.time_ms} ms</div>
+  </div>`;
+}
+
+function buildManualReason(d){
+  const path=d.path||'';
+  const reasons={
+    qwen_disagrees:'Qwen2.5-VL ne confirme pas la prédiction',
+    llama_disagrees:'llama3.2 ne confirme pas la prédiction',
+    dual_llm_rejected:'Les deux LLM rejettent la prédiction du modèle',
+    no_llm_available:'Aucun LLM disponible pour confirmer',
+    model_qwen_disagreement:'Désaccord entre le modèle et Qwen',
+    model_only_very_high:'Validation sans LLM (agents indisponibles)',
+    model_only_medium:'Confiance insuffisante, agents indisponibles',
+    model_only_low:'Confiance faible, agents indisponibles',
+  };
+  return reasons[path]||(!d.agreement?'Désaccord entre les agents':'Vérification manuelle requise');
 }
 
 function renderError(msg){
-  document.getElementById('right-panel').innerHTML=`
-    <div style="background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--r-lg);padding:24px">
-      <div style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:8px">Erreur de connexion</div>
-      <div style="font-size:13px;font-family:var(--mono);color:var(--text2)">${msg}</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:10px">Vérifiez : <code style="color:var(--brand)">python app.py</code></div>
-    </div>`;
+  document.getElementById('results-area').innerHTML=`<div class="results-container"><div style="background:var(--danger-bg);border:1px solid var(--danger-border);border-left:3px solid var(--danger);padding:18px"><div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:6px">Erreur de connexion</div><div style="font-family:var(--mono);font-size:11px;color:var(--text2)">${esc(msg)}</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Vérifiez que le serveur est actif : <code style="color:var(--brand)">python app.py</code></div></div></div>`;
 }
-
-function enc(s){return encodeURIComponent(s);}
+function enc(s){return encodeURIComponent(s||'');}
 </script>
 </body>
 </html>

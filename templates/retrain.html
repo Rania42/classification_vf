@@ -4,192 +4,169 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BankDoc — Ré-entraînement</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="shared_styles.css"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@300;400;600&display=swap" rel="stylesheet"/>
 <style>
-html,body{min-height:100%;display:flex;flex-direction:column}
-
-/* ── TOPBAR ── */
-.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;box-shadow:var(--shadow-xs);flex-shrink:0}
-.topbar-right{margin-left:auto;display:flex;gap:8px}
-.nav-btn{display:flex;align-items:center;gap:6px;color:var(--text-3);font-size:12px;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface-2);transition:all .15s}
-.nav-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none}
-.nav-btn:hover{color:var(--brand);border-color:var(--brand-glow);background:var(--brand-tint)}
-
-/* ── CONTENT ── */
-.content{max-width:920px;margin:0 auto;padding:40px 24px;display:flex;flex-direction:column;gap:28px;width:100%;flex:1}
-
-/* ── HERO ── */
-.hero{
-  background:linear-gradient(135deg,var(--brand-tint),rgba(76,29,149,0.05));
-  border:1px solid var(--brand-glow);
-  border-radius:var(--r-2xl);
-  padding:32px 36px;
-  display:flex;align-items:flex-start;gap:24px;
-  position:relative;overflow:hidden;
+:root {
+  --bg:#F5F6F8;--surface:#FFFFFF;--surface2:#F0F2F7;--surface3:#E8EBF2;
+  --brand:#1A2E6B;--brand2:#253D8A;--brand-accent:#2D52B8;--brand-light:rgba(26,46,107,0.08);--brand-border:rgba(26,46,107,0.2);
+  --success:#0C6B4E;--success-bg:rgba(12,107,78,0.07);--success-border:rgba(12,107,78,0.18);
+  --warning:#7A4500;--warning-bg:rgba(122,69,0,0.07);--warning-border:rgba(122,69,0,0.18);
+  --danger:#8B1A1A;--danger-bg:rgba(139,26,26,0.07);--danger-border:rgba(139,26,26,0.18);
+  --purple:#3D1F7A;--purple-bg:rgba(61,31,122,0.07);--purple-border:rgba(61,31,122,0.18);
+  --text:#0D1117;--text2:#3D4A5C;--text3:#6B7A8D;--text4:#9AAAB8;
+  --border:#D8DDE8;--border-subtle:#EDF0F7;
+  --shadow-sm:0 1px 3px rgba(13,17,23,0.06),0 1px 2px rgba(13,17,23,0.04);
+  --shadow-md:0 4px 16px rgba(13,17,23,0.08),0 2px 4px rgba(13,17,23,0.04);
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;--serif:'IBM Plex Serif',serif;
 }
-.hero::before{
-  content:'';position:absolute;top:-60px;right:-60px;
-  width:240px;height:240px;
-  background:radial-gradient(circle,var(--brand-tint) 0%,transparent 70%);
-  pointer-events:none;
+[data-theme="dark"] {
+  --bg:#0A0D14;--surface:#111520;--surface2:#171C2B;--surface3:#1D2336;
+  --brand:#4A6ED4;--brand2:#5A80E0;--brand-accent:#6B91F0;--brand-light:rgba(74,110,212,0.12);--brand-border:rgba(74,110,212,0.25);
+  --success:#1DB87A;--success-bg:rgba(29,184,122,0.08);--success-border:rgba(29,184,122,0.2);
+  --warning:#D4870A;--warning-bg:rgba(212,135,10,0.08);--warning-border:rgba(212,135,10,0.2);
+  --danger:#E05050;--danger-bg:rgba(224,80,80,0.08);--danger-border:rgba(224,80,80,0.2);
+  --purple:#8B6BD4;--purple-bg:rgba(139,107,212,0.08);--purple-border:rgba(139,107,212,0.2);
+  --text:#E4EAF4;--text2:#8A9BB8;--text3:#5A6B84;--text4:#384456;
+  --border:#1E2840;--border-subtle:#141A28;
 }
-.hero-icon-wrap{
-  width:56px;height:56px;
-  background:var(--brand);
-  border-radius:var(--r-lg);
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-  box-shadow:0 4px 14px rgba(26,58,107,0.28);
-}
-.hero-icon-wrap svg{width:26px;height:26px;stroke:#fff;stroke-width:1.5;fill:none}
-.hero-title{font-family:var(--font-serif);font-size:26px;font-weight:400;letter-spacing:-0.03em;margin-bottom:10px;color:var(--text)}
-.hero-sub{font-size:14px;color:var(--text-2);line-height:1.75}
-.hero-sub strong{color:var(--amber);font-weight:600}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-/* ── ALERTS ── */
-.alerts-section{display:flex;flex-direction:column;gap:8px}
-.alert-card{
-  background:var(--emerald-bg);border:1px solid var(--emerald-bd);
-  border-radius:var(--r-lg);padding:16px 20px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  box-shadow:var(--shadow-xs);
-}
-.ac-left{display:flex;align-items:center;gap:12px}
-.ac-icon{width:36px;height:36px;background:var(--emerald-bg);border:1px solid var(--emerald-bd);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
-.ac-icon svg{width:17px;height:17px;stroke:var(--emerald);stroke-width:1.8;fill:none}
-.ac-info strong{color:var(--emerald);font-weight:700;font-size:13px}
-.ac-info{font-size:13px}
-.ac-count{font-size:11px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px}
-.see-lib-btn{padding:8px 16px;border-radius:var(--r-sm);font-size:11px;font-weight:600;background:var(--emerald);border:none;color:#fff;cursor:pointer;transition:all .15s;white-space:nowrap}
-.see-lib-btn:hover{opacity:.9}
+/* Navigation */
+.nav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:0;flex-shrink:0}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:32px}
+.nav-logo{width:28px;height:28px;background:var(--brand);display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;fill:#fff}
+.nav-title{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--text);letter-spacing:.01em}
+.nav-sep{width:1px;height:16px;background:var(--border);margin:0 20px}
+.nav-links{display:flex;gap:2px}
+.nav-link{padding:6px 12px;font-size:13px;color:var(--text3);text-decoration:none;letter-spacing:.01em;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;transition:color .15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.theme-toggle{width:28px;height:28px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;transition:all .15s}
+.theme-toggle:hover{color:var(--text);border-color:var(--brand)}
 
-/* ── CARD ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
-.card-header{padding:16px 22px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;gap:12px;background:var(--surface-2)}
-.card-header-icon{width:32px;height:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
-.card-header-icon svg{width:15px;height:15px;stroke:var(--text-3);stroke-width:1.8;fill:none}
-.card-header-title{font-size:14px;font-weight:600;letter-spacing:-0.01em;color:var(--text)}
-.card-body{padding:22px}
+/* Content */
+.content{max-width:960px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:24px;width:100%;flex:1}
 
-/* ── TABLE ── */
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text-4);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface-2);font-family:var(--font-mono)}
-td{padding:12px 14px;border-bottom:1px solid var(--border-2);font-family:var(--font-mono);font-size:12px;color:var(--text-2)}
+/* Section header */
+.section-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-label::before{content:"";width:3px;height:10px;background:var(--brand)}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--brand-light),rgba(61,31,122,0.04));border:1px solid var(--brand-border);padding:28px 32px;display:flex;align-items:flex-start;gap:24px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,var(--brand-light) 0%,transparent 70%);pointer-events:none}
+.hero-icon{width:48px;height:48px;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hero-icon svg{width:22px;height:22px;stroke:#fff;stroke-width:1.5;fill:none}
+.hero-title{font-family:var(--serif);font-size:22px;font-weight:400;letter-spacing:-0.02em;margin-bottom:8px;color:var(--text)}
+.hero-sub{font-size:13px;color:var(--text2);line-height:1.7}
+.hero-sub strong{color:var(--warning);font-weight:600}
+
+/* Alert cards */
+.alert-card{background:var(--success-bg);border:1px solid var(--success-border);border-left:3px solid var(--success);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.alert-left{display:flex;align-items:center;gap:14px}
+.alert-icon{width:32px;height:32px;background:var(--success-bg);border:1px solid var(--success-border);display:flex;align-items:center;justify-content:center}
+.alert-icon svg{width:16px;height:16px;stroke:var(--success);stroke-width:1.8;fill:none}
+.alert-info strong{color:var(--success);font-weight:600;font-size:13px}
+.alert-info{font-size:12px;color:var(--text2)}
+.alert-count{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+.alert-btn{padding:7px 14px;background:var(--success);color:#fff;font-family:var(--font);font-size:11px;font-weight:500;border:none;cursor:pointer;letter-spacing:.02em;transition:opacity .15s}
+.alert-btn:hover{opacity:.85}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:10px;background:var(--surface2)}
+.card-header-icon{width:28px;height:28px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.card-header-icon svg{width:14px;height:14px;stroke:var(--text3);stroke-width:1.5;fill:none}
+.card-header-title{font-size:13px;font-weight:500;color:var(--text);letter-spacing:-0.01em}
+.card-body{padding:18px}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:12px 14px;border-bottom:1px solid var(--border-subtle);font-family:var(--mono);font-size:12px;color:var(--text2)}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--surface-2)}
-.ready-pill{padding:3px 10px;border-radius:var(--r-full);font-size:10px;font-weight:600;background:var(--emerald-bg);color:var(--emerald);border:1px solid var(--emerald-bd)}
-.notready-pill{padding:3px 10px;border-radius:var(--r-full);font-size:10px;font-weight:600;background:var(--surface-3);color:var(--text-4);border:1px solid var(--border-2)}
+tr:hover td{background:var(--surface2)}
+.ready-pill{padding:3px 9px;font-size:9px;font-weight:500;background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);white-space:nowrap}
+.notready-pill{padding:3px 9px;font-size:9px;font-weight:500;background:var(--surface3);color:var(--text3);border:1px solid var(--border);white-space:nowrap}
 .prog-wrap{display:flex;align-items:center;gap:8px}
-.mini-bg{flex:1;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden}
-.mini-fill{height:100%;border-radius:2px;background:var(--brand);transition:width .4s var(--ease)}
+.mini-bg{flex:1;height:4px;background:var(--surface3)}
+.mini-fill{height:4px;background:var(--brand);transition:width .4s ease}
 
-/* ── STEP GUIDE ── */
-.steps-guide{display:flex;flex-direction:column;gap:0}
-.step-g{display:flex;gap:20px;padding-bottom:28px;position:relative}
-.step-g:last-child{padding-bottom:0}
-.step-num-circle{
-  width:38px;height:38px;border-radius:50%;
-  background:var(--brand-tint);border:1.5px solid var(--brand-glow);
-  color:var(--brand);
-  font-family:var(--font-serif);font-size:18px;font-style:italic;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;z-index:1;
-}
-.step-line2{position:absolute;left:19px;top:38px;bottom:0;width:1.5px;background:var(--border-2)}
-.step-g:last-child .step-line2{display:none}
-.step-content{flex:1;padding-top:8px}
-.step-title{font-size:15px;font-weight:600;margin-bottom:7px;letter-spacing:-0.01em;color:var(--text)}
-.step-desc{font-size:13px;color:var(--text-2);line-height:1.75;margin-bottom:12px}
-.step-desc code{font-family:var(--font-mono);font-size:11px;color:var(--brand);background:var(--brand-tint);padding:2px 6px;border-radius:var(--r-xs)}
+/* Steps */
+.steps-guide{display:flex;flex-direction:column}
+.step-item{display:flex;gap:18px;padding-bottom:24px;position:relative}
+.step-item:last-child{padding-bottom:0}
+.step-num{width:34px;height:34px;border-radius:50%;background:var(--brand-light);border:1.5px solid var(--brand-border);color:var(--brand);font-family:var(--serif);font-size:16px;font-style:italic;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+.step-line{position:absolute;left:17px;top:34px;bottom:0;width:1.5px;background:var(--border)}
+.step-item:last-child .step-line{display:none}
+.step-content{flex:1;padding-top:6px}
+.step-title{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px}
+.step-desc code{font-family:var(--mono);font-size:11px;color:var(--brand);background:var(--brand-light);padding:2px 5px}
 
-.code-block{
-  background:var(--surface-2);
-  border:1px solid var(--border);
-  border-radius:var(--r-md);
-  padding:14px 16px;
-  font-family:var(--font-mono);
-  font-size:11.5px;
-  color:var(--brand);
-  line-height:1.8;
-  white-space:pre-wrap;
-  word-break:break-word;
-  position:relative;
-  overflow-x:auto;
-}
+.code-block{background:var(--surface2);border:1px solid var(--border);padding:12px 14px;font-family:var(--mono);font-size:11px;color:var(--brand);line-height:1.7;white-space:pre-wrap;word-break:break-word;position:relative;overflow-x:auto}
 [data-theme="dark"] .code-block{color:#93C5FD}
+.copy-btn{position:absolute;top:6px;right:6px;padding:3px 8px;font-family:var(--mono);font-size:9px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text3);cursor:pointer;transition:all .12s}
+.copy-btn:hover{border-color:var(--brand-border);color:var(--brand);background:var(--brand-light)}
 
-.copy-btn{
-  position:absolute;top:8px;right:8px;
-  padding:4px 10px;
-  border-radius:var(--r-xs);
-  font-family:var(--font-mono);font-size:9px;font-weight:600;
-  background:var(--surface);border:1px solid var(--border);
-  color:var(--text-3);cursor:pointer;transition:all .12s;
-  letter-spacing:.03em;
-}
-.copy-btn:hover{border-color:var(--brand-glow);color:var(--brand);background:var(--brand-tint)}
+.note-block{padding:10px 12px;font-size:11px;line-height:1.6;margin-top:10px}
+.note-block.info{background:var(--brand-light);border:1px solid var(--brand-border);color:var(--brand)}
+.note-block.warn{background:var(--warning-bg);border:1px solid var(--warning-border);border-left:3px solid var(--warning);color:var(--warning)}
+.note-block code{font-family:var(--mono);font-size:10px;background:rgba(0,0,0,0.04);padding:1px 4px}
 
-.note-block{padding:10px 14px;border-radius:var(--r-md);font-size:12px;line-height:1.65;margin-top:10px}
-.note-block.info{background:var(--brand-tint);border:1px solid var(--brand-glow);color:var(--brand)}
-.note-block.warn{background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber)}
-.note-block code{font-family:var(--font-mono);font-size:10px;background:rgba(0,0,0,0.05);padding:1px 5px;border-radius:3px}
+.empty-table{text-align:center;padding:32px;font-size:12px;color:var(--text4);font-family:var(--font)!important}
 
-/* ── EMPTY TABLE ── */
-.empty-table{text-align:center;padding:32px;font-size:13px;color:var(--text-4);font-family:var(--font)!important}
+/* Toasts */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{padding:8px 14px;background:var(--surface);border:1px solid var(--border);font-size:12px;color:var(--text);animation:fadeup .2s ease}
+.toast.ok{background:var(--success-bg);border-color:var(--success-border);color:var(--success)}
+@keyframes fadeup{from{transform:translateY(5px);opacity:0}to{transform:none;opacity:1}}
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <a class="wordmark" href="index.html">
-    <div class="wordmark-icon">
-      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
-    </div>
-    <div class="wordmark-text">
-      <span class="wordmark-name">BankDoc</span>
-      <span class="wordmark-sub">Ré-entraînement</span>
-    </div>
+<nav class="nav">
+  <a class="nav-brand" href="dashboard.html">
+    <div class="nav-logo"><svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg></div>
+    <span class="nav-title">BankDoc</span>
   </a>
-  <div class="topbar-right">
-    <a class="nav-btn" href="index.html">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Accueil
-    </a>
-    <a class="nav-btn" href="library.html">
-      <svg viewBox="0 0 24 24"><path d="M4 19V7l7-4 7 4v12"/><path d="M4 19h16"/><rect x="9" y="12" width="6" height="7"/></svg>
-      Bibliothèque
-    </a>
-    <button class="icon-btn" onclick="toggleTheme()">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-    </button>
+  <div class="nav-sep"></div>
+  <div class="nav-links">
+    <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+    <a class="nav-link" href="queue.html">Traitement par lot</a>
+    <a class="nav-link" href="index.html">Analyse unitaire</a>
+    <a class="nav-link" href="library.html">Bibliothèque</a>
+    <a class="nav-link active" href="retrain.html">Modèle</a>
   </div>
-</div>
+  <div class="nav-right">
+    <button class="theme-toggle" onclick="toggleTheme()">◐</button>
+  </div>
+</nav>
 
 <div class="content">
 
-  <!-- Hero -->
   <div class="hero">
-    <div class="hero-icon-wrap">
+    <div class="hero-icon">
       <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="1"/><path d="M2 12a10 10 0 1 0 10-10"/></svg>
     </div>
     <div>
-      <div class="hero-title">Entraîner le modèle sur de nouveaux types</div>
+      <div class="hero-title">Ré-entraînement du modèle</div>
       <div class="hero-sub">
-        Quand un type personnalisé atteint <strong>50 images</strong> classifiées, le modèle peut être ré-entraîné pour le reconnaître automatiquement. Suivez ce guide pour lancer l'entraînement sur Google Colab.
+        Lorsqu'un type personnalisé atteint <strong>50 images</strong> classifiées manuellement, le modèle peut être ré-entraîné pour reconnaître automatiquement ce nouveau type. Suivez ce guide pour lancer l'entraînement sur Google Colab.
       </div>
     </div>
   </div>
 
-  <!-- Ready alerts -->
   <div id="alerts-section" style="display:none">
-    <span class="lbl">Types prêts pour l'entraînement</span>
-    <div class="alerts-section" id="alerts-list"></div>
+    <div class="section-label">Types prêts pour l'entraînement</div>
+    <div id="alerts-list"></div>
   </div>
 
-  <!-- Progress table -->
   <div class="card">
     <div class="card-header">
       <div class="card-header-icon">
@@ -197,7 +174,7 @@ tr:hover td{background:var(--surface-2)}
       </div>
       <span class="card-header-title">Progression des types personnalisés</span>
     </div>
-    <div style="padding:0">
+    <div style="padding:0;overflow-x:auto">
       <table>
         <thead>
           <tr>
@@ -214,7 +191,6 @@ tr:hover td{background:var(--surface-2)}
     </div>
   </div>
 
-  <!-- Step guide -->
   <div class="card">
     <div class="card-header">
       <div class="card-header-icon">
@@ -225,12 +201,12 @@ tr:hover td{background:var(--surface-2)}
     <div class="card-body">
       <div class="steps-guide">
 
-        <div class="step-g">
-          <div class="step-num-circle">1</div>
-          <div class="step-line2"></div>
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-line"></div>
           <div class="step-content">
             <div class="step-title">Exporter les images classifiées</div>
-            <div class="step-desc">Téléchargez les images depuis la bibliothèque. Elles sont stockées dans <code>stored_documents/&lt;nom_type&gt;/</code>. Créez une archive ZIP avec cette structure :</div>
+            <div class="step-desc">Les images sont stockées dans <code>stored_documents/&lt;nom_type&gt;/</code>. Créez une archive ZIP avec cette structure :</div>
             <div class="code-block">dataset/
 ├── rib/
 ├── cheque/
@@ -242,12 +218,12 @@ tr:hover td{background:var(--surface-2)}
           </div>
         </div>
 
-        <div class="step-g">
-          <div class="step-num-circle">2</div>
-          <div class="step-line2"></div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-line"></div>
           <div class="step-content">
-            <div class="step-title">Modifier la liste des classes dans le notebook</div>
-            <div class="step-desc">Ouvrez <code>multimodale.ipynb</code> dans Google Colab. Modifiez uniquement la cellule de configuration (CELLULE 4) :</div>
+            <div class="step-title">Modifier la liste des classes</div>
+            <div class="step-desc">Ouvrez <code>multimodale.ipynb</code> dans Google Colab. Modifiez uniquement la cellule de configuration :</div>
             <div class="code-block" id="classes-code"><button class="copy-btn" onclick="copyCode('classes-code')">Copier</button>CLASSES = [
     "rib",
     "cheque",
@@ -262,12 +238,12 @@ tr:hover td{background:var(--surface-2)}
           </div>
         </div>
 
-        <div class="step-g">
-          <div class="step-num-circle">3</div>
-          <div class="step-line2"></div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-line"></div>
           <div class="step-content">
-            <div class="step-title">Lancer l'entraînement complet</div>
-            <div class="step-desc">Exécutez toutes les cellules (environ <strong style="color:var(--amber)">20–30 min</strong> sur GPU Colab T4).</div>
+            <div class="step-title">Lancer l'entraînement</div>
+            <div class="step-desc">Exécutez toutes les cellules (environ <strong style="color:var(--warning)">20–30 min</strong> sur GPU Colab T4).</div>
             <div class="code-block"><button class="copy-btn" onclick="copyCodeEl(this)">Copier</button># Activer le GPU : Runtime → Change runtime type → T4
 # Puis lancer tout : Runtime → Run all (Ctrl+F9)
 
@@ -277,12 +253,12 @@ print(torch.cuda.is_available())  # Doit afficher True</div>
           </div>
         </div>
 
-        <div class="step-g">
-          <div class="step-num-circle">4</div>
-          <div class="step-line2"></div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-line"></div>
           <div class="step-content">
-            <div class="step-title">Télécharger et remplacer le modèle</div>
-            <div class="step-desc">Après entraînement, la dernière cellule exporte <code>bank_doc_classifier_multimodal.pth</code>. Remplacez l'ancien :</div>
+            <div class="step-title">Remplacer le modèle</div>
+            <div class="step-desc">Après entraînement, la dernière cellule exporte <code>bank_doc_classifier_multimodal.pth</code>. Remplacez l'ancien fichier :</div>
             <div class="code-block">classification_vf/
 └── model/
     └── bank_doc_classifier_multimodal.pth  ← remplacer</div>
@@ -290,11 +266,10 @@ print(torch.cuda.is_available())  # Doit afficher True</div>
           </div>
         </div>
 
-        <div class="step-g">
-          <div class="step-num-circle">5</div>
-          <div class="step-line2"></div>
+        <div class="step-item">
+          <div class="step-num">5</div>
           <div class="step-content">
-            <div class="step-title">Vérifier que le nouveau type est reconnu</div>
+            <div class="step-title">Vérifier l'installation</div>
             <div class="step-desc">Après redémarrage, vérifiez que le type apparaît dans les classes reconnues :</div>
             <div class="code-block"><button class="copy-btn" onclick="copyCodeEl(this)">Copier</button>curl http://localhost:5000/status | python -m json.tool | grep classes
 # "certificat_vie" doit apparaître dans la liste</div>
@@ -312,7 +287,8 @@ print(torch.cuda.is_available())  # Doit afficher True</div>
 
 <script>
 const API="http://localhost:5000";
-function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark');localStorage.setItem('theme',h.getAttribute('data-theme'));}
+
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
 (()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
 
 async function loadStats(){
@@ -322,14 +298,14 @@ async function loadStats(){
     if(d.alerts?.length){
       as.style.display='block';
       al.innerHTML=d.alerts.map(a=>`<div class="alert-card">
-        <div class="ac-left">
-          <div class="ac-icon"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--emerald);stroke-width:1.8;fill:none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-          <div class="ac-info">
+        <div class="alert-left">
+          <div class="alert-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="alert-info">
             <strong>${esc(a.label)}</strong> est prêt pour le ré-entraînement
-            <div class="ac-count">${a.count} images classifiées</div>
+            <div class="alert-count">${a.count} images classifiées</div>
           </div>
         </div>
-        <button class="see-lib-btn" onclick="window.location='library.html'">Voir dans la bibliothèque</button>
+        <button class="alert-btn" onclick="window.location='library.html'">Voir dans la bibliothèque</button>
       </div>`).join('');
     }
     const tbody=document.getElementById('types-tbody');
@@ -340,15 +316,15 @@ async function loadStats(){
     tbody.innerHTML=d.custom_types.map(t=>{
       const pct=Math.min((t.count/(d.threshold||50))*100,100).toFixed(0);
       return`<tr>
-        <td><span style="font-family:var(--font);font-size:13px;font-weight:600;color:var(--text)">${esc(t.label||t.name)}</span><br><span style="font-size:9px;color:var(--text-4)">${esc(t.name)}</span></td>
-        <td style="color:var(--brand);font-weight:600;font-size:14px">${t.count}</td>
-        <td><div class="prog-wrap"><div class="mini-bg"><div class="mini-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text-4);white-space:nowrap">${t.count}/${d.threshold||50}</span></div></td>
+        <td><span style="font-family:var(--font);font-size:12px;font-weight:500;color:var(--text)">${esc(t.label||t.name)}</span><br><span style="font-size:9px;color:var(--text4)">${esc(t.name)}</span></td>
+        <td style="color:var(--brand);font-weight:600;font-size:13px">${t.count}</td>
+        <td><div class="prog-wrap"><div class="mini-bg"><div class="mini-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text4);white-space:nowrap">${t.count}/${d.threshold||50}</span></div></td>
         <td>${t.ready_for_training?`<span class="ready-pill">Prêt</span>`:`<span class="notready-pill">${Math.max(0,(d.threshold||50)-t.count)} restants</span>`}</td>
       </tr>`;
     }).join('');
     updateClassesCode(d.custom_types);
   }catch(e){
-    document.getElementById('types-tbody').innerHTML=`<tr><td colspan="4" class="empty-table" style="color:var(--crimson)">Erreur : ${esc(e.message)}</td></tr>`;
+    document.getElementById('types-tbody').innerHTML=`<tr><td colspan="4" class="empty-table" style="color:var(--danger)">Erreur : ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -374,12 +350,13 @@ function copyCodeEl(btn){
 }
 function copyToClipboard(text,btn){
   navigator.clipboard.writeText(text).then(()=>{
-    if(btn){const orig=btn.textContent;btn.textContent='Copié';setTimeout(()=>btn.textContent=orig,1800);}
+    if(btn){const orig=btn.textContent;btn.textContent='Copié';setTimeout(()=>btn.textContent=orig,1500);}
     toast('Copié dans le presse-papier','ok');
   });
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},3000);}
+
 loadStats();
 </script>
 </body>
