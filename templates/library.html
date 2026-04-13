@@ -12,6 +12,7 @@
   --success:#0C6B4E;--success-bg:rgba(12,107,78,0.07);--success-border:rgba(12,107,78,0.18);
   --warning:#7A4500;--warning-bg:rgba(122,69,0,0.07);--warning-border:rgba(122,69,0,0.18);
   --danger:#8B1A1A;--danger-bg:rgba(139,26,26,0.07);--danger-border:rgba(139,26,26,0.18);
+  --purple:#3D1F7A;--purple-bg:rgba(61,31,122,0.07);--purple-border:rgba(61,31,122,0.18);
   --text:#0D1117;--text2:#3D4A5C;--text3:#6B7A8D;--text4:#9AAAB8;
   --border:#D8DDE8;--border-subtle:#EDF0F7;
   --shadow-md:0 4px 16px rgba(13,17,23,0.08);--shadow-lg:0 12px 40px rgba(13,17,23,0.12);
@@ -23,6 +24,7 @@
   --success:#1DB87A;--success-bg:rgba(29,184,122,0.08);--success-border:rgba(29,184,122,0.2);
   --warning:#D4870A;--warning-bg:rgba(212,135,10,0.08);--warning-border:rgba(212,135,10,0.2);
   --danger:#E05050;--danger-bg:rgba(224,80,80,0.08);--danger-border:rgba(224,80,80,0.2);
+  --purple:#8B6BD4;--purple-bg:rgba(139,107,212,0.08);--purple-border:rgba(139,107,212,0.2);
   --text:#E4EAF4;--text2:#8A9BB8;--text3:#5A6B84;--text4:#384456;
   --border:#1E2840;--border-subtle:#141A28;
 }
@@ -165,7 +167,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .meta-key{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px}
 .meta-val{font-family:var(--mono);font-size:11px;color:var(--text);word-break:break-all;line-height:1.4}
 
-/* LLM VERDICTS in detail panel */
+/* LLM VERDICTS */
 .llm-verdicts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .llm-verdict-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--border);background:var(--surface2);font-size:12px}
 .llm-verdict-name{font-weight:500;display:flex;align-items:center;gap:6px}
@@ -205,8 +207,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .ft-val.empty{color:var(--text4);font-style:italic}
 .source-badge{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 8px;display:inline-flex;align-items:center;gap:4px;margin-top:6px;border:1px solid var(--border)}
 .source-badge.llama{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
-.source-badge.qwen{background:rgba(61,31,122,0.07);color:#3D1F7A;border-color:rgba(61,31,122,0.18)}
+.source-badge.qwen{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
 .source-badge.cache{background:var(--surface2);color:var(--text3)}
+.source-badge.none{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
 .extract-error{font-size:12px;color:var(--danger);padding:8px 10px;background:var(--danger-bg);border:1px solid var(--danger-border);margin-bottom:8px}
 
 /* SCORES MINI */
@@ -446,13 +449,10 @@ function renderDetail(doc){
   document.getElementById('d-header').innerHTML=`<div style="width:20px;height:20px;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div><div class="detail-title">${esc(doc.original_filename)}</div><button class="detail-close" onclick="closeDetail()">×</button>`;
   document.getElementById('d-actions').innerHTML=`<button class="act-btn primary" onclick="dlDoc('${doc._id}','${esc(doc.original_filename)}')">Télécharger</button><button class="act-btn danger" onclick="delDoc('${doc._id}')">Supprimer</button>`;
 
-  /* ── Résultats des LLM stockés dans le document ── */
   const qwen=doc.qwen||{};
-  const llamaResult=doc.llama_result||{};  // Stocké par le pipeline depuis la v2
+  const llamaResult=doc.llama_result||{};
   const votes=doc.votes||{};
 
-  // Affichage des verdicts LLM (depuis les données MongoDB)
-  // On détermine les verdicts à partir des votes stockés
   const llamaPred=votes.llm||llamaResult.class||null;
   const qwenPred=votes.qwen||qwen.class||null;
   const modelPred=doc.prediction;
@@ -539,8 +539,13 @@ function renderDetail(doc){
     </div>
     ${correctionHTML}
     ${supE?`<div class="d-section" id="extract-sec-${doc._id}">
-      <div class="d-sec-label">${esc(TYPE_LABELS[doc.prediction]||doc.prediction)} — Champs extraits par IA</div>
-      <div id="extract-body-${doc._id}">${hasCache?renderFields(cached,doc.extraction_source||'',doc.prediction,doc._id):`<button class="extract-btn" onclick="runExtract('${doc._id}','${doc.prediction}')">⚙ Extraire les informations via IA</button>`}</div>
+      <div class="d-sec-label">${esc(TYPE_LABELS[doc.prediction]||doc.prediction)} — Champs à extraire</div>
+      <div id="extract-body-${doc._id}">
+        ${hasCache 
+          ? renderFields(cached, doc.extraction_source || 'cache', doc.prediction, doc._id, false) 
+          : renderEmptyFields(doc.prediction, doc._id)
+        }
+      </div>
     </div>`:''}
     ${scHTML}
     ${ocr?`<div class="d-section"><div class="d-sec-label">Texte OCR</div><div class="ocr-text">${esc(ocr)}</div></div>`:''}
@@ -590,60 +595,122 @@ async function correctCat(id){
   }catch{toast('Erreur réseau','err');}
 }
 
-/* ── renderFields : affichage des champs extraits ─────
-   FIX: passage de docId pour le bouton "Ré-extraire"  */
-function renderFields(fields, source, docType, docId){
-  const labels=FIELD_LABELS[docType]||{};
-  const entries=Object.entries(fields).filter(([,v])=>v!==undefined);// Inclure les null pour voir les champs vides
-  if(!entries.length)return`<div style="font-size:12px;color:var(--text3);padding:8px 0">Aucun champ extrait</div>`;
-
-  const filledCount=entries.filter(([,v])=>v).length;
-  const srcMap={'llama3.2':'llama','qwen':'qwen','cache':'cache'};
-  const sCls=srcMap[source]||'cache';
-  const srcLabel={'llama3.2':'llama3.2','qwen':'Qwen2.5-VL','cache':'cache'}[source]||source||'—';
-  const targetId=docId||S.activeId;
-
-  return`<table class="fields-table">
-    ${entries.map(([k,v])=>`<tr>
-      <td class="ft-key">${esc(labels[k]||k)}</td>
-      <td class="ft-val ${v?'':'empty'}">${v?esc(String(v)):'—'}</td>
-    </tr>`).join('')}
-  </table>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:6px">
-    <span class="source-badge ${sCls}">Via ${esc(srcLabel)} · ${filledCount}/${entries.length} champs</span>
-    <button class="extract-btn" style="width:auto;padding:4px 12px;font-size:11px" onclick="runExtract('${targetId}','${docType}',true)">Ré-extraire</button>
-  </div>`;
+/* ── renderEmptyFields : affiche tous les champs vides avec bouton Extraire ── */
+function renderEmptyFields(docType, docId) {
+    const schemaFields = FIELD_LABELS[docType] || {};
+    const fieldKeys = Object.keys(schemaFields);
+    
+    if (!fieldKeys.length) {
+        return `<div style="font-size:12px;color:var(--text3);padding:8px 0">Aucun champ défini pour ce type</div>`;
+    }
+    
+    let html = `<table class="fields-table">`;
+    fieldKeys.forEach(k => {
+        html += `<tr>
+            <td class="ft-key">${esc(schemaFields[k] || k)}</td>
+            <td class="ft-val empty">—</td>
+        </tr>`;
+    });
+    html += `</table>`;
+    
+    html += `<div style="margin-top:12px">
+        <button class="extract-btn" onclick="runExtract('${docId}','${docType}')">⚙ Extraire les informations via IA</button>
+        <div style="font-size:10px;color:var(--text4);margin-top:6px">llama3.2 sera utilisé en priorité, puis Qwen2.5-VL en fallback</div>
+    </div>`;
+    
+    return html;
 }
 
-/* ── runExtract : extraction ou ré-extraction via LLM ─
-   FIX: gestion d'erreur complète + timeout visible      */
-async function runExtract(docId, docType, force=false){
-  const body=document.getElementById(`extract-body-${docId}`);
-  if(!body)return;
-  body.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:10px;font-size:12px;color:var(--text3)"><div class="spin" style="width:14px;height:14px;border-width:2px"></div>Extraction en cours (llama3.2 → Qwen si besoin)…</div>`;
-  try{
-    const r=await fetch(`${API}/documents/${docId}/extract`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({force})
+/* ── renderFields : affichage de TOUS les champs du schéma ── */
+function renderFields(fields, source, docType, docId, hasError = false, errorMsg = '') {
+    const schemaFields = FIELD_LABELS[docType] || {};
+    const fieldKeys = Object.keys(schemaFields);
+    
+    if (!fieldKeys.length) {
+        return `<div style="font-size:12px;color:var(--text3);padding:8px 0">Aucun champ défini pour ce type</div>`;
+    }
+    
+    const filledCount = fieldKeys.filter(k => fields[k] && fields[k] !== null).length;
+    
+    const srcMap = {'llama3.2':'llama', 'qwen':'qwen', 'cache':'cache', 'none':'none'};
+    const sCls = srcMap[source] || 'cache';
+    const srcLabel = {'llama3.2':'llama3.2', 'qwen':'Qwen2.5-VL', 'cache':'cache', 'none':'Échec'}[source] || source || '—';
+    
+    const targetId = docId || S.activeId;
+    
+    let html = `<table class="fields-table">`;
+    
+    fieldKeys.forEach(k => {
+        const v = fields[k];
+        const label = schemaFields[k] || k;
+        html += `<tr>
+            <td class="ft-key">${esc(label)}</td>
+            <td class="ft-val ${v ? '' : 'empty'}">${v ? esc(String(v)) : '—'}</td>
+        </tr>`;
     });
-    const d=await r.json();
-    if(d.error){
-      body.innerHTML=`<div class="extract-error">${esc(d.error)}</div><button class="extract-btn" onclick="runExtract('${docId}','${docType}')">Réessayer</button>`;
-      return;
+    
+    html += `</table>`;
+    
+    if (hasError) {
+        html += `<div class="extract-error" style="margin-top:8px">⚠️ ${esc(errorMsg || 'Extraction échouée — LLM indisponible ou timeout')}</div>`;
     }
-    const filledCount=Object.values(d.fields||{}).filter(v=>v).length;
-    const totalFields=Object.keys(d.fields||{}).length;
-    if(filledCount===0){
-      body.innerHTML=`<div class="extract-error">Aucun champ extrait — texte OCR peut-être insuffisant (${d.source||'?'})</div>
-        <button class="extract-btn" onclick="runExtract('${docId}','${docType}',true)">Réessayer</button>`;
-      return;
+    
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:6px">
+        <span class="source-badge ${sCls}">${hasError ? '❌' : '✓'} ${esc(srcLabel)} · ${filledCount}/${fieldKeys.length} champs</span>
+        <button class="extract-btn" style="width:auto;padding:4px 12px;font-size:11px" onclick="runExtract('${targetId}','${docType}',true)">↻ Ré-extraire</button>
+    </div>`;
+    
+    return html;
+}
+
+/* ── runExtract : extraction ou ré-extraction via LLM ── */
+async function runExtract(docId, docType, force = false) {
+    const body = document.getElementById(`extract-body-${docId}`);
+    if (!body) return;
+    
+    body.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:10px;font-size:12px;color:var(--text3)"><div class="spin" style="width:14px;height:14px;border-width:2px"></div>Extraction en cours (llama3.2 → Qwen si besoin)…</div>`;
+    
+    try {
+        const r = await fetch(`${API}/documents/${docId}/extract`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ force })
+        });
+        const d = await r.json();
+        
+        const fields = d.fields || {};
+        const source = d.source || d._source || 'none';
+        const hasError = d._error || d.error || false;
+        const errorMsg = d._error_msg || d.error || 'Extraction échouée';
+        
+        body.innerHTML = renderFields(fields, source, docType, docId, hasError, errorMsg);
+        
+        const filledCount = Object.values(fields).filter(v => v && v !== null).length;
+        const totalFields = Object.keys(FIELD_LABELS[docType] || {}).length;
+        
+        if (hasError) {
+            toast(`⚠️ Extraction échouée — ${errorMsg}`, 'err');
+        } else if (filledCount === 0) {
+            toast(`ℹ️ Aucun champ extrait — texte OCR peut-être insuffisant`, 'ok');
+        } else {
+            toast(`✅ ${filledCount}/${totalFields} champs extraits via ${source}`, 'ok');
+        }
+        
+    } catch (e) {
+        const schemaFields = FIELD_LABELS[docType] || {};
+        const emptyFields = {};
+        Object.keys(schemaFields).forEach(k => emptyFields[k] = null);
+        
+        body.innerHTML = renderFields(
+            emptyFields, 
+            'none', 
+            docType, 
+            docId, 
+            true, 
+            `Erreur réseau : ${e.message}`
+        );
+        toast(`❌ Erreur réseau : ${e.message}`, 'err');
     }
-    toast(`${filledCount}/${totalFields} champs extraits via ${d.source||'LLM'}`,'ok');
-    body.innerHTML=renderFields(d.fields||{},d.source,docType,docId);
-  }catch(e){
-    body.innerHTML=`<div class="extract-error">Erreur réseau : ${esc(e.message)}</div><button class="extract-btn" onclick="runExtract('${docId}','${docType}')">Réessayer</button>`;
-  }
 }
 
 function closeDetail(){S.activeId=null;document.getElementById('d-empty').style.display='flex';document.getElementById('d-content').style.display='none';document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('active'));document.getElementById('detail').classList.remove('show');}
