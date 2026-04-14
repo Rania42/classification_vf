@@ -100,18 +100,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 .gp-bg{height:3px;background:var(--surface3)}
 .gp-fill{height:3px;background:var(--brand);transition:width .5s cubic-bezier(.4,0,.2,1)}
 
-/* OPTION */
-.option-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);background:var(--surface2)}
-.opt-left{display:flex;flex-direction:column;gap:2px}
-.opt-label{font-size:12px;font-weight:500}
-.opt-warn{font-family:var(--mono);font-size:10px;color:var(--warning)}
-.sw{position:relative;width:32px;height:18px;display:inline-block;flex-shrink:0}
-.sw input{opacity:0;width:0;height:0}
-.sw-track{position:absolute;inset:0;background:var(--border);cursor:pointer;transition:background .2s}
-.sw-track:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-input:checked+.sw-track{background:var(--brand)}
-input:checked+.sw-track:before{transform:translateX(14px)}
-
 /* QUEUE LIST */
 .queue-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .queue-count{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--brand)}
@@ -273,10 +261,9 @@ input:checked+.sw-track:before{transform:translateX(14px)}
         </div>
       </div>
 
-
       <div class="section" style="flex:1">
         <div class="queue-header">
-          <div class="section-title" style="margin-bottom:0">File d'attente &mdash; <span id="q-cnt" style="color:var(--brand)">0</span></div>
+          <div class="section-title" style="margin-bottom:0">File d'attente — <span id="q-cnt" style="color:var(--brand)">0</span></div>
           <div class="queue-actions">
             <button class="sm-action danger" onclick="clearFinished()">Supprimer terminés</button>
             <button class="sm-action danger" onclick="clearAll()">Tout</button>
@@ -310,9 +297,10 @@ input:checked+.sw-track:before{transform:translateX(14px)}
 
 <script>
 let _items=[],_pollTimer=null,_uploading=false,_typesList=[];
-let _editingCorrectionId=null; // ← NOUVEAU : ID du document en cours d'édition
+let _editingCorrectionId=null;
 
-const TYPE_LABELS={carte_identite:"Carte d'Identité",rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
+// CORRECTION : Suppression de carte_identite
+const TYPE_LABELS={rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
 
 function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
 (()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
@@ -333,7 +321,8 @@ async function uploadFiles(files){
   if(_uploading){toast('Envoi déjà en cours','err');return;}
   if(!files.length)return;
   _uploading=true;
-  const useQwen=document.getElementById('opt-qwen').checked;
+  // CORRECTION : Qwen toujours activé
+  const useQwen = true;
   const prog=document.getElementById('up-prog'),fill=document.getElementById('up-fill'),lbl=document.getElementById('up-label');
   prog.classList.add('show');lbl.textContent=`Préparation de ${files.length} fichier(s)…`;fill.style.width='20%';
   try{
@@ -358,10 +347,8 @@ async function poll(){
     const r=await fetch('/queue/status');if(!r.ok)return;
     const d=await r.json();
     
-    // Mettre à jour _items sans écraser les corrections en cours
     const newItems=d.items||[];
     
-    // Préserver les flags manually_corrected des items existants
     newItems.forEach(newItem => {
       const existingItem = _items.find(i => i.id === newItem.id);
       if (existingItem && existingItem.result && existingItem.result.manually_corrected) {
@@ -374,11 +361,9 @@ async function poll(){
     
     _items = newItems;
     
-    // Ne pas rafraîchir l'affichage si un formulaire de correction est ouvert
     if (!_editingCorrectionId) {
       renderAll();
     } else {
-      // Mettre à jour seulement les stats et la queue, pas les résultats
       renderStats();
       renderQueue();
     }
@@ -459,7 +444,6 @@ function renderResults(){
     return;
   }
   
-  // Sauvegarder l'état d'ouverture des cards
   const openCards = new Set();
   document.querySelectorAll('.rc-body.open').forEach(el => openCards.add(el.dataset.id));
   
