@@ -49,8 +49,8 @@ val_acc     = checkpoint.get("val_acc", 0.0)
 _thr_raw = checkpoint.get("confidence_threshold", 70.0)
 CONFIDENCE_THRESHOLD = _thr_raw / 100.0 if _thr_raw > 1.0 else _thr_raw
 
-# Classes reconnues par le modèle + règle métier CIN
-DOC_CLASSES = list(label_enc.classes_) + ["carte_identite"]
+# 7 classes reconnues par le modèle
+DOC_CLASSES = list(label_enc.classes_)
 
 model = MultimodalBankClassifier(num_classes=num_classes)
 model.load_state_dict(checkpoint["model_state_dict"])

@@ -192,9 +192,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   <div class="nav-links">
     <a class="nav-link active" href="dashboard.html">Tableau de bord</a>
     <a class="nav-link" href="queue.html">Traitement par lot</a>
-    <a class="nav-link" href="index.html">Analyse unitaire</a>
     <a class="nav-link" href="library.html">Bibliothèque</a>
-    <a class="nav-link" href="retrain.html">Modèle</a>
   </div>
   <div class="nav-right">
     <div class="service-indicator" id="si-model"><span class="dot pulse" id="dot-model"></span><span id="txt-model">Modèle</span></div>
@@ -359,7 +357,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 <script>
 const API='http://localhost:5000';
-const TYPE_LABELS={carte_identite:"Carte d'Identité",rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
+const TYPE_LABELS={rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
 
 function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
 (()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();

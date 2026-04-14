@@ -52,7 +52,7 @@ def init_mongodb(force_reconnect=False) -> bool:
 
         # Types natifs
         from config import TRAINING_THRESHOLD
-        native = ["carte_identite", "rib", "cheque", "tableau_amortissement",
+        native = ["rib", "cheque", "tableau_amortissement",
                   "acte_naissance", "acte_heredite", "assurance", "attestation_solde"]
         for t in native:
             _mongo_db.doc_types.update_one(

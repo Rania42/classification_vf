@@ -44,7 +44,7 @@ app.register_blueprint(status_bp)
 # ── Pages statiques ────────────────────────────────────
 @app.route("/")
 def index():
-    return app.send_static_file("index.html")
+    return app.send_static_file("dashboard.html")
 
 @app.route("/library")
 def library():

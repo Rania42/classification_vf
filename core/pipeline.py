@@ -4,7 +4,6 @@ Pipeline de classification bancaire — Confirmation double LLM obligatoire.
 Logique :
   1. OCR + nettoyage
   2. EfficientNet+mBERT → prédiction initiale
-  3. Règle métier CIN
   4. llama3.2 → confirmation ou rejet (OBLIGATOIRE)
   5. Qwen2.5-VL → confirmation ou rejet (OBLIGATOIRE)
   
@@ -30,16 +29,6 @@ from core.agents import (
 
 def _step(steps: list, name: str, status: str, detail: str):
     steps.append({"step": name, "status": status, "detail": detail})
-
-
-def _cin_override(text: str, pred: str, conf: float) -> tuple[str, float, bool]:
-    """Règle métier prioritaire : CIN détecté via patterns OCR."""
-    t = text.lower()
-    if re.search(r"carte nationale|cni|cin", t):
-        if re.search(r"n[ée] le \d{1,2}[./-]\d{1,2}[./-]\d{4}", t):
-            if conf < 0.8:
-                return "carte_identite", 0.85, True
-    return pred, conf, False
 
 
 def run_pipeline(img_path: str, original_filename: str = "") -> dict:
@@ -73,12 +62,6 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     model_pred, model_conf, all_scores = classify_with_model(img_path, clean_text)
     _step(steps, "Modèle EfficientNet+mBERT", "ok",
           f"→ {model_pred} ({model_conf:.1%})")
-
-    # Règle métier CIN
-    model_pred, model_conf, cin_overridden = _cin_override(clean_text, model_pred, model_conf)
-    if cin_overridden:
-        _step(steps, "Règle métier CIN", "warning",
-              f"Pattern CIN détecté — forçage carte_identite ({model_conf:.0%})")
 
     # ══════════════════════════════════════════════════════════════════════
     # ÉTAPE 4 — Agent llama3.2 (confirmation LLM texte)

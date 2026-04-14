@@ -25,7 +25,7 @@ def _get_db():
 @types_bp.route("/types", methods=["GET"])
 def list_types():
     if not is_mongo_available():
-        native = ["carte_identite","rib","cheque","tableau_amortissement",
+        native = ["rib","cheque","tableau_amortissement",
                   "acte_naissance","acte_heredite","assurance","attestation_solde"]
         return jsonify({"types": [{"name": t, "label": t.replace("_"," ").title(),
                                    "is_custom": False, "count": 0} for t in native]})
