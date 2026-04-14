@@ -13,7 +13,7 @@ queue_bp = Blueprint("queue", __name__)
 @queue_bp.route("/queue/upload", methods=["POST"])
 def queue_upload():
     files     = request.files.getlist("files")
-    use_qwen  = request.form.get("use_qwen", "false").lower() == "true"
+    use_qwen = True
 
     if not files:
         return jsonify({"error": "Aucun fichier"}), 400
