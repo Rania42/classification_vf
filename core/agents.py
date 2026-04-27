@@ -119,6 +119,18 @@ def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) 
 
 # ── Image → base64 ─────────────────────────────────────
 def image_to_base64(img_path: str, max_size: int = 1024) -> str:
+    # Si PDF, convertir la première page en image d'abord
+    if img_path.lower().endswith(".pdf"):
+        import tempfile as _tf
+        from core.ocr import pdf_first_page_to_image
+        tmp = pdf_first_page_to_image(img_path)
+        try:
+            return image_to_base64(tmp, max_size)
+        finally:
+            import os as _os
+            if _os.path.exists(tmp):
+                _os.remove(tmp)
+
     img = Image.open(img_path).convert("RGB")
     w, h = img.size
     if max(w, h) > max_size:

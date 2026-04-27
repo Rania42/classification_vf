@@ -1,12 +1,51 @@
 """
 OCR bilingue + évaluation qualité image + prétraitement si dégradée.
+Support PDF : première page convertie en image avant traitement.
 """
 import re
+import os
+import tempfile
 import torch
 import easyocr
 from PIL import Image, ImageFilter, ImageEnhance
 
 from config import DEVICE, OCR_QUALITY_THRESHOLD
+
+
+def pdf_first_page_to_image(pdf_path: str) -> str:
+    """
+    Convertit la première page d'un PDF en image PNG temporaire.
+    Retourne le chemin de l'image temporaire.
+    Essaie pdf2image (poppler) puis pymupdf (fitz) en fallback.
+    """
+    tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    tmp_path = tmp.name
+    tmp.close()
+
+    # Tentative 1 : pdf2image (poppler)
+    try:
+        from pdf2image import convert_from_path
+        pages = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=200)
+        if pages:
+            pages[0].save(tmp_path, "PNG")
+            return tmp_path
+    except Exception as e:
+        print(f"[PDF] pdf2image échoué : {e} — essai pymupdf")
+
+    # Tentative 2 : pymupdf (fitz)
+    try:
+        import fitz
+        doc = fitz.open(pdf_path)
+        page = doc[0]
+        mat = fitz.Matrix(2.0, 2.0)  # 2x zoom ≈ 144 dpi
+        pix = page.get_pixmap(matrix=mat)
+        pix.save(tmp_path)
+        doc.close()
+        return tmp_path
+    except Exception as e:
+        print(f"[PDF] pymupdf échoué : {e}")
+
+    raise RuntimeError("Impossible de convertir le PDF (installer pdf2image+poppler ou pymupdf)")
 
 # Init readers une seule fois
 ocr_latin  = easyocr.Reader(["fr", "en"], gpu=torch.cuda.is_available(), verbose=False)
@@ -48,16 +87,26 @@ def extract_text_ocr(img_path: str, force_preprocess: bool = False) -> tuple[str
     """
     Extrait le texte OCR complet.
     Retourne (texte, image_degradee).
-    
+
+    Si img_path est un PDF, la première page est convertie en image avant traitement.
     - Tente d'abord le latin+fr+en
     - Si < 30 chars → ajoute arabe
     - Évalue la qualité → si dégradée, prétraite et re-OCR
     - Retourne texte complet (PAS tronqué — troncature faite dans model.py)
     """
-    import os
+    pdf_tmp = None
+    degraded = False
+
+    # Conversion PDF → image (première page)
+    if img_path.lower().endswith(".pdf"):
+        try:
+            pdf_tmp = pdf_first_page_to_image(img_path)
+            img_path = pdf_tmp
+        except Exception as e:
+            print(f"[OCR] Conversion PDF échouée : {e}")
+            return "[NO_TEXT]", True
 
     tmp_path = None
-    degraded = False
 
     def _run_ocr(path: str) -> str:
         text_latin = " ".join(ocr_latin.readtext(path, detail=0, paragraph=True))
@@ -82,5 +131,12 @@ def extract_text_ocr(img_path: str, force_preprocess: bool = False) -> tuple[str
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
+
+    # Nettoyage image temporaire PDF
+    if pdf_tmp and os.path.exists(pdf_tmp):
+        try:
+            os.remove(pdf_tmp)
+        except Exception:
+            pass
 
     return (text or "[NO_TEXT]"), degraded

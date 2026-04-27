@@ -2,7 +2,7 @@
 Pipeline de classification bancaire — Confirmation double LLM obligatoire.
 
 Logique :
-  1. OCR + nettoyage
+  1. OCR + nettoyage (PDF → première page convertie en image)
   2. EfficientNet+mBERT → prédiction initiale
   4. llama3.2 → confirmation ou rejet (OBLIGATOIRE)
   5. Qwen2.5-VL → confirmation ou rejet (OBLIGATOIRE)
@@ -15,9 +15,11 @@ Logique :
   Principe bancaire : jamais de confiance aveugle dans un seul système.
 """
 import re
+import os
 import time
+import tempfile
 
-from core.ocr import extract_text_ocr
+from core.ocr import extract_text_ocr, pdf_first_page_to_image
 from core.model import classify_with_model, DOC_CLASSES, CONFIDENCE_THRESHOLD
 from core.agents import (
     agent_llm_classification,
@@ -25,6 +27,21 @@ from core.agents import (
     agent_nettoyeur,
     USE_OLLAMA, USE_QWEN,
 )
+
+
+def _ensure_image_path(img_path: str) -> tuple[str, str | None]:
+    """
+    Si le fichier est un PDF, convertit la première page en image temporaire.
+    Retourne (chemin_image, chemin_tmp_à_supprimer_ou_None).
+    """
+    if img_path.lower().endswith(".pdf"):
+        try:
+            tmp = pdf_first_page_to_image(img_path)
+            return tmp, tmp
+        except Exception as e:
+            print(f"[Pipeline] PDF→image échoué : {e}")
+            return img_path, None
+    return img_path, None
 
 
 def _step(steps: list, name: str, status: str, detail: str):
@@ -42,7 +59,15 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     agents_used: list = []
 
     # ══════════════════════════════════════════════════════════════════════
-    # ÉTAPE 1 — OCR bilingue (fr/ar)
+    # ÉTAPE 0 — Conversion PDF → image si nécessaire
+    # ══════════════════════════════════════════════════════════════════════
+    img_path_for_vision, pdf_tmp = _ensure_image_path(img_path)
+    if pdf_tmp:
+        _step(steps, "Conversion PDF", "ok",
+              f"Première page extraite → {os.path.basename(pdf_tmp)}")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ÉTAPE 1 — OCR bilingue (fr/ar) — opère sur le fichier original (gère PDF en interne)
     # ══════════════════════════════════════════════════════════════════════
     ocr_text, degraded = extract_text_ocr(img_path)
     _step(steps, "OCR bilingue",
@@ -59,7 +84,7 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     # ══════════════════════════════════════════════════════════════════════
     # ÉTAPE 3 — Modèle EfficientNet+mBERT (prédiction initiale)
     # ══════════════════════════════════════════════════════════════════════
-    model_pred, model_conf, all_scores = classify_with_model(img_path, clean_text)
+    model_pred, model_conf, all_scores = classify_with_model(img_path_for_vision, clean_text)
     _step(steps, "Modèle EfficientNet+mBERT", "ok",
           f"→ {model_pred} ({model_conf:.1%})")
 
@@ -95,7 +120,7 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     qwen_available = False
 
     if USE_QWEN:
-        qwen_result = agent_qwen_vision(img_path, clean_text, DOC_CLASSES)
+        qwen_result = agent_qwen_vision(img_path_for_vision, clean_text, DOC_CLASSES)
         if qwen_result.get("available") and qwen_result.get("class"):
             qwen_available = True
             qwen_class = qwen_result["class"]
@@ -211,6 +236,13 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
           f"{'✅ Validé automatiquement' if not needs_manual else '⚠️ Révision humaine requise'} → {final_prediction} ({final_confidence:.1%})")
 
     time_ms = int((time.time() - t0) * 1000)
+
+    # Nettoyage image temporaire PDF
+    if pdf_tmp and os.path.exists(pdf_tmp):
+        try:
+            os.remove(pdf_tmp)
+        except Exception:
+            pass
 
     return {
         "prediction": final_prediction,
