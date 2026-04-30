@@ -95,64 +95,64 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 .empty-title{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--text3)}
 .empty-sub{font-size:12px;color:var(--text4);max-width:340px;line-height:1.7}
 
-/* RESULTS GRID */
-.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+/* RESULTS LIST - Une carte par ligne */
+.results-list{display:flex;flex-direction:column;gap:12px;max-width:1400px;margin:0 auto;width:100%}
 
-/* RESULT CARD */
-.rcard{background:var(--surface);border:1px solid var(--border);transition:border-color .15s;cursor:pointer;overflow:hidden}
+/* RESULT CARD - Pleine largeur */
+.rcard{background:var(--surface);border:1px solid var(--border);transition:border-color .15s;cursor:pointer;overflow:hidden;width:100%}
 .rcard:hover{border-color:var(--brand-border)}
 .rcard.expanded{border-color:var(--brand)}
-.rcard-head{display:flex;gap:0}
-.rcard-thumb{width:80px;height:80px;flex-shrink:0;background:var(--surface3);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.rcard-head{display:flex;gap:0;align-items:stretch;min-height:80px}
+.rcard-thumb{width:100px;flex-shrink:0;background:var(--surface3);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
 .rcard-thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
 .rcard-thumb-icon{width:32px;height:32px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
 .rcard-thumb-icon svg{width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:1.5}
-.rcard-meta{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
-.rcard-filename{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard-meta{flex:1;padding:14px 18px;display:flex;flex-direction:column;gap:6px;min-width:0;justify-content:center}
+.rcard-filename{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rcard-type{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--brand)}
-.rcard-badges{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:2px}
-.rcard-conf{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 6px;border:1px solid}
+.rcard-badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.rcard-conf{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 8px;border:1px solid}
 .rcard-conf.hi{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
 .rcard-conf.mid{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-border)}
 .rcard-conf.lo{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
 .rcard-date{font-family:var(--mono);font-size:9px;color:var(--text4)}
-.rcard-toggle{display:flex;align-items:center;justify-content:center;width:32px;flex-shrink:0;border-left:1px solid var(--border);color:var(--text4);font-size:12px;transition:transform .2s;background:none;border-top:none;border-bottom:none;border-right:none;cursor:pointer}
+.rcard-toggle{display:flex;align-items:center;justify-content:center;width:40px;flex-shrink:0;border-left:1px solid var(--border);color:var(--text4);font-size:14px;transition:transform .2s;background:none;border-top:none;border-bottom:none;border-right:none;cursor:pointer}
 .rcard-toggle.open{transform:rotate(90deg)}
 
-/* EXPANDED DETAIL */
+/* EXPANDED DETAIL - Layout 40/60 */
 .rcard-detail{display:none;border-top:1px solid var(--border-subtle)}
 .rcard-detail.open{display:block}
-.rcard-detail-inner{display:grid;grid-template-columns:260px 1fr;gap:0}
-.rcard-preview{border-right:1px solid var(--border-subtle);padding:14px;display:flex;flex-direction:column;gap:10px}
-.rcard-preview-img{background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:180px;overflow:hidden}
-.rcard-preview-img img{max-width:100%;max-height:220px;object-fit:contain}
-.dl-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:var(--surface2);border:1px solid var(--border);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;text-decoration:none;transition:all .12s}
-.dl-btn:hover{border-color:var(--brand-border);color:var(--brand)}
-.rcard-info{padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.rcard-detail-inner{display:grid;grid-template-columns:40% 60%;gap:0;min-height:400px}
+.rcard-preview{border-right:1px solid var(--border-subtle);padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--surface2)}
+.rcard-preview-img{flex:1;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:300px;position:relative}
+.rcard-preview-img img{max-width:100%;max-height:100%;object-fit:contain;padding:10px}
+.dl-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:var(--surface);border:1px solid var(--border);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;text-decoration:none;transition:all .12s;flex-shrink:0}
+.dl-btn:hover{border-color:var(--brand-border);color:var(--brand);background:var(--brand-light)}
+.rcard-info{padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;max-height:600px}
 
 /* INFO SECTIONS */
-.info-sec{display:flex;flex-direction:column;gap:6px}
-.info-sec-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:6px}
-.info-sec-label::before{content:"";width:2px;height:9px;background:var(--brand)}
+.info-sec{display:flex;flex-direction:column;gap:8px}
+.info-sec-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px}
+.info-sec-label::before{content:"";width:3px;height:10px;background:var(--brand);border-radius:1px}
 
 /* OCR highlight */
-.ocr-snippet{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:8px 10px;line-height:1.7;max-height:100px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.ocr-snippet{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:10px 12px;line-height:1.8;max-height:120px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
 .ocr-snippet mark{background:rgba(26,46,107,0.15);color:var(--brand);padding:0 2px}
 
 /* Extracted fields */
-.fields-mini{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.fm-cell{background:var(--surface2);border:1px solid var(--border-subtle);padding:6px 8px}
-.fm-key{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px}
-.fm-val{font-family:var(--mono);font-size:10px;color:var(--text);word-break:break-all}
+.fields-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fm-cell{background:var(--surface2);border:1px solid var(--border-subtle);padding:8px 10px}
+.fm-key{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px}
+.fm-val{font-family:var(--mono);font-size:11px;color:var(--text);word-break:break-all}
 .fm-val.empty{color:var(--text4);font-style:italic}
 
 /* Extract action */
-.extract-inline-btn{display:flex;align-items:center;gap:5px;padding:6px 10px;background:var(--brand-light);border:1px solid var(--brand-border);color:var(--brand);font-family:var(--mono);font-size:10px;font-weight:500;cursor:pointer;transition:all .12s}
+.extract-inline-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--brand-light);border:1px solid var(--brand-border);color:var(--brand);font-family:var(--mono);font-size:10px;font-weight:500;cursor:pointer;transition:all .12s;align-self:flex-start}
 .extract-inline-btn:hover{background:var(--brand);color:#fff}
 
 /* Agents row */
-.agents-row{display:flex;gap:6px;flex-wrap:wrap}
-.agent-pill{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;padding:3px 7px;border:1px solid var(--border);color:var(--text3)}
+.agents-row{display:flex;gap:8px;flex-wrap:wrap}
+.agent-pill{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--border);color:var(--text3)}
 .agent-pill .adot{width:5px;height:5px;border-radius:50%}
 .agent-pill.ok .adot{background:var(--success)}.agent-pill.warn .adot{background:var(--warning)}.agent-pill.na .adot{background:var(--border)}
 .agent-pill.ok{color:var(--success);border-color:var(--success-border);background:var(--success-bg)}
@@ -167,7 +167,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 .no-results-icon svg{width:24px;height:24px;stroke:var(--text4);fill:none;stroke-width:1.5}
 
 /* loading skeleton */
-.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:skelanim 1.4s infinite;border:1px solid var(--border)}
+.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:skelanim 1.4s infinite;border:1px solid var(--border);height:80px;width:100%}
 @keyframes skelanim{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* Toasts */
@@ -176,6 +176,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 .toast.ok{border-left:2px solid var(--success);color:var(--success)}
 .toast.err{border-left:2px solid var(--danger);color:var(--danger)}
 @keyframes fadeup{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
+
+/* Responsive */
+@media(max-width:900px){
+  .rcard-detail-inner{grid-template-columns:1fr}
+  .rcard-preview{border-right:none;border-bottom:1px solid var(--border-subtle);min-height:200px}
+  .rcard-preview-img{min-height:200px}
+  .rcard-info{max-height:400px}
+  .search-hero{padding:16px 20px}
+  .results-area{padding:16px 20px}
+}
 </style>
 </head>
 <body>
@@ -378,7 +388,7 @@ function renderResults(docs, prompt) {
     return;
   }
 
-  area.innerHTML = `<div class="results-grid" id="results-grid">${docs.map(doc => renderCard(doc)).join('')}</div>`;
+  area.innerHTML = `<div class="results-list" id="results-list">${docs.map(doc => renderCard(doc)).join('')}</div>`;
 }
 
 function renderCard(doc) {
@@ -411,11 +421,11 @@ function renderCard(doc) {
       <div class="rcard-detail-inner">
         <div class="rcard-preview">
           <div class="rcard-preview-img">
-            <img src="${API}/documents/${doc._id}/download" alt="Aperçu" onerror="this.style.display='none'"/>
+            <img src="${API}/documents/${doc._id}/download" alt="Aperçu du document" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=color:var(--text4);text-align:center;padding:20px>Aperçu indisponible</div>'"/>
           </div>
           <a class="dl-btn" href="${API}/documents/${doc._id}/download" download="${esc(doc.original_filename)}">
-            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Télécharger
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Télécharger le document
           </a>
           <div style="display:flex;flex-direction:column;gap:4px">
             <div style="font-family:var(--mono);font-size:9px;color:var(--text3)">ID : <span style="color:var(--text2)">${esc(doc._id)}</span></div>
@@ -466,7 +476,7 @@ function renderExtractedSection(doc) {
   const srcLabel = {gemma2:'Gemma2', qwen:'Qwen', 'llama3.2':'LLaMA', cache:'Cache'}[src] || src;
   
   return `<div class="info-sec">
-    <div class="info-sec-label">Informations extraites <span style="font-family:var(--mono);font-size:8px;color:var(--text4);margin-left:6px">${srcLabel}</span></div>
+    <div class="info-sec-label">Informations extraites <span style="font-family:var(--mono);font-size:8px;color:var(--text4);margin-left:8px">${srcLabel}</span></div>
     <div class="fields-mini">
       ${entries.slice(0,8).map(([k,label]) => `
         <div class="fm-cell">
@@ -483,7 +493,7 @@ function renderExtractAction(doc) {
   return `<div class="info-sec">
     <div class="info-sec-label">Informations extraites</div>
     <button class="extract-inline-btn" onclick="event.stopPropagation();runExtractInline('${doc._id}','${doc.prediction}',false)">
-      <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
       Extraire les informations avec l'IA
     </button>
   </div>`;
@@ -502,11 +512,11 @@ function renderScoresSection(doc) {
   if (!scores.length) return '';
   return `<div class="info-sec">
     <div class="info-sec-label">Scores EfficientNet</div>
-    <div style="display:flex;flex-direction:column;gap:3px">
+    <div style="display:flex;flex-direction:column;gap:4px">
       ${scores.slice(0,4).map((s,i) => `
-        <div style="display:grid;grid-template-columns:110px 1fr 36px;align-items:center;gap:6px">
+        <div style="display:grid;grid-template-columns:120px 1fr 42px;align-items:center;gap:8px">
           <div style="font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(TYPE_LABELS[s.class]||s.class)}</div>
-          <div style="height:3px;background:var(--surface3)"><div style="height:3px;background:${i===0?'var(--brand)':'var(--border)'};width:${(s.score*100).toFixed(0)}%"></div></div>
+          <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="height:4px;background:${i===0?'var(--brand)':'var(--border)'};width:${(s.score*100).toFixed(0)}%;border-radius:2px"></div></div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:right">${(s.score*100).toFixed(1)}%</div>
         </div>
       `).join('')}
@@ -560,7 +570,7 @@ async function runExtractInline(docId, docType, force) {
       const srcLabel = {gemma2:'Gemma2', qwen:'Qwen', cache:'Cache'}[src] || src;
       if (entries.length) {
         extractSection.innerHTML = `
-          <div class="info-sec-label">Informations extraites <span style="font-family:var(--mono);font-size:8px;color:var(--text4);margin-left:6px">${esc(srcLabel)}</span></div>
+          <div class="info-sec-label">Informations extraites <span style="font-family:var(--mono);font-size:8px;color:var(--text4);margin-left:8px">${esc(srcLabel)}</span></div>
           <div class="fields-mini">
             ${entries.slice(0,8).map(([k,label]) => `
               <div class="fm-cell">
@@ -584,8 +594,8 @@ async function runExtractInline(docId, docType, force) {
 
 function showSkeletons() {
   const area = document.getElementById('results-area');
-  area.innerHTML = `<div class="results-grid">${Array(6).fill(0).map(() =>
-    `<div class="skel" style="height:80px;border-radius:0"></div>`
+  area.innerHTML = `<div class="results-list">${Array(4).fill(0).map(() =>
+    `<div class="skel"></div>`
   ).join('')}</div>`;
 }
 
