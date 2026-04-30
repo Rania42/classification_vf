@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BankDoc — Analyse unitaire</title>
+<title>BankDoc — Analyse de document</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@300;400;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -15,7 +15,6 @@
   --purple:#3D1F7A;--purple-bg:rgba(61,31,122,0.07);--purple-border:rgba(61,31,122,0.18);
   --text:#0D1117;--text2:#3D4A5C;--text3:#6B7A8D;--text4:#9AAAB8;
   --border:#D8DDE8;--border-subtle:#EDF0F7;
-  --shadow-md:0 4px 16px rgba(13,17,23,0.08),0 2px 4px rgba(13,17,23,0.04);
   --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;--serif:'IBM Plex Serif',serif;
 }
 [data-theme="dark"] {
@@ -52,7 +51,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .theme-toggle{width:28px;height:28px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;transition:all .15s}
 .theme-toggle:hover{color:var(--text);border-color:var(--brand)}
-.workspace{flex:1;display:grid;grid-template-columns:360px 1fr;overflow:hidden;min-height:0}
+
+.workspace{flex:1;display:grid;grid-template-columns:340px 1fr;overflow:hidden;min-height:0}
 
 /* LEFT */
 .left-panel{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
@@ -69,23 +69,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 .preview-img-box{background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;height:160px;overflow:hidden}
 .preview-img-box img{max-height:160px;max-width:100%;object-fit:contain}
 .preview-meta{display:flex;gap:12px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-top:none;font-family:var(--mono);font-size:11px;color:var(--text3)}
-.agent-list{display:flex;flex-direction:column;gap:6px}
-.agent-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);background:var(--surface2);transition:border-color .15s}
-.agent-row:hover{border-color:var(--brand-border)}
-.agent-info{display:flex;align-items:center;gap:8px}
-.agent-dot{width:6px;height:6px;border-radius:50%}
-.agent-dot.active{background:var(--success)}
-.agent-dot.inactive{background:var(--border)}
-.agent-name{font-size:12px;font-weight:500}
-.agent-type{font-family:var(--mono);font-size:10px;color:var(--text3)}
-.sw{position:relative;width:32px;height:18px;display:inline-block;flex-shrink:0}
-.sw input{opacity:0;width:0;height:0}
-.sw-track{position:absolute;inset:0;background:var(--border);cursor:pointer;transition:background .2s}
-.sw-track:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-input:checked+.sw-track{background:var(--brand)}
-input:checked+.sw-track:before{transform:translateX(14px)}
-.pipeline-badge{padding:10px 12px;background:var(--brand-light);border:1px solid var(--brand-border);font-size:11px;color:var(--text2);line-height:1.7}
-.pipeline-badge strong{color:var(--brand);font-weight:600}
+
+/* Système info */
+.system-info{display:flex;flex-direction:column;gap:6px}
+.sys-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--border);background:var(--surface2)}
+.sys-left{display:flex;align-items:center;gap:8px}
+.sys-dot{width:6px;height:6px;border-radius:50%}
+.sys-dot.ok{background:var(--success)}.sys-dot.warn{background:var(--warning)}.sys-dot.err{background:var(--border)}
+.sys-name{font-size:12px;font-weight:500}
+.sys-role{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.sys-badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border:1px solid var(--border-subtle);font-weight:500}
+.sys-badge.principal{background:var(--brand-light);color:var(--brand);border-color:var(--brand-border)}
+.sys-badge.verif{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.sys-badge.fallback{background:var(--surface3);color:var(--text3)}
+
 .analyze-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.03em;text-transform:uppercase;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
 .analyze-btn:hover{background:var(--brand2)}
 .analyze-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -98,89 +95,43 @@ input:checked+.sw-track:before{transform:translateX(14px)}
 .empty-icon{width:48px;height:48px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto}
 .empty-icon svg{width:24px;height:24px;stroke:var(--text4);fill:none;stroke-width:1.5}
 .empty-title{font-family:var(--serif);font-size:16px;font-weight:400;color:var(--text3)}
-.empty-sub{font-size:12px;color:var(--text4)}
+.empty-sub{font-size:12px;color:var(--text4);max-width:280px;line-height:1.6}
 .results-container{padding:24px;display:flex;flex-direction:column;gap:18px}
 
-/* RESULT HEADER */
-.result-header{background:var(--surface);border:1px solid var(--border);padding:20px 24px}
-.result-header-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
-.result-class-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
-.result-class{font-family:var(--serif);font-size:28px;font-weight:400;color:var(--text);letter-spacing:-.01em}
-.result-path-badge{padding:4px 10px;border:1px solid var(--border);font-family:var(--mono);font-size:10px;font-weight:500}
-.result-path-badge.validated{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
-.result-path-badge.disagreement{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-border)}
-.result-path-badge.default{background:var(--surface2);color:var(--text3)}
-.conf-block{display:flex;flex-direction:column;gap:6px}
-.conf-labels{display:flex;justify-content:space-between;font-size:12px}
-.conf-label{color:var(--text3)}
-.conf-val{font-family:var(--mono);font-weight:500}
-.conf-val.hi{color:var(--success)}.conf-val.mid{color:var(--warning)}.conf-val.lo{color:var(--danger)}
-.conf-bar{height:4px;background:var(--surface3)}
-.conf-fill{height:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
-.conf-fill.hi{background:var(--success)}.conf-fill.mid{background:var(--warning)}.conf-fill.lo{background:var(--danger)}
+/* ── RÉSULTAT PRINCIPAL ── */
+.result-main{background:var(--surface);border:1px solid var(--border);padding:28px 32px}
+.result-status-row{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.result-status-icon{width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.result-status-icon.ok{background:var(--success-bg);border:1px solid var(--success-border)}
+.result-status-icon.warn{background:var(--warning-bg);border:1px solid var(--warning-border)}
+.result-status-text{}
+.result-status-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.result-status-label.ok{color:var(--success)}
+.result-status-label.warn{color:var(--warning)}
+.result-status-title{font-family:var(--serif);font-size:13px;color:var(--text2);line-height:1.5}
+.result-doc-type{font-family:var(--serif);font-size:32px;font-weight:300;color:var(--text);letter-spacing:-.02em;margin-bottom:16px}
+.result-doc-type em{font-style:normal;color:var(--brand)}
+.result-actions{display:flex;gap:10px;flex-wrap:wrap}
+.result-action-btn{padding:10px 20px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+.result-action-btn:hover{border-color:var(--brand-border);color:var(--brand)}
+.result-action-btn.primary{background:var(--warning);border-color:var(--warning);color:#fff}
+.result-action-btn.primary:hover{opacity:.85}
 
-/* MANUAL ALERT */
-.manual-alert{background:var(--warning-bg);border:1px solid var(--warning-border);border-left:3px solid var(--warning);padding:16px 18px;display:flex;gap:16px;align-items:flex-start}
-.alert-content{flex:1}
-.alert-title{font-size:13px;font-weight:600;color:var(--warning);margin-bottom:5px}
-.alert-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
-.alert-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--warning);color:#fff;font-family:var(--font);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;border:none;letter-spacing:.02em;transition:opacity .15s}
-.alert-btn:hover{opacity:.85}
+/* ── DÉTAILS TECHNIQUES (accordion) ── */
+.details-accordion{background:var(--surface);border:1px solid var(--border)}
+.acc-header{padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .15s;user-select:none}
+.acc-header:hover{background:var(--surface2)}
+.acc-title{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px}
+.acc-title::before{content:"";width:2px;height:10px;background:var(--brand)}
+.acc-arrow{font-family:var(--mono);font-size:11px;color:var(--text4);transition:transform .2s}
+.acc-arrow.open{transform:rotate(90deg)}
+.acc-body{display:none;border-top:1px solid var(--border-subtle)}
+.acc-body.open{display:block}
 
-/* SECTION CARDS */
-.result-section{background:var(--surface);border:1px solid var(--border)}
-.rs-header{padding:12px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
-.rs-title{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px}
-.rs-title::before{content:"";width:2px;height:10px;background:var(--brand)}
-.rs-body{padding:14px 16px}
-
-/* VERDICT BANNER */
-.verdict-banner{padding:14px 18px;display:flex;align-items:center;gap:12px;border:1px solid}
-.verdict-banner.ok{background:var(--success-bg);border-color:var(--success-border)}
-.verdict-banner.warn{background:var(--warning-bg);border-color:var(--warning-border);border-left:3px solid var(--warning)}
-.verdict-icon{font-size:18px;flex-shrink:0}
-.verdict-text{flex:1}
-.verdict-title{font-size:13px;font-weight:600;margin-bottom:3px}
-.verdict-banner.ok .verdict-title{color:var(--success)}
-.verdict-banner.warn .verdict-title{color:var(--warning)}
-.verdict-sub{font-size:11px;color:var(--text2);line-height:1.5}
-
-/* MODEL COMPARISON TABLE */
-.model-table{width:100%;border-collapse:collapse;font-size:12px}
-.model-table th{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.model-table td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
-.model-table tr:last-child td{border-bottom:none}
-.model-row-name{font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px}
-.model-badge{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 6px;border:1px solid}
-.model-badge.principal{background:var(--brand-light);color:var(--brand);border-color:var(--brand-border)}
-.model-badge.llm{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
-.model-badge.vision{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
-.model-badge.unavail{background:var(--surface3);color:var(--text3);border-color:var(--border)}
-.verdict-cell{font-family:var(--mono);font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px}
-.verdict-cell.agree{color:var(--success)}
-.verdict-cell.disagree{color:var(--danger)}
-.verdict-cell.unavail{color:var(--text4)}
-.pred-cell{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text)}
-.conf-cell{font-family:var(--mono);font-size:11px}
-.conf-cell.hi{color:var(--success)}.conf-cell.mid{color:var(--warning)}.conf-cell.lo{color:var(--danger)}
-
-/* QWEN REASONING */
-.qw-reasoning{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;background:var(--surface2);padding:8px 10px;border:1px solid var(--border-subtle);margin-top:10px}
-.qw-reasoning-label{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:4px}
-
-/* SCORES */
-.scores-list{display:flex;flex-direction:column;gap:6px}
-.score-row{display:grid;grid-template-columns:160px 1fr 50px;align-items:center;gap:8px}
-.score-name{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.score-bar-bg{height:4px;background:var(--surface3)}
-.score-bar-fill{height:4px;background:var(--border);transition:width .5s}
-.score-bar-fill.top{background:var(--brand)}
-.score-pct{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
-
-/* PIPELINE STEPS */
+/* Pipeline steps */
 .steps-list{display:flex;flex-direction:column}
-.step-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
-.step-item:last-child{border-bottom:none;padding-bottom:0}
+.step-item{display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-subtle)}
+.step-item:last-child{border-bottom:none}
 .step-num{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500}
 .step-num.ok{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
 .step-num.warning{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
@@ -189,13 +140,25 @@ input:checked+.sw-track:before{transform:translateX(14px)}
 .step-name{font-size:12px;font-weight:500;margin-bottom:2px}
 .step-detail{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.5;word-break:break-word}
 
-/* OCR & MONGO */
-.ocr-text{background:var(--surface2);border:1px solid var(--border);padding:12px;font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.7;max-height:120px;overflow-y:auto;white-space:pre-wrap}
-.mongo-badge{background:var(--success-bg);border:1px solid var(--success-border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:11px}
+/* Scores */
+.scores-section{padding:14px 18px}
+.score-row{display:grid;grid-template-columns:160px 1fr 50px;align-items:center;gap:8px;margin-bottom:6px}
+.score-name{font-size:12px;color:var(--text2)}
+.score-bar-bg{height:4px;background:var(--surface3)}
+.score-bar-fill{height:4px;background:var(--border)}
+.score-bar-fill.top{background:var(--brand)}
+.score-pct{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
+
+/* OCR */
+.ocr-box{margin:14px 18px;background:var(--surface2);border:1px solid var(--border);padding:12px;font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.7;max-height:120px;overflow-y:auto;white-space:pre-wrap}
+
+/* MongoDB */
+.mongo-badge{background:var(--success-bg);border:1px solid var(--success-border);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:11px}
 .mongo-badge-label{color:var(--success);font-weight:500}
 .mongo-badge-id{color:var(--text3)}
 .mongo-badge a{color:var(--success);font-size:11px;text-decoration:underline}
-.timing{font-family:var(--mono);font-size:11px;color:var(--text4);text-align:right}
+
+.timing{font-family:var(--mono);font-size:11px;color:var(--text4);text-align:right;padding:0 4px}
 
 @media(max-width:900px){.workspace{grid-template-columns:1fr;height:auto;overflow:visible}body{height:auto;overflow:auto}.right-panel{min-height:60vh}}
 </style>
@@ -211,12 +174,12 @@ input:checked+.sw-track:before{transform:translateX(14px)}
   <div class="nav-links">
     <a class="nav-link" href="dashboard.html">Tableau de bord</a>
     <a class="nav-link" href="queue.html">Traitement par lot</a>
+    <a class="nav-link active" href="index.html">Analyse unitaire</a>
     <a class="nav-link" href="library.html">Bibliothèque</a>
-
   </div>
   <div class="nav-right">
-    <div class="status-chip"><span class="dot pulse" id="dot-model"></span><span id="txt-model">Modèle…</span></div>
     <div class="status-chip"><span class="dot pulse" id="dot-qwen"></span><span id="txt-qwen">Qwen…</span></div>
+    <div class="status-chip"><span class="dot pulse" id="dot-gemma"></span><span id="txt-gemma">Gemma…</span></div>
     <div class="status-chip"><span class="dot pulse" id="dot-mongo"></span><span id="txt-mongo">MongoDB…</span></div>
     <button class="theme-toggle" onclick="toggleTheme()">◐</button>
   </div>
@@ -226,7 +189,7 @@ input:checked+.sw-track:before{transform:translateX(14px)}
   <!-- LEFT -->
   <div class="left-panel">
     <div class="panel-section">
-      <div class="section-label">Document source</div>
+      <div class="section-label">Document à analyser</div>
       <div class="dropzone" id="dropzone">
         <input type="file" id="file-input" accept="image/*,.pdf"/>
         <div class="dz-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
@@ -245,35 +208,38 @@ input:checked+.sw-track:before{transform:translateX(14px)}
     </div>
 
     <div class="panel-section">
-      <div class="section-label">Agents de confirmation</div>
-      <div class="agent-list">
-        <div class="agent-row">
-          <div class="agent-info">
-            <span class="agent-dot active" id="agent-dot-llama"></span>
+      <div class="section-label">Systèmes d'analyse</div>
+      <div class="system-info">
+        <div class="sys-row">
+          <div class="sys-left">
+            <span class="sys-dot ok" id="sdot-qwen"></span>
             <div>
-              <div class="agent-name">llama3.2</div>
-              <div class="agent-type">Confirmation texte (OCR)</div>
+              <div class="sys-name">Qwen2.5-VL</div>
+              <div class="sys-role">Analyse visuelle du document</div>
             </div>
           </div>
-          <label class="sw"><input type="checkbox" id="toggle-llama" checked onchange="setAgent('ollama',this.checked)"/><span class="sw-track"></span></label>
+          <span class="sys-badge principal">Principal</span>
         </div>
-        <div class="agent-row" style="border-color:var(--purple-border)">
-          <div class="agent-info">
-            <span class="agent-dot active" id="agent-dot-qwen"></span>
+        <div class="sys-row">
+          <div class="sys-left">
+            <span class="sys-dot ok" id="sdot-gemma"></span>
             <div>
-              <div class="agent-name" style="color:var(--purple)">Qwen2.5-VL</div>
-              <div class="agent-type">Confirmation vision (image)</div>
+              <div class="sys-name">Gemma2:9b</div>
+              <div class="sys-role">Vérification par texte</div>
             </div>
           </div>
-          <label class="sw"><input type="checkbox" id="toggle-qwen" checked onchange="setAgent('qwen',this.checked)"/><span class="sw-track"></span></label>
+          <span class="sys-badge verif">Vérificateur</span>
         </div>
-      </div>
-    </div>
-
-    <div class="panel-section">
-      <div class="pipeline-badge">
-        <strong>Principe bancaire</strong> : EfficientNet+mBERT prédit → <strong>llama3.2</strong> confirme via OCR → <strong style="color:var(--purple)">Qwen2.5-VL</strong> confirme via image<br>
-        <strong>Les deux doivent confirmer</strong> pour valider automatiquement. Tout désaccord → révision humaine.
+        <div class="sys-row" style="opacity:.5">
+          <div class="sys-left">
+            <span class="sys-dot err"></span>
+            <div>
+              <div class="sys-name">EfficientNet+mBERT</div>
+              <div class="sys-role">Secours uniquement</div>
+            </div>
+          </div>
+          <span class="sys-badge fallback">Fallback</span>
+        </div>
       </div>
     </div>
 
@@ -290,7 +256,7 @@ input:checked+.sw-track:before{transform:translateX(14px)}
     <div class="empty-state" id="empty-state">
       <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
       <div class="empty-title">Prêt pour l'analyse</div>
-      <div class="empty-sub">Déposez un document — les deux LLM devront confirmer le résultat du modèle</div>
+      <div class="empty-sub">Déposez un document bancaire — le résultat s'affichera ici</div>
     </div>
     <div id="results-area"></div>
   </div>
@@ -300,37 +266,41 @@ input:checked+.sw-track:before{transform:translateX(14px)}
 const API='http://localhost:5000';
 let selectedFile=null;
 
-const TYPE_LABELS={carte_identite:"Carte d'Identité",rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
+const TYPE_LABELS={
+  carte_identite:"Carte Nationale d'Identité",
+  rib:"Relevé d'Identité Bancaire (RIB)",
+  cheque:"Chèque bancaire",
+  tableau_amortissement:"Tableau d'amortissement",
+  acte_naissance:"Acte de naissance",
+  acte_heredite:"Acte d'hérédité",
+  assurance:"Contrat d'assurance",
+  attestation_solde:"Attestation de solde"
+};
 
 function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
 (()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function confClass(c){return c>=80?'hi':c>=60?'mid':'lo';}
 
 async function checkStatus(){
   try{
     const r=await fetch(`${API}/status`,{signal:AbortSignal.timeout(4000)});
     const d=await r.json();
-    setDot('dot-model',d.device?'ok':'warn',`${(d.device||'CPU').toUpperCase()} · ${d.val_acc}%`);
     setDot('dot-qwen',d.qwen?'ok':'warn',d.qwen?'Qwen disponible':'Qwen hors ligne');
+    setDot('dot-gemma',d.ollama?'ok':'warn',d.ollama?'Gemma disponible':'Gemma hors ligne');
     setDot('dot-mongo',d.mongodb?'ok':'err',d.mongodb?'MongoDB':'MongoDB hors ligne');
-    document.getElementById('toggle-llama').checked=!!d.ollama;
-    document.getElementById('toggle-qwen').checked=!!d.qwen;
-    document.getElementById('agent-dot-llama').className=`agent-dot ${d.ollama?'active':'inactive'}`;
-    document.getElementById('agent-dot-qwen').className=`agent-dot ${d.qwen?'active':'inactive'}`;
-  }catch{['dot-model','dot-qwen','dot-mongo'].forEach(k=>setDot(k,'err','Hors ligne'));}
+    document.getElementById('sdot-qwen').className=`sys-dot ${d.qwen?'ok':'err'}`;
+    document.getElementById('sdot-gemma').className=`sys-dot ${d.ollama?'ok':'err'}`;
+  }catch{
+    ['dot-qwen','dot-gemma','dot-mongo'].forEach(k=>setDot(k,'err','Hors ligne'));
+  }
 }
 function setDot(id,state,txt){
-  const d=document.getElementById(id);d.className=`dot ${state}`;
+  const d=document.getElementById(id);
+  if(d)d.className=`dot ${state}`;
   const t=document.getElementById(id.replace('dot-','txt-'));
   if(t){t.textContent=txt;t.style.color=state==='ok'?'var(--success)':state==='warn'?'var(--warning)':'var(--danger)';}
 }
 checkStatus();setInterval(checkStatus,15000);
-
-async function setAgent(type,enabled){
-  const ep=type==='qwen'?'/toggle_qwen':'/toggle_ollama';
-  await fetch(`${API}${ep}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})}).catch(()=>{});
-}
 
 const dropzone=document.getElementById('dropzone'),fi=document.getElementById('file-input');
 dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('drag');});
@@ -347,7 +317,7 @@ function handleFile(file){
     document.getElementById('file-name').textContent=file.name;
     document.getElementById('file-size').textContent=(file.size/1024).toFixed(1)+' KB';
     document.getElementById('btn-analyze').disabled=false;
-    document.getElementById('btn-text').textContent="Lancer l'analyse";
+    document.getElementById('btn-text').textContent="Analyser ce document";
   };
   reader.readAsDataURL(file);
 }
@@ -364,172 +334,121 @@ async function runAnalysis(){
     const d=await r.json();
     renderResult(d);
   }catch(err){renderError(err.message);}
-  finally{btn.disabled=false;sp.style.display='none';bt.textContent='Nouvelle analyse';}
-}
-
-/* ── pathInfo : mappé sur les nouveaux cas du pipeline ── */
-function pathInfo(p){
-  const map={
-    dual_llm_confirmed:     {text:'Double confirmation',cls:'validated',desc:'llama3.2 + Qwen confirment'},
-    qwen_disagrees:         {text:'Désaccord Qwen',cls:'disagreement',desc:'Qwen désaccorde le modèle'},
-    llama_disagrees:        {text:'Désaccord llama3.2',cls:'disagreement',desc:'llama3.2 désaccorde le modèle'},
-    dual_llm_rejected:      {text:'Double rejet',cls:'disagreement',desc:'Les deux LLM rejettent le modèle'},
-    no_llm_available:       {text:'Aucun LLM',cls:'disagreement',desc:'Ni llama ni Qwen disponibles'},
-    qwen_confirms_model:    {text:'Qwen confirme',cls:'validated',desc:'Accord modèle + Qwen'},
-    model_qwen_disagreement:{text:'Désaccord Qwen',cls:'disagreement',desc:'Modèle et Qwen en désaccord'},
-    model_only_very_high:   {text:'Modèle seul',cls:'default',desc:'Confiance ≥ 90%, aucun LLM'},
-    model_only_medium:      {text:'Modèle seul',cls:'disagreement',desc:'Confiance 70-90%, sans LLM'},
-    model_only_low:         {text:'Confiance faible',cls:'disagreement',desc:'Confiance < 70%, sans LLM'},
-  };
-  return map[p]||{text:p||'—',cls:'default',desc:'Résultat pipeline'};
+  finally{btn.disabled=false;sp.style.display='none';bt.textContent='Analyser un autre document';}
 }
 
 function renderResult(d){
   const conf=parseFloat(d.confidence||0);
-  const cc=confClass(conf);
-  const pl=pathInfo(d.path);
   const predLabel=TYPE_LABELS[d.prediction]||d.prediction;
   const validated=d.agreement&&!d.needs_manual;
+  const path=d.path||'';
 
-  /* ── 1. VERDICT GLOBAL ── */
-  const verdictHTML=validated
-    ?`<div class="verdict-banner ok">
-        <div class="verdict-icon">✅</div>
-        <div class="verdict-text">
-          <div class="verdict-title">Classification validée automatiquement</div>
-          <div class="verdict-sub">llama3.2 et Qwen2.5-VL confirment tous les deux la prédiction du modèle. Aucune révision humaine requise.</div>
-        </div>
-      </div>`
-    :`<div class="verdict-banner warn">
-        <div class="verdict-icon">⚠️</div>
-        <div class="verdict-text">
-          <div class="verdict-title">Révision humaine obligatoire</div>
-          <div class="verdict-sub">${buildManualReason(d)} — <a href="manual_classify.html?doc_id=${enc(d.mongo_id||'')}&filename=${enc(selectedFile?.name||'')}&confidence=${conf.toFixed(1)}&prediction=${enc(d.prediction||'')}&ocr=${enc((d.ocr_text||'').substring(0,500))}&scores=${enc(JSON.stringify(d.all_scores||[]))}" style="color:var(--warning);font-weight:600">Classifier manuellement →</a></div>
-        </div>
-      </div>`;
+  // ── MESSAGE STATUT SIMPLIFIÉ ────────────────────────────────────────────
+  let statusIcon,statusCls,statusLabel,statusDesc;
+  if(validated){
+    statusIcon='✅';statusCls='ok';
+    statusLabel='Document identifié avec succès';
+    statusDesc='Les deux systèmes d\'analyse sont en accord. Aucune vérification nécessaire.';
+  } else {
+    statusIcon='⚠️';statusCls='warn';
+    statusLabel='Vérification humaine recommandée';
+    statusDesc=buildStatusDesc(d);
+  }
 
-  /* ── 2. TABLEAU DES MODÈLES ── */
-  const llama=d.llama_result||{};
-  const qwen=d.qwen||{};
-  const modelConf=(d.all_scores?.[0]?.score||0)*100;
-
-  const llamaAgrees=llama.available&&llama.agrees===true;
-  const llamaDisagrees=llama.available&&llama.agrees===false;
-  const llamaUnavail=!llama.available;
-  const qwenAgrees=qwen.available&&qwen.class&&qwen.class.toLowerCase()===d.prediction.toLowerCase();
-  const qwenDisagrees=qwen.available&&qwen.class&&qwen.class.toLowerCase()!==d.prediction.toLowerCase();
-  const qwenUnavail=!qwen.available;
-
-  const modelsHTML=`<div class="result-section">
-    <div class="rs-header"><span class="rs-title">Résultats par modèle</span></div>
-    <div class="rs-body" style="padding:0">
-      <table class="model-table">
-        <thead><tr>
-          <th>Modèle</th><th>Prédiction</th><th>Confiance</th><th>Verdict</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td><div class="model-row-name">EfficientNet+mBERT <span class="model-badge principal">Principal</span></div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Vision + texte multimodal</div></td>
-            <td class="pred-cell">${esc(predLabel)}</td>
-            <td class="conf-cell ${cc}">${conf.toFixed(1)}%</td>
-            <td><div class="verdict-cell agree">✓ Référence</div></td>
-          </tr>
-          <tr style="${llamaUnavail?'opacity:.6':''}">
-            <td><div class="model-row-name">llama3.2 <span class="model-badge ${llamaUnavail?'unavail':'llm'}">${llamaUnavail?'Indisponible':'LLM texte'}</span></div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Analyse OCR</div></td>
-            <td class="pred-cell">${llamaUnavail?'—':esc(TYPE_LABELS[llama.class]||llama.class||'—')}</td>
-            <td class="conf-cell" style="color:var(--text4)">${llamaUnavail?'—':'—'}</td>
-            <td><div class="verdict-cell ${llamaUnavail?'unavail':llamaAgrees?'agree':'disagree'}">${llamaUnavail?'⚠ Non disponible':llamaAgrees?'✓ Confirme':'✗ Désaccorde'}</div></td>
-          </tr>
-          <tr style="${qwenUnavail?'opacity:.6':''}">
-            <td><div class="model-row-name" style="color:var(--purple)">Qwen2.5-VL <span class="model-badge ${qwenUnavail?'unavail':'vision'}">${qwenUnavail?'Indisponible':'Vision'}</span></div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Analyse image</div></td>
-            <td class="pred-cell" style="color:var(--purple)">${qwenUnavail?'—':esc(TYPE_LABELS[qwen.class]||qwen.class||'—')}</td>
-            <td class="conf-cell ${confClass((qwen.confidence||0)*100)}">${qwenUnavail?'—':((qwen.confidence||0)*100).toFixed(0)+'%'}</td>
-            <td><div class="verdict-cell ${qwenUnavail?'unavail':qwenAgrees?'agree':'disagree'}">${qwenUnavail?'⚠ Non disponible':qwenAgrees?'✓ Confirme':'✗ Désaccorde'}</div></td>
-          </tr>
-        </tbody>
-      </table>
-      ${qwen.reasoning?`<div class="rs-body" style="border-top:1px solid var(--border-subtle)">
-        <div class="qw-reasoning-label">Raisonnement Qwen2.5-VL</div>
-        <div class="qw-reasoning">${esc(qwen.reasoning.substring(0,300))}</div>
-      </div>`:''}
+  // ── RÉSULTAT PRINCIPAL ─────────────────────────────────────────────────
+  const mainHTML=`<div class="result-main">
+    <div class="result-status-row">
+      <div class="result-status-icon ${statusCls}">${statusIcon}</div>
+      <div class="result-status-text">
+        <div class="result-status-label ${statusCls}">${statusLabel}</div>
+        <div class="result-status-title">${esc(statusDesc)}</div>
+      </div>
+    </div>
+    <div class="result-doc-type">Type de document : <em>${esc(predLabel)}</em></div>
+    <div class="result-actions">
+      ${d.needs_manual&&d.mongo_id?`<a class="result-action-btn primary" href="manual_classify.html?doc_id=${enc(d.mongo_id)}&filename=${enc(selectedFile?.name||'')}&confidence=${conf.toFixed(1)}&prediction=${enc(d.prediction||'')}&ocr=${enc((d.ocr_text||'').substring(0,500))}&scores=${enc(JSON.stringify(d.all_scores||[]))}">Corriger la classification →</a>`:''}
+      ${d.mongo_id?`<a class="result-action-btn" href="library.html">Voir dans la bibliothèque</a>`:''}
+      <button class="result-action-btn" onclick="location.reload()">Analyser un autre document</button>
     </div>
   </div>`;
 
-  /* ── 3. SCORES EfficientNet ── */
-  const maxScore=d.all_scores?.[0]?.score||1;
-  const scoresHTML=`<div class="result-section">
-    <div class="rs-header"><span class="rs-title">Distribution EfficientNet+mBERT</span></div>
-    <div class="rs-body"><div class="scores-list">${(d.all_scores||[]).map((s,i)=>`
-      <div class="score-row">
-        <div class="score-name">${esc(TYPE_LABELS[s.class]||s.class)}</div>
-        <div class="score-bar-bg"><div class="score-bar-fill ${i===0?'top':''}" style="width:${(s.score/maxScore*100).toFixed(0)}%"></div></div>
-        <div class="score-pct">${(s.score*100).toFixed(1)}%</div>
-      </div>`).join('')}</div></div>
-  </div>`;
-
-  /* ── 4. PIPELINE STEPS ── */
-  const stepsHTML=`<div class="result-section">
-    <div class="rs-header"><span class="rs-title">Journal d'exécution du pipeline</span></div>
-    <div class="rs-body"><div class="steps-list">${(d.steps||[]).map((s,i)=>`
-      <div class="step-item">
-        <div class="step-num ${s.status||'ok'}">${i+1}</div>
-        <div class="step-body">
-          <div class="step-name">${esc(s.step)}</div>
-          <div class="step-detail">${esc(s.detail)}</div>
-        </div>
-      </div>`).join('')}</div></div>
-  </div>`;
-
-  /* ── 5. OCR ── */
-  const ocrHTML=`<div class="result-section">
-    <div class="rs-header"><span class="rs-title">Texte OCR extrait</span>${d.degraded_image?`<span style="font-family:var(--mono);font-size:10px;color:var(--warning)">⚠ Image dégradée</span>`:''}
-    </div>
-    <div class="rs-body"><div class="ocr-text">${esc(d.ocr_text||'—')}</div></div>
-  </div>`;
-
-  /* ── 6. MONGO ── */
+  // ── SAUVEGARDE MONGO ───────────────────────────────────────────────────
   const mongoHTML=d.mongo_id?`<div class="mongo-badge">
-    <span><span class="mongo-badge-label">Sauvegardé</span> <span class="mongo-badge-id">${esc(d.mongo_id)}</span></span>
-    <a href="library.html">Voir dans la bibliothèque →</a>
+    <span><span class="mongo-badge-label">Document sauvegardé</span> <span class="mongo-badge-id">${esc(d.mongo_id)}</span></span>
+    <a href="library.html">Bibliothèque →</a>
+  </div>`:'';
+
+  // ── DÉTAILS TECHNIQUES (accordion) ─────────────────────────────────────
+  const stepsHTML=`<div class="details-accordion">
+    <div class="acc-header" onclick="toggleAcc('acc-pipeline')">
+      <span class="acc-title">Détail du traitement</span>
+      <span class="acc-arrow" id="acc-pipeline-arrow">▶</span>
+    </div>
+    <div class="acc-body" id="acc-pipeline">
+      <div class="steps-list">${(d.steps||[]).map((s,i)=>`
+        <div class="step-item">
+          <div class="step-num ${s.status||'ok'}">${i+1}</div>
+          <div class="step-body">
+            <div class="step-name">${esc(s.step)}</div>
+            <div class="step-detail">${esc(s.detail)}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  const scoresHTML=(d.all_scores&&d.all_scores.length)?`<div class="details-accordion">
+    <div class="acc-header" onclick="toggleAcc('acc-scores')">
+      <span class="acc-title">Scores de classification</span>
+      <span class="acc-arrow" id="acc-scores-arrow">▶</span>
+    </div>
+    <div class="acc-body" id="acc-scores">
+      <div class="scores-section">${d.all_scores.map((s,i)=>`
+        <div class="score-row">
+          <div class="score-name">${esc(TYPE_LABELS[s.class]||s.class)}</div>
+          <div class="score-bar-bg"><div class="score-bar-fill ${i===0?'top':''}" style="width:${(s.score*100).toFixed(0)}%"></div></div>
+          <div class="score-pct">${(s.score*100).toFixed(1)}%</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`:'' ;
+
+  const ocrHTML=d.ocr_text?`<div class="details-accordion">
+    <div class="acc-header" onclick="toggleAcc('acc-ocr')">
+      <span class="acc-title">Texte extrait du document</span>
+      <span class="acc-arrow" id="acc-ocr-arrow">▶</span>
+    </div>
+    <div class="acc-body" id="acc-ocr">
+      <div class="ocr-box">${esc(d.ocr_text)}</div>
+    </div>
   </div>`:'';
 
   document.getElementById('results-area').innerHTML=`<div class="results-container">
-    <div class="result-header">
-      <div class="result-header-top">
-        <div>
-          <div class="result-class-label">Classification</div>
-          <div class="result-class">${esc(predLabel)}</div>
-        </div>
-        <span class="result-path-badge ${pl.cls}">${pl.text}</span>
-      </div>
-      <div class="conf-block">
-        <div class="conf-labels"><span class="conf-label">Confiance EfficientNet</span><span class="conf-val ${cc}">${conf.toFixed(1)}%</span></div>
-        <div class="conf-bar"><div class="conf-fill ${cc}" style="width:${Math.min(conf,100)}%"></div></div>
-      </div>
-    </div>
-    ${verdictHTML}
+    ${mainHTML}
     ${mongoHTML}
-    ${modelsHTML}
-    ${scoresHTML}
     ${stepsHTML}
+    ${scoresHTML}
     ${ocrHTML}
-    <div class="timing">Traitement total : ${d.time_ms} ms</div>
+    <div class="timing">Traitement : ${d.time_ms} ms</div>
   </div>`;
 }
 
-function buildManualReason(d){
+function buildStatusDesc(d){
   const path=d.path||'';
-  const reasons={
-    qwen_disagrees:'Qwen2.5-VL ne confirme pas la prédiction',
-    llama_disagrees:'llama3.2 ne confirme pas la prédiction',
-    dual_llm_rejected:'Les deux LLM rejettent la prédiction du modèle',
-    no_llm_available:'Aucun LLM disponible pour confirmer',
-    model_qwen_disagreement:'Désaccord entre le modèle et Qwen',
-    model_only_very_high:'Validation sans LLM (agents indisponibles)',
-    model_only_medium:'Confiance insuffisante, agents indisponibles',
-    model_only_low:'Confiance faible, agents indisponibles',
+  const m={
+    qwen_gemma_disagreement:`L'analyse visuelle et la vérification textuelle donnent des résultats différents.`,
+    qwen_only:`L'analyse visuelle n'a pas pu être confirmée (vérificateur indisponible).`,
+    gemma_only:`L'analyse visuelle est indisponible — résultat basé sur le texte uniquement.`,
+    efficientnet_fallback:`Les systèmes principaux sont indisponibles — résultat de secours.`,
   };
-  return reasons[path]||(!d.agreement?'Désaccord entre les agents':'Vérification manuelle requise');
+  return m[path]||'Une vérification humaine est recommandée pour ce document.';
+}
+
+function toggleAcc(id){
+  const body=document.getElementById(id);
+  const arrow=document.getElementById(id+'-arrow');
+  const open=body.classList.toggle('open');
+  if(arrow)arrow.classList.toggle('open',open);
 }
 
 function renderError(msg){

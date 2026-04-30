@@ -2,6 +2,9 @@
 OCR bilingue + évaluation qualité image + prétraitement si dégradée.
 Support PDF : première page convertie en image avant traitement.
 """
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 import re
 import os
 import tempfile
@@ -48,9 +51,14 @@ def pdf_first_page_to_image(pdf_path: str) -> str:
     raise RuntimeError("Impossible de convertir le PDF (installer pdf2image+poppler ou pymupdf)")
 
 # Init readers une seule fois
-ocr_latin  = easyocr.Reader(["fr", "en"], gpu=torch.cuda.is_available(), verbose=False)
-ocr_arabic = easyocr.Reader(["ar", "en"], gpu=torch.cuda.is_available(), verbose=False)
-print("[INIT] OCR prêt")
+try:
+    ocr_latin  = easyocr.Reader(["fr", "en"], gpu=torch.cuda.is_available(), verbose=False)
+    ocr_arabic = easyocr.Reader(["ar", "en"], gpu=torch.cuda.is_available(), verbose=False)
+    print("[INIT] OCR prêt")
+except Exception as e:
+    print(f"[INIT] Erreur initialisation OCR: {e}")
+    print("[INIT] Vérifiez votre connexion internet ou les modèles EasyOCR")
+    raise
 
 
 def _ocr_quality_score(text: str) -> float:

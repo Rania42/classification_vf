@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BankDoc — Recherche intelligente</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#F5F6F8;--surface:#FFFFFF;--surface2:#F0F2F7;--surface3:#E8EBF2;
+  --brand:#1A2E6B;--brand2:#253D8A;--brand-accent:#2D52B8;--brand-light:rgba(26,46,107,0.08);--brand-border:rgba(26,46,107,0.2);
+  --success:#0C6B4E;--success-bg:rgba(12,107,78,0.07);--success-border:rgba(12,107,78,0.18);
+  --warning:#7A4500;--warning-bg:rgba(122,69,0,0.07);--warning-border:rgba(122,69,0,0.18);
+  --danger:#8B1A1A;--danger-bg:rgba(139,26,26,0.07);--danger-border:rgba(139,26,26,0.18);
+  --purple:#3D1F7A;--purple-bg:rgba(61,31,122,0.07);--purple-border:rgba(61,31,122,0.18);
+  --text:#0D1117;--text2:#3D4A5C;--text3:#6B7A8D;--text4:#9AAAB8;
+  --border:#D8DDE8;--border-subtle:#EDF0F7;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;--serif:'IBM Plex Serif',serif;
+}
+[data-theme="dark"]{
+  --bg:#0A0D14;--surface:#111520;--surface2:#171C2B;--surface3:#1D2336;
+  --brand:#4A6ED4;--brand2:#5A80E0;--brand-accent:#6B91F0;--brand-light:rgba(74,110,212,0.12);--brand-border:rgba(74,110,212,0.25);
+  --success:#1DB87A;--success-bg:rgba(29,184,122,0.08);--success-border:rgba(29,184,122,0.2);
+  --warning:#D4870A;--warning-bg:rgba(212,135,10,0.08);--warning-border:rgba(212,135,10,0.2);
+  --danger:#E05050;--danger-bg:rgba(224,80,80,0.08);--danger-border:rgba(224,80,80,0.2);
+  --purple:#8B6BD4;--purple-bg:rgba(139,107,212,0.08);--purple-border:rgba(139,107,212,0.2);
+  --text:#E4EAF4;--text2:#8A9BB8;--text3:#5A6B84;--text4:#384456;
+  --border:#1E2840;--border-subtle:#141A28;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* NAV */
+.nav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:0;flex-shrink:0}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:32px}
+.nav-logo{width:28px;height:28px;background:var(--brand);display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;fill:#fff}
+.nav-title{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--text)}
+.nav-sep{width:1px;height:16px;background:var(--border);margin:0 20px}
+.nav-links{display:flex;gap:2px}
+.nav-link{padding:6px 12px;font-size:13px;color:var(--text3);text-decoration:none;border-bottom:2px solid transparent;transition:color .15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.status-chip{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);background:var(--surface2)}
+.dot{width:6px;height:6px;border-radius:50%}
+.dot.ok{background:var(--success)}.dot.warn{background:var(--warning)}.dot.err{background:var(--danger)}.dot.pulse{animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.theme-toggle{width:28px;height:28px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px}
+
+/* LAYOUT */
+.workspace{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* SEARCH HERO */
+.search-hero{background:var(--surface);border-bottom:1px solid var(--border);padding:24px 32px;flex-shrink:0}
+.search-hero-title{font-family:var(--serif);font-size:20px;font-weight:400;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.search-hero-title .ai-badge{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 8px;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border);letter-spacing:.05em}
+.search-hero-sub{font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.5}
+
+.search-box{position:relative;display:flex;gap:0}
+.search-input{flex:1;padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-right:none;font-family:var(--font);font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--brand);background:var(--surface)}
+.search-input::placeholder{color:var(--text4)}
+.search-btn{padding:14px 24px;background:var(--brand);color:#fff;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.04em;transition:background .15s;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.search-btn:hover{background:var(--brand2)}
+.search-btn:disabled{opacity:.5;cursor:not-allowed}
+.search-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SUGGESTIONS */
+.suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.sug{font-family:var(--mono);font-size:11px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);cursor:pointer;transition:all .12s}
+.sug:hover{border-color:var(--brand-border);color:var(--brand);background:var(--brand-light)}
+
+/* INTERPRETATION CARD */
+.interp-bar{background:var(--purple-bg);border-bottom:1px solid var(--purple-border);padding:10px 32px;display:none;align-items:flex-start;gap:16px;flex-shrink:0}
+.interp-bar.show{display:flex}
+.interp-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.interp-body{flex:1;min-width:0}
+.interp-explanation{font-size:12px;color:var(--purple);font-weight:500;margin-bottom:6px}
+.interp-tags{display:flex;gap:6px;flex-wrap:wrap}
+.itag{font-family:var(--mono);font-size:10px;padding:3px 8px;border:1px solid var(--purple-border);color:var(--purple);background:var(--purple-bg)}
+.itag.type{background:var(--brand-light);color:var(--brand);border-color:var(--brand-border)}
+.itag.kw{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.interp-count{font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0;align-self:center}
+
+/* RESULTS AREA */
+.results-area{flex:1;overflow-y:auto;padding:20px 32px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;height:100%;text-align:center;color:var(--text3)}
+.empty-icon{width:64px;height:64px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.empty-icon svg{width:30px;height:30px;stroke:var(--text4);fill:none;stroke-width:1.5}
+.empty-title{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--text3)}
+.empty-sub{font-size:12px;color:var(--text4);max-width:340px;line-height:1.7}
+
+/* RESULTS GRID */
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+
+/* RESULT CARD */
+.rcard{background:var(--surface);border:1px solid var(--border);transition:border-color .15s;cursor:pointer;overflow:hidden}
+.rcard:hover{border-color:var(--brand-border)}
+.rcard.expanded{border-color:var(--brand)}
+.rcard-head{display:flex;gap:0}
+.rcard-thumb{width:80px;height:80px;flex-shrink:0;background:var(--surface3);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.rcard-thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
+.rcard-thumb-icon{width:32px;height:32px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.rcard-thumb-icon svg{width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:1.5}
+.rcard-meta{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.rcard-filename{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard-type{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--brand)}
+.rcard-badges{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:2px}
+.rcard-conf{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 6px;border:1px solid}
+.rcard-conf.hi{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.rcard-conf.mid{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-border)}
+.rcard-conf.lo{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
+.rcard-date{font-family:var(--mono);font-size:9px;color:var(--text4)}
+.rcard-toggle{display:flex;align-items:center;justify-content:center;width:32px;flex-shrink:0;border-left:1px solid var(--border);color:var(--text4);font-size:12px;transition:transform .2s;background:none;border-top:none;border-bottom:none;border-right:none;cursor:pointer}
+.rcard-toggle.open{transform:rotate(90deg)}
+
+/* EXPANDED DETAIL */
+.rcard-detail{display:none;border-top:1px solid var(--border-subtle)}
+.rcard-detail.open{display:block}
+.rcard-detail-inner{display:grid;grid-template-columns:260px 1fr;gap:0}
+.rcard-preview{border-right:1px solid var(--border-subtle);padding:14px;display:flex;flex-direction:column;gap:10px}
+.rcard-preview-img{background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:180px;overflow:hidden}
+.rcard-preview-img img{max-width:100%;max-height:220px;object-fit:contain}
+.dl-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:var(--surface2);border:1px solid var(--border);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;text-decoration:none;transition:all .12s}
+.dl-btn:hover{border-color:var(--brand-border);color:var(--brand)}
+.rcard-info{padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+
+/* INFO SECTIONS */
+.info-sec{display:flex;flex-direction:column;gap:6px}
+.info-sec-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:6px}
+.info-sec-label::before{content:"";width:2px;height:9px;background:var(--brand)}
+
+/* OCR highlight */
+.ocr-snippet{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:8px 10px;line-height:1.7;max-height:100px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.ocr-snippet mark{background:rgba(26,46,107,0.15);color:var(--brand);padding:0 2px}
+
+/* Extracted fields */
+.fields-mini{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.fm-cell{background:var(--surface2);border:1px solid var(--border-subtle);padding:6px 8px}
+.fm-key{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px}
+.fm-val{font-family:var(--mono);font-size:10px;color:var(--text);word-break:break-all}
+.fm-val.empty{color:var(--text4);font-style:italic}
+
+/* Extract action */
+.extract-inline-btn{display:flex;align-items:center;gap:5px;padding:6px 10px;background:var(--brand-light);border:1px solid var(--brand-border);color:var(--brand);font-family:var(--mono);font-size:10px;font-weight:500;cursor:pointer;transition:all .12s}
+.extract-inline-btn:hover{background:var(--brand);color:#fff}
+
+/* Agents row */
+.agents-row{display:flex;gap:6px;flex-wrap:wrap}
+.agent-pill{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;padding:3px 7px;border:1px solid var(--border);color:var(--text3)}
+.agent-pill .adot{width:5px;height:5px;border-radius:50%}
+.agent-pill.ok .adot{background:var(--success)}.agent-pill.warn .adot{background:var(--warning)}.agent-pill.na .adot{background:var(--border)}
+.agent-pill.ok{color:var(--success);border-color:var(--success-border);background:var(--success-bg)}
+.agent-pill.warn{color:var(--warning);border-color:var(--warning-border);background:var(--warning-bg)}
+
+/* Pipeline path badge */
+.path-pill{font-family:var(--mono);font-size:9px;padding:3px 7px;border:1px solid var(--border);color:var(--text3);background:var(--surface2)}
+
+/* No results */
+.no-results{display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px;text-align:center;grid-column:1/-1}
+.no-results-icon{width:48px;height:48px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.no-results-icon svg{width:24px;height:24px;stroke:var(--text4);fill:none;stroke-width:1.5}
+
+/* loading skeleton */
+.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:skelanim 1.4s infinite;border:1px solid var(--border)}
+@keyframes skelanim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Toasts */
+.toasts{position:fixed;bottom:16px;right:16px;z-index:9000;display:flex;flex-direction:column;gap:4px}
+.toast{padding:9px 14px;font-size:12px;background:var(--surface);border:1px solid var(--border);animation:fadeup .2s ease}
+.toast.ok{border-left:2px solid var(--success);color:var(--success)}
+.toast.err{border-left:2px solid var(--danger);color:var(--danger)}
+@keyframes fadeup{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="dashboard.html">
+    <div class="nav-logo"><svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg></div>
+    <span class="nav-title">BankDoc</span>
+  </a>
+  <div class="nav-sep"></div>
+  <div class="nav-links">
+    <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+    <a class="nav-link" href="queue.html">Traitement par lot</a>
+    <a class="nav-link" href="library.html">Bibliothèque</a>
+    <a class="nav-link active" href="smart_search.html">Recherche</a>
+  </div>
+  <div class="nav-right">
+    <div class="status-chip"><span class="dot pulse" id="dot-llm"></span><span id="txt-llm">Gemma…</span></div>
+    <div class="status-chip"><span class="dot pulse" id="dot-mongo"></span><span id="txt-mongo">MongoDB…</span></div>
+    <button class="theme-toggle" onclick="toggleTheme()">◐</button>
+  </div>
+</nav>
+
+<div class="workspace">
+  <div class="search-hero">
+    <div class="search-hero-title">
+      Recherche intelligente
+      <span class="ai-badge">IA · Gemma2</span>
+    </div>
+    <div class="search-hero-sub">Posez votre question en langage naturel — Gemma2 interprète votre demande et interroge la base de données.</div>
+    <div class="search-box">
+      <input class="search-input" id="search-input" type="text"
+        placeholder="Ex : le chèque de monsieur Alami, les RIB de Attijariwafa, actes de naissance de 2023…"
+        onkeydown="if(event.key==='Enter')runSearch()"/>
+      <button class="search-btn" id="search-btn" onclick="runSearch()">
+        <div class="search-spinner" id="search-spinner"></div>
+        <span id="search-btn-txt">Rechercher</span>
+      </button>
+    </div>
+    <div class="suggestions">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text4);align-self:center">Suggestions :</span>
+      <div class="sug" onclick="setPrompt('Tous les chèques de la semaine')">Tous les chèques de la semaine</div>
+      <div class="sug" onclick="setPrompt('Les RIB de la banque CIH')">RIB banque CIH</div>
+      <div class="sug" onclick="setPrompt('Attestations de solde récentes')">Attestations de solde récentes</div>
+      <div class="sug" onclick="setPrompt('Documents qui nécessitent une vérification manuelle')">À vérifier manuellement</div>
+      <div class="sug" onclick="setPrompt('Actes de naissance')">Actes de naissance</div>
+      <div class="sug" onclick="setPrompt('Tableaux d amortissement')">Tableaux d'amortissement</div>
+    </div>
+  </div>
+
+  <div class="interp-bar" id="interp-bar">
+    <div class="interp-icon">🧠</div>
+    <div class="interp-body">
+      <div class="interp-explanation" id="interp-explanation">—</div>
+      <div class="interp-tags" id="interp-tags"></div>
+    </div>
+    <div class="interp-count" id="interp-count">—</div>
+  </div>
+
+  <div class="results-area" id="results-area">
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <div class="empty-title">Recherche intelligente</div>
+      <div class="empty-sub">Entrez votre question ci-dessus. Gemma2 l'interprétera et cherchera les documents correspondants dans la base.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const API = 'http://localhost:5000';
+
+const TYPE_LABELS = {
+  rib:"RIB", cheque:"Chèque", tableau_amortissement:"Tableau d'amortissement",
+  acte_naissance:"Acte de naissance", acte_heredite:"Acte d'hérédité",
+  assurance:"Assurance", attestation_solde:"Attestation de solde", carte_identite:"Carte d'Identité"
+};
+const FIELD_LABELS = {
+  rib:{titulaire:"Titulaire",iban:"IBAN",bic:"BIC",code_banque:"Code banque",code_guichet:"Code guichet",num_compte:"N° compte",cle_rib:"Clé RIB",domiciliation:"Domiciliation",banque:"Banque"},
+  cheque:{beneficiaire:"Bénéficiaire",montant_chiffres:"Montant",montant_lettres:"En lettres",date_emission:"Date",num_cheque:"N° chèque",tire_sur:"Tiré sur",emetteur:"Émetteur",endossable:"Endossable"},
+  tableau_amortissement:{montant_pret:"Montant prêt",taux_interet:"Taux",duree:"Durée",mensualite:"Mensualité",capital_initial:"Capital",date_debut:"Début",nombre_echeances:"Échéances",banque:"Banque"},
+  acte_naissance:{nom:"Nom",prenom:"Prénom",date_naissance:"Naissance",heure_naissance:"Heure",lieu_naissance:"Lieu",sexe:"Sexe",pere:"Père",mere:"Mère",num_acte:"N° acte",date_acte:"Date acte"},
+  acte_heredite:{defunt:"Défunt(e)",date_deces:"Décès",lieu_deces:"Lieu décès",heritiers:"Héritiers",notaire:"Notaire",date_acte:"Date acte",lieu_acte:"Lieu acte"},
+  assurance:{assure:"Assuré(e)",num_contrat:"N° contrat",type_garantie:"Garantie",date_effet:"Effet",date_echeance:"Échéance",prime:"Prime",assureur:"Assureur",agence:"Agence"},
+  attestation_solde:{titulaire:"Titulaire",num_compte:"N° compte",solde:"Solde",arrete_au:"Arrêté au",banque:"Banque",agence:"Agence",type_compte:"Type compte"},
+  carte_identite:{nom:"Nom",prenom:"Prénom",cin_number:"N° CIN",date_naissance:"Naissance",lieu_naissance:"Lieu",date_delivrance:"Délivrance",date_expiration:"Expiration",adresse:"Adresse",sexe:"Sexe"},
+};
+
+let currentKeywords = [];
+let expandedCards = new Set();
+
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
+(()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function confCls(c){return c>=80?'hi':c>=60?'mid':'lo';}
+function fmtDate(iso){if(!iso)return'—';return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function fmtSz(b){if(!b)return'';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+
+function setPrompt(txt) {
+  document.getElementById('search-input').value = txt;
+  document.getElementById('search-input').focus();
+}
+
+async function checkStatus() {
+  try {
+    const r = await fetch(`${API}/status`, {signal: AbortSignal.timeout(4000)});
+    const d = await r.json();
+    setDot('dot-llm', d.ollama?'ok':'warn', d.ollama?'Gemma disponible':'Gemma hors ligne');
+    setDot('dot-mongo', d.mongodb?'ok':'err', d.mongodb?'MongoDB':'MongoDB hors ligne');
+  } catch {
+    setDot('dot-llm','err','Hors ligne');
+    setDot('dot-mongo','err','Hors ligne');
+  }
+}
+function setDot(id,state,txt){
+  const d=document.getElementById(id);if(d)d.className=`dot ${state}`;
+  const t=document.getElementById(id.replace('dot-','txt-'));
+  if(t){t.textContent=txt;t.style.color=state==='ok'?'var(--success)':state==='warn'?'var(--warning)':'var(--danger)';}
+}
+checkStatus();
+
+async function runSearch() {
+  const prompt = document.getElementById('search-input').value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('search-btn');
+  const spinner = document.getElementById('search-spinner');
+  const btnTxt = document.getElementById('search-btn-txt');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnTxt.textContent = 'Analyse…';
+
+  document.getElementById('interp-bar').classList.remove('show');
+  showSkeletons();
+
+  try {
+    const r = await fetch(`${API}/smart_search`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt, limit: 30})
+    });
+    const d = await r.json();
+    if (d.error) { toast('Erreur : ' + d.error, 'err'); showEmpty('Erreur de recherche'); return; }
+
+    currentKeywords = d.interpretation?.keywords || [];
+    renderInterpretation(d.interpretation, d.total, d.llm_available);
+    renderResults(d.results, prompt);
+  } catch(e) {
+    toast('Erreur réseau : ' + e.message, 'err');
+    showEmpty('Erreur de connexion');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnTxt.textContent = 'Rechercher';
+  }
+}
+
+function renderInterpretation(interp, total, llmOk) {
+  if (!interp) return;
+  const bar = document.getElementById('interp-bar');
+  bar.classList.add('show');
+
+  document.getElementById('interp-explanation').textContent = interp.explanation || 'Recherche effectuée';
+  document.getElementById('interp-count').textContent = `${total} résultat${total !== 1 ? 's' : ''}`;
+
+  let tagsHTML = '';
+  if (!llmOk) tagsHTML += `<span class="itag">⚠ LLM indisponible — recherche textuelle</span>`;
+  (interp.doc_types || []).forEach(t => {
+    tagsHTML += `<span class="itag type">📄 ${esc(TYPE_LABELS[t]||t)}</span>`;
+  });
+  (interp.keywords || []).filter(k=>k.length>1).slice(0,8).forEach(k => {
+    tagsHTML += `<span class="itag kw">🔑 ${esc(k)}</span>`;
+  });
+  const ef = interp.extracted_fields || {};
+  Object.entries(ef).filter(([,v])=>v).forEach(([k,v]) => {
+    tagsHTML += `<span class="itag">🎯 ${esc(k)}: ${esc(v)}</span>`;
+  });
+  document.getElementById('interp-tags').innerHTML = tagsHTML;
+}
+
+function highlightText(text, keywords) {
+  if (!text || !keywords || !keywords.length) return esc(text || '');
+  let result = esc(text);
+  keywords.filter(k => k && k.length > 1).forEach(kw => {
+    const re = new RegExp(esc(kw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    result = result.replace(re, m => `<mark>${m}</mark>`);
+  });
+  return result;
+}
+
+function renderResults(docs, prompt) {
+  const area = document.getElementById('results-area');
+  expandedCards.clear();
+
+  if (!docs || !docs.length) {
+    showEmpty(`Aucun document trouvé pour "${esc(prompt)}"`);
+    return;
+  }
+
+  area.innerHTML = `<div class="results-grid" id="results-grid">${docs.map(doc => renderCard(doc)).join('')}</div>`;
+}
+
+function renderCard(doc) {
+  const cc = confCls(doc.confidence || 0);
+  const label = TYPE_LABELS[doc.prediction] || doc.prediction;
+  const ocrSnippet = doc.ocr_text ? doc.ocr_text.substring(0, 300) : '';
+  const hasExtracted = doc.extracted_fields && Object.values(doc.extracted_fields).some(v => v);
+  const SUPPORTED = ['rib','cheque','tableau_amortissement','acte_naissance','acte_heredite','assurance','attestation_solde','carte_identite'];
+  const supExtract = SUPPORTED.includes(doc.prediction);
+
+  return `<div class="rcard" id="rc-${doc._id}">
+    <div class="rcard-head" onclick="toggleCard('${doc._id}')">
+      <div class="rcard-thumb">
+        <img src="${API}/documents/${doc._id}/download" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="rcard-thumb-icon" style="display:none"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      </div>
+      <div class="rcard-meta">
+        <div class="rcard-filename" title="${esc(doc.original_filename)}">${esc(doc.original_filename)}</div>
+        <div class="rcard-type">${esc(label)}</div>
+        <div class="rcard-badges">
+          <span class="rcard-conf ${cc}">${(doc.confidence||0).toFixed(0)}%</span>
+          ${doc.corrected ? '<span class="rcard-conf hi">✓ Corrigé</span>' : ''}
+          ${doc.needs_manual && !doc.corrected ? '<span class="rcard-conf lo">⚠ Révision</span>' : ''}
+          <span class="rcard-date">${fmtDate(doc.uploaded_at)}</span>
+        </div>
+      </div>
+      <button class="rcard-toggle" id="rct-${doc._id}">▶</button>
+    </div>
+    <div class="rcard-detail" id="rcd-${doc._id}">
+      <div class="rcard-detail-inner">
+        <div class="rcard-preview">
+          <div class="rcard-preview-img">
+            <img src="${API}/documents/${doc._id}/download" alt="Aperçu" onerror="this.style.display='none'"/>
+          </div>
+          <a class="dl-btn" href="${API}/documents/${doc._id}/download" download="${esc(doc.original_filename)}">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Télécharger
+          </a>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3)">ID : <span style="color:var(--text2)">${esc(doc._id)}</span></div>
+            ${doc.file_size_bytes ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text3)">Taille : <span style="color:var(--text2)">${fmtSz(doc.file_size_bytes)}</span></div>` : ''}
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3)">Pipeline : <span style="color:var(--text2)">${esc(doc.path||'—')}</span></div>
+          </div>
+        </div>
+        <div class="rcard-info">
+          ${renderAgentsSection(doc)}
+          ${hasExtracted ? renderExtractedSection(doc) : supExtract ? renderExtractAction(doc) : ''}
+          ${ocrSnippet ? renderOcrSection(ocrSnippet) : ''}
+          ${renderScoresSection(doc)}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAgentsSection(doc) {
+  const votes = doc.votes || {};
+  const qwenClass = votes.qwen || (doc.qwen||{}).class;
+  const gemmaClass = votes.gemma || (doc.gemma||{}).class;
+  const path = doc.path || '';
+  const qwenOk = qwenClass && qwenClass.toLowerCase() === (doc.prediction||'').toLowerCase();
+  const gemmaOk = gemmaClass && gemmaClass.toLowerCase() === (doc.prediction||'').toLowerCase();
+  
+  return `<div class="info-sec">
+    <div class="info-sec-label">Agents IA</div>
+    <div class="agents-row">
+      <div class="agent-pill ${qwenClass ? (qwenOk?'ok':'warn') : 'na'}">
+        <span class="adot"></span>Qwen${qwenClass ? ' → '+esc(TYPE_LABELS[qwenClass]||qwenClass) : ' indisponible'}
+      </div>
+      <div class="agent-pill ${gemmaClass ? (gemmaOk?'ok':'warn') : 'na'}">
+        <span class="adot"></span>Gemma${gemmaClass ? ' → '+esc(TYPE_LABELS[gemmaClass]||gemmaClass) : ' indisponible'}
+      </div>
+      ${doc.agreement ? '<div class="agent-pill ok"><span class="adot"></span>✓ Accord automatique</div>' : ''}
+    </div>
+  </div>`;
+}
+
+function renderExtractedSection(doc) {
+  const fl = FIELD_LABELS[doc.prediction] || {};
+  const fields = doc.extracted_fields || {};
+  const entries = Object.entries(fl).filter(([k]) => fields[k]);
+  if (!entries.length) return renderExtractAction(doc);
+  
+  const src = doc.extraction_source || 'cache';
+  const srcLabel = {gemma2:'Gemma2', qwen:'Qwen', 'llama3.2':'LLaMA', cache:'Cache'}[src] || src;
+  
+  return `<div class="info-sec">
+    <div class="info-sec-label">Informations extraites <span style="font-family:var(--mono);font-size:8px;color:var(--text4);margin-left:6px">${srcLabel}</span></div>
+    <div class="fields-mini">
+      ${entries.slice(0,8).map(([k,label]) => `
+        <div class="fm-cell">
+          <div class="fm-key">${esc(label)}</div>
+          <div class="fm-val">${esc(String(fields[k]||''))}</div>
+        </div>
+      `).join('')}
+    </div>
+    <button class="extract-inline-btn" onclick="event.stopPropagation();runExtractInline('${doc._id}','${doc.prediction}',true)">↻ Ré-extraire</button>
+  </div>`;
+}
+
+function renderExtractAction(doc) {
+  return `<div class="info-sec">
+    <div class="info-sec-label">Informations extraites</div>
+    <button class="extract-inline-btn" onclick="event.stopPropagation();runExtractInline('${doc._id}','${doc.prediction}',false)">
+      <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Extraire les informations avec l'IA
+    </button>
+  </div>`;
+}
+
+function renderOcrSection(text) {
+  const highlighted = highlightText(text, currentKeywords);
+  return `<div class="info-sec">
+    <div class="info-sec-label">Texte OCR extrait</div>
+    <div class="ocr-snippet">${highlighted}${text.length >= 300 ? '<span style="color:var(--text4)">…</span>' : ''}</div>
+  </div>`;
+}
+
+function renderScoresSection(doc) {
+  const scores = doc.all_scores || [];
+  if (!scores.length) return '';
+  return `<div class="info-sec">
+    <div class="info-sec-label">Scores EfficientNet</div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      ${scores.slice(0,4).map((s,i) => `
+        <div style="display:grid;grid-template-columns:110px 1fr 36px;align-items:center;gap:6px">
+          <div style="font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(TYPE_LABELS[s.class]||s.class)}</div>
+          <div style="height:3px;background:var(--surface3)"><div style="height:3px;background:${i===0?'var(--brand)':'var(--border)'};width:${(s.score*100).toFixed(0)}%"></div></div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:right">${(s.score*100).toFixed(1)}%</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleCard(id) {
+  const detail = document.getElementById(`rcd-${id}`);
+  const toggle = document.getElementById(`rct-${id}`);
+  const card = document.getElementById(`rc-${id}`);
+  const isOpen = detail.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+  card.classList.toggle('expanded', isOpen);
+  if (isOpen) expandedCards.add(id);
+  else expandedCards.delete(id);
+}
+
+async function runExtractInline(docId, docType, force) {
+  const infoDiv = document.querySelector(`#rc-${docId} .rcard-info`);
+  if (!infoDiv) return;
+  
+  const fl = FIELD_LABELS[docType] || {};
+  const fk = Object.keys(fl);
+  
+  // Show loading state
+  const extractSection = infoDiv.querySelector('.info-sec:has(.extract-inline-btn)') || 
+    infoDiv.querySelector('.extract-inline-btn')?.closest('.info-sec');
+  if (extractSection) {
+    extractSection.innerHTML = `<div class="info-sec-label">Informations extraites</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:8px 0">Extraction en cours…</div>`;
+  }
+  
+  try {
+    const r = await fetch(`${API}/documents/${docId}/extract`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({force})
+    });
+    const d = await r.json();
+    if (d.error) { toast('Erreur extraction : ' + d.error, 'err'); return; }
+    
+    const fields = d.fields || {};
+    const filled = Object.values(fields).filter(v=>v).length;
+    toast(`✅ ${filled} champ${filled>1?'s':''} extrait${filled>1?'s':''}`, 'ok');
+    
+    // Re-render the info section
+    const entries = Object.entries(fl).filter(([k]) => fields[k]);
+    if (extractSection) {
+      const src = d.source || 'none';
+      const srcLabel = {gemma2:'Gemma2', qwen:'Qwen', cache:'Cache'}[src] || src;
+      if (entries.length) {
+        extractSection.innerHTML = `
+          <div class="info-sec-label">Informations extraites <span style="font-family:var(--mono);font-size:8px;color:var(--text4);margin-left:6px">${esc(srcLabel)}</span></div>
+          <div class="fields-mini">
+            ${entries.slice(0,8).map(([k,label]) => `
+              <div class="fm-cell">
+                <div class="fm-key">${esc(label)}</div>
+                <div class="fm-val">${esc(String(fields[k]||''))}</div>
+              </div>
+            `).join('')}
+          </div>
+          <button class="extract-inline-btn" onclick="event.stopPropagation();runExtractInline('${docId}','${docType}',true)">↻ Ré-extraire</button>`;
+      } else {
+        extractSection.innerHTML = `
+          <div class="info-sec-label">Informations extraites</div>
+          <div style="font-size:11px;color:var(--text4)">Aucun champ extrait</div>
+          <button class="extract-inline-btn" onclick="event.stopPropagation();runExtractInline('${docId}','${docType}',true)">↻ Réessayer</button>`;
+      }
+    }
+  } catch(e) {
+    toast('Erreur réseau', 'err');
+  }
+}
+
+function showSkeletons() {
+  const area = document.getElementById('results-area');
+  area.innerHTML = `<div class="results-grid">${Array(6).fill(0).map(() =>
+    `<div class="skel" style="height:80px;border-radius:0"></div>`
+  ).join('')}</div>`;
+}
+
+function showEmpty(msg) {
+  const area = document.getElementById('results-area');
+  area.innerHTML = `<div class="empty-state">
+    <div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+    <div class="empty-title">${esc(msg)}</div>
+    <div class="empty-sub">Essayez de reformuler votre question ou d'utiliser des termes différents.</div>
+  </div>`;
+}
+
+function toast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},3500);}
+</script>
+</body>
+</html>

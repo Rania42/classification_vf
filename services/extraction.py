@@ -1,17 +1,21 @@
 """
-Extraction des métadonnées structurées via LLM (llama3.2 ou Qwen2.5-VL).
-Lit USE_OLLAMA / USE_QWEN au moment de l'appel (pas à l'import).
+Extraction des métadonnées structurées via LLM.
+Stratégie :
+  1. Gemma2:9b  → extraction via texte OCR (principal)
+  2. Qwen2.5-VL → extraction via image (fallback si Gemma échoue)
 """
 import re
 import time
 import os
 
-from config import OLLAMA_MODEL, QWEN_MODEL
+from config import QWEN_MODEL
 from core.agents import (
     _call_ollama_streaming,
     _call_qwen_streaming,
     image_to_base64,
 )
+
+GEMMA_MODEL = "gemma2:9b"
 
 DOC_FIELD_SCHEMAS = {
     "carte_identite": {
@@ -136,10 +140,13 @@ def _parse_llm_json(raw: str, field_keys: list) -> dict | None:
 def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "") -> dict:
     """
     Extrait les métadonnées via LLM.
-    Stratégie : llama3.2 → Qwen2.5-VL → champs vides avec erreur.
-    
+
+    Stratégie :
+      1. Gemma2:9b (texte OCR) → rapide et précis sur le texte
+      2. Qwen2.5-VL (image)    → fallback si Gemma échoue ou champs vides
+      3. Échec total           → champs vides avec _error=True
+
     Retourne TOUJOURS tous les champs du schéma (même vides).
-    Ajoute _error en cas d'échec.
     """
     import core.agents as _agents_module
 
@@ -147,38 +154,38 @@ def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "
     if not schema:
         return {"error": f"Type '{doc_type}' non supporté pour l'extraction", "_error": True}
 
-    field_keys = list(schema["fields"].keys())
-    empty = {k: None for k in field_keys}
+    field_keys  = list(schema["fields"].keys())
+    empty       = {k: None for k in field_keys}
     keys_inline = ", ".join(f'"{k}"' for k in field_keys)
-    ocr_short = ocr_text[:2000]
+    ocr_short   = ocr_text[:2000]
 
     prompt = (
-        f"Texte OCR d'un document '{doc_type}' (marocain, peut être bruité) :\n"
+        f"Tu es un expert en documents bancaires marocains. "
+        f"Voici le texte OCR d'un document de type '{doc_type}' (peut être bruité) :\n"
         f"{ocr_short}\n\n"
         f"Extrais en JSON les champs suivants : {keys_inline}\n"
         f"Mets null si le champ est absent. Corrige les erreurs OCR évidentes. "
-        f"Réponds UNIQUEMENT avec le JSON, aucun texte autour :"
+        f"Réponds UNIQUEMENT avec le JSON, sans texte autour :"
     )
 
-    # ── Essai llama3.2 ──────────────────────────────────
+    # ── Étape 1 : Gemma2:9b (extracteur principal via OCR) ─────────────────
     if _agents_module.USE_OLLAMA:
-        print(f"[Extract] llama3.2 streaming pour '{doc_type}'...")
-        t0 = time.time()
-        raw = _call_ollama_streaming(prompt, OLLAMA_MODEL, timeout_no_token=35)
+        print(f"[Extract] Gemma2:9b pour '{doc_type}'...")
+        t0  = time.time()
+        raw = _call_ollama_streaming(prompt, GEMMA_MODEL, timeout_no_token=60)
         elapsed = time.time() - t0
-        print(f"[Extract] llama3.2 → {len(raw)} chars en {elapsed:.1f}s")
+        print(f"[Extract] Gemma2 → {len(raw)} chars en {elapsed:.1f}s")
         if raw:
             result = _parse_llm_json(raw, field_keys)
             if result and any(v for v in result.values()):
-                # Compléter avec les champs manquants
-                full_result = empty.copy()
-                full_result.update(result)
-                full_result["_source"] = "llama3.2"
-                full_result["_error"] = False
-                return full_result
-        print("[Extract] llama3.2 : réponse vide ou JSON invalide")
+                full = empty.copy()
+                full.update(result)
+                full["_source"] = "gemma2"
+                full["_error"]  = False
+                return full
+        print("[Extract] Gemma2 : réponse vide ou JSON invalide")
 
-    # ── Essai Qwen2.5-VL ────────────────────────────────
+    # ── Étape 2 : Qwen2.5-VL (fallback visuel) ─────────────────────────────
     if _agents_module.USE_QWEN and stored_path and os.path.exists(stored_path):
         prompt_q = (
             f"Document type: {doc_type} (Moroccan banking document). "
@@ -186,27 +193,27 @@ def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "
             f"null if absent. Fix OCR errors. JSON only, no extra text:"
         )
         try:
-            print(f"[Extract] Qwen2.5-VL streaming pour '{doc_type}'...")
+            print(f"[Extract] Qwen2.5-VL fallback pour '{doc_type}'...")
             img_b64 = image_to_base64(stored_path)
-            t0 = time.time()
+            t0  = time.time()
             raw = _call_qwen_streaming(prompt_q, img_b64, timeout_no_token=60)
             elapsed = time.time() - t0
             print(f"[Extract] Qwen → {len(raw)} chars en {elapsed:.1f}s")
             if raw:
                 result = _parse_llm_json(raw, field_keys)
                 if result and any(v for v in result.values()):
-                    full_result = empty.copy()
-                    full_result.update(result)
-                    full_result["_source"] = "qwen"
-                    full_result["_error"] = False
-                    return full_result
+                    full = empty.copy()
+                    full.update(result)
+                    full["_source"] = "qwen"
+                    full["_error"]  = False
+                    return full
             print("[Extract] Qwen : réponse vide ou JSON invalide")
         except Exception as e:
             print(f"[Extract Qwen] ❌ {e}")
 
-    # ── Échec total ─────────────────────────────────────
-    print(f"[Extract] Échec total pour '{doc_type}' — retourne champs vides avec erreur")
-    empty["_source"] = "none"
-    empty["_error"] = True
+    # ── Échec total ─────────────────────────────────────────────────────────
+    print(f"[Extract] Échec total pour '{doc_type}'")
+    empty["_source"]    = "none"
+    empty["_error"]     = True
     empty["_error_msg"] = "Aucun LLM disponible ou extraction échouée"
     return empty

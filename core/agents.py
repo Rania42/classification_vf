@@ -1,5 +1,5 @@
 """
-Agents d'analyse : llama3.2 (Ollama streaming), Qwen2.5-VL (streaming), Nettoyeur regex.
+Agents d'analyse : Qwen2.5-VL (principal), Gemma2:9b (vérificateur), regex nettoyeur.
 """
 import re
 import io
@@ -12,8 +12,10 @@ from config import (
     OLLAMA_TIMEOUT, QWEN_TIMEOUT, KEYWORD_RULES,
 )
 
+GEMMA_MODEL = "gemma2:9b"
+
 # ── État des agents (modifiable via /toggle_*) ─────────
-USE_OLLAMA = True
+USE_OLLAMA = True   # contrôle Gemma2 (et tout modèle Ollama texte)
 USE_QWEN   = True
 
 
@@ -24,36 +26,35 @@ def check_ollama_available() -> dict:
         r = requests.get("http://localhost:11434/api/tags", timeout=3)
         if r.status_code != 200:
             USE_OLLAMA = USE_QWEN = False
-            return {"ollama": False, "qwen": False}
+            return {"ollama": False, "qwen": False, "gemma": False}
         names = [m.get("name", "") for m in r.json().get("models", [])]
-        USE_OLLAMA = any(OLLAMA_MODEL in n for n in names)
         USE_QWEN   = any(QWEN_MODEL   in n for n in names)
-        print(f"[Ollama] llama3.2 : {'✅' if USE_OLLAMA else '❌'}  |  qwen2.5vl : {'✅' if USE_QWEN else '❌'}")
+        USE_OLLAMA = any(GEMMA_MODEL  in n for n in names)
+        gemma_ok   = USE_OLLAMA
+        llama_ok   = any("llama3.2" in n for n in names)
+        print(f"[Ollama] qwen2.5vl : {'✅' if USE_QWEN else '❌'}  |  gemma2:9b : {'✅' if gemma_ok else '❌'}  |  llama3.2 : {'✅' if llama_ok else '❌'}")
     except Exception as e:
         print(f"[Ollama] ❌ Non disponible : {e}")
         USE_OLLAMA = USE_QWEN = False
-    return {"ollama": USE_OLLAMA, "qwen": USE_QWEN}
+    return {"ollama": USE_OLLAMA, "qwen": USE_QWEN, "gemma": USE_OLLAMA}
 
 
 # ── Streaming Ollama ───────────────────────────────────
 def _call_ollama_streaming(prompt: str, model: str, timeout_no_token: int = 30) -> str:
-    """
-    Appel streaming Ollama /api/generate.
-    timeout_no_token : secondes sans recevoir de token avant d'abandonner.
-    """
     import json as _json
     payload = {
         "model": model, "prompt": prompt, "stream": True,
         "options": {"temperature": 0.1, "num_predict": 300},
+        "keep_alive": -1,  # ← Garder le modèle en mémoire GPU indéfiniment
     }
     chunks = []
     try:
         with requests.post(
             OLLAMA_URL, json=payload, stream=True,
-            timeout=(10, timeout_no_token),  # (connect, read)
+            timeout=(10, timeout_no_token),
         ) as resp:
             if resp.status_code != 200:
-                print(f"[llama3.2] HTTP {resp.status_code}")
+                print(f"[{model}] HTTP {resp.status_code}")
                 return ""
             for line in resp.iter_lines():
                 if not line:
@@ -66,26 +67,23 @@ def _call_ollama_streaming(prompt: str, model: str, timeout_no_token: int = 30) 
                 except Exception:
                     continue
     except requests.exceptions.ConnectTimeout:
-        print("[llama3.2] Timeout connexion")
+        print(f"[{model}] Timeout connexion")
     except requests.exceptions.ReadTimeout:
-        print(f"[llama3.2] Timeout lecture ({timeout_no_token}s sans token)")
+        print(f"[{model}] Timeout lecture ({timeout_no_token}s)")
     except requests.exceptions.ConnectionError:
-        print("[llama3.2] Ollama non joignable (service arrêté ?)")
+        print(f"[{model}] Ollama non joignable")
     except Exception as e:
-        print(f"[llama3.2] Erreur inattendue : {e}")
+        print(f"[{model}] Erreur : {e}")
     return "".join(chunks)
 
 
 def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) -> str:
-    """
-    Appel streaming Qwen2.5-VL via /api/chat.
-    timeout_no_token plus long car modèle vision plus lent.
-    """
     import json as _json
     payload = {
         "model": QWEN_MODEL, "stream": True,
         "options": {"temperature": 0.1, "num_predict": 300},
         "messages": [{"role": "user", "content": prompt, "images": [img_b64]}],
+        "keep_alive": -1,  # ← Garder le modèle en mémoire GPU indéfiniment
     }
     chunks = []
     try:
@@ -109,17 +107,16 @@ def _call_qwen_streaming(prompt: str, img_b64: str, timeout_no_token: int = 60) 
     except requests.exceptions.ConnectTimeout:
         print("[Qwen] Timeout connexion")
     except requests.exceptions.ReadTimeout:
-        print(f"[Qwen] Timeout lecture ({timeout_no_token}s sans token)")
+        print(f"[Qwen] Timeout lecture ({timeout_no_token}s)")
     except requests.exceptions.ConnectionError:
         print("[Qwen] Ollama non joignable")
     except Exception as e:
-        print(f"[Qwen] Erreur inattendue : {e}")
+        print(f"[Qwen] Erreur : {e}")
     return "".join(chunks)
 
 
 # ── Image → base64 ─────────────────────────────────────
 def image_to_base64(img_path: str, max_size: int = 1024) -> str:
-    # Si PDF, convertir la première page en image d'abord
     if img_path.lower().endswith(".pdf"):
         import tempfile as _tf
         from core.ocr import pdf_first_page_to_image
@@ -175,28 +172,30 @@ def _parse_classification_json(raw: str, valid_classes: list) -> dict:
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT LLAMA3.2 — Classification via texte OCR
+# AGENT LLM GÉNÉRIQUE (Gemma2 ou llama3.2 selon dispo)
+# Utilisé pour classification texte seul
 # ═══════════════════════════════════════════════════════
-def agent_llm_classification(ocr_text: str, doc_classes: list, context: str = "") -> str | None:
+def agent_llm_classification(ocr_text: str, doc_classes: list, context: str = "",
+                               model: str = None) -> str | None:
     """
-    Appelle llama3.2 pour classifier le document via son texte OCR.
-    Retourne la classe prédite ou None si échec/timeout/indisponible.
+    Classifie via texte OCR avec le modèle spécifié (défaut: gemma2:9b).
+    Retourne la classe ou None.
     """
     if not USE_OLLAMA:
         return None
 
+    target_model = model or GEMMA_MODEL
     classes_str = ", ".join(doc_classes)
     prompt = (
         f"Tu es un expert en documents bancaires marocains.\n"
         f"Catégories disponibles : {classes_str}\n"
         f"{'Contexte : ' + context + chr(10) if context else ''}"
         f"Texte OCR du document :\n{ocr_text[:1500]}\n\n"
-        f"Analyse le texte et réponds UNIQUEMENT avec le nom exact de la catégorie "
-        f"(parmi les catégories listées). Si aucune ne correspond : 'inconnu'.\n"
-        f"Catégorie :"
+        f"Analyse le texte et réponds UNIQUEMENT avec le nom exact de la catégorie. "
+        f"Si aucune ne correspond : 'inconnu'.\nCatégorie :"
     )
 
-    raw = _call_ollama_streaming(prompt, OLLAMA_MODEL, timeout_no_token=30)
+    raw = _call_ollama_streaming(prompt, target_model, timeout_no_token=45)
     if not raw:
         return None
 
@@ -208,12 +207,12 @@ def agent_llm_classification(ocr_text: str, doc_classes: list, context: str = ""
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT QWEN2.5-VL — Confirmation vision multimodale
+# AGENT QWEN2.5-VL — Modèle principal
 # ═══════════════════════════════════════════════════════
 def agent_qwen_vision(img_path: str, ocr_text: str, doc_classes: list,
                       timeout: int = QWEN_TIMEOUT, retry: bool = True) -> dict:
     """
-    Appelle Qwen2.5-VL en streaming pour analyser l'image.
+    Qwen2.5-VL analyse l'image et retourne la classification.
     Retourne {"class": ..., "confidence": ..., "reasoning": ..., "available": bool}
     """
     if not USE_QWEN:
@@ -253,7 +252,6 @@ def agent_qwen_vision(img_path: str, ocr_text: str, doc_classes: list,
 
 # ═══════════════════════════════════════════════════════
 # AGENT KEYWORDS — Détection rapide par règles lexicales
-# (utilisé uniquement pour information / debug, non décisionnel)
 # ═══════════════════════════════════════════════════════
 def agent_keywords(text: str) -> dict:
     text_lower = text.lower()
@@ -275,14 +273,9 @@ def agent_keywords(text: str) -> dict:
 
 
 # ═══════════════════════════════════════════════════════
-# AGENT NETTOYEUR — Regex uniquement (pas de LLM)
-# Appel LLM supprimé : trop coûteux en latence pour ce rôle
+# AGENT NETTOYEUR — Regex uniquement
 # ═══════════════════════════════════════════════════════
 def agent_nettoyeur(raw_text: str) -> str:
-    """
-    Nettoie le texte OCR par regex.
-    Pas d'appel LLM ici — la latence doit rester minimale.
-    """
     cleaned = re.sub(r"[^\w\s\-\.,;:éèêëàâäôöùûüçæœ]", " ", raw_text)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned if cleaned else raw_text

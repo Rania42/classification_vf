@@ -128,14 +128,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .conf-tag.mid{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-border)}
 .conf-tag.lo{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
 .doc-date{font-family:var(--mono);font-size:9px;color:var(--text4)}
-/* List view */
 .doc-grid.list-view .doc-card{display:flex;align-items:center;border-radius:4px}
 .doc-grid.list-view .doc-thumb{width:52px;height:44px;flex-shrink:0;border-bottom:none;border-right:1px solid var(--border-subtle);border-radius:4px 0 0 4px}
 .doc-grid.list-view .doc-info{display:flex;align-items:center;gap:12px;flex:1;padding:0 12px}
 .doc-grid.list-view .doc-name{flex:1;margin:0;font-size:12px}
 .doc-grid.list-view .doc-type-tag{display:none}
 .doc-grid.list-view .doc-needs-manual{position:static;margin-right:2px}
-/* Pager */
 .pager{padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:3px;justify-content:center;flex-shrink:0}
 .pg{padding:5px 10px;font-family:var(--mono);font-size:11px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text2)}
 .pg:hover:not(:disabled){border-color:var(--brand-border);color:var(--brand)}
@@ -146,56 +144,32 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ════════════════════════════════════════
-   MODAL DÉTAIL
-════════════════════════════════════════ */
-.modal-overlay{
-  position:fixed;inset:0;z-index:500;
-  background:rgba(13,17,23,.55);
-  backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity .2s;
-  padding:20px;
-}
+/* ════════ MODAL ════════ */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(13,17,23,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
 .modal-overlay.open{opacity:1;pointer-events:all}
-.modal{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:10px;
-  width:100%;max-width:960px;
-  max-height:calc(100vh - 40px);
-  display:flex;flex-direction:column;
-  transform:translateY(12px) scale(.98);
-  transition:transform .2s;
-  overflow:hidden;
-}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:960px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;transform:translateY(12px) scale(.98);transition:transform .2s;overflow:hidden}
 .modal-overlay.open .modal{transform:none}
-.modal-header{
-  display:flex;align-items:center;gap:10px;
-  padding:14px 18px;border-bottom:1px solid var(--border);
-  flex-shrink:0;background:var(--surface2);
-}
+.modal-header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2)}
 .modal-title{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:2px 6px;border-radius:4px;line-height:1;transition:color .15s}
 .modal-close:hover{color:var(--text);background:var(--surface3)}
-.modal-body{
-  flex:1;overflow-y:auto;
-  display:grid;grid-template-columns:300px 1fr;
-  min-height:0;
-}
+.modal-body{flex:1;overflow-y:auto;display:grid;grid-template-columns:300px 1fr;min-height:0}
 .modal-left{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
 .modal-right{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:16px}
-/* Preview image */
+
+/* Preview */
 .preview-box{padding:14px;border-bottom:1px solid var(--border-subtle);background:var(--surface3)}
 .preview-img{background:var(--surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;min-height:180px;max-height:240px;overflow:hidden}
 .preview-img img{max-width:100%;max-height:220px;object-fit:contain;border-radius:6px}
 .preview-meta{display:flex;gap:10px;margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--text3)}
-/* Sections modales */
+
+/* Modal sections */
 .ms{border-bottom:1px solid var(--border-subtle);padding:14px 16px}
 .ms:last-child{border-bottom:none}
 .ms-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .ms-label::before{content:"";width:2px;height:9px;background:var(--brand);flex-shrink:0}
-/* Classification result */
+
+/* Classification */
 .class-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
 .class-name{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--text)}
 .path-badge{font-family:var(--mono);font-size:9px;padding:3px 8px;border:1px solid var(--border);border-radius:3px;color:var(--text3);white-space:nowrap}
@@ -207,26 +181,44 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .verdict-tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:4px 8px;border:1px solid;border-radius:3px;margin-top:8px}
 .verdict-tag.ok{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
 .verdict-tag.warn{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-border)}
-/* LLM verdicts */
-.llm-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);margin-bottom:5px;font-size:11px}
-.llm-name{font-weight:500;display:flex;align-items:center;gap:5px}
-.llm-pred{font-family:var(--mono);font-size:10px;color:var(--text3)}
-.llm-badge{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 7px;border:1px solid;border-radius:3px}
-.llm-badge.agree{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
-.llm-badge.disagree{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
-.llm-badge.unavail{background:var(--surface3);color:var(--text3);border-color:var(--border)}
-/* Lexical scores */
-.lex-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border-subtle)}
-.lex-row:last-child{border-bottom:none}
-.lex-name{color:var(--text2)}
-.lex-score{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--brand)}
-/* Meta grid */
+
+/* ── AGENTS section (remplace ancienne LLM section) ── */
+.agent-pipeline{display:flex;flex-direction:column;gap:6px}
+.agent-row{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border:1px solid var(--border);border-radius:5px;background:var(--surface2)}
+.agent-left{display:flex;align-items:center;gap:8px;min-width:0}
+.agent-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.agent-dot.ok{background:var(--success)}.agent-dot.warn{background:var(--warning)}.agent-dot.na{background:var(--border)}
+.agent-info{}
+.agent-name{font-size:12px;font-weight:500;color:var(--text)}
+.agent-role{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.agent-pred{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:2px}
+.agent-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.agent-badge{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 7px;border:1px solid;border-radius:3px;white-space:nowrap}
+.agent-badge.agree{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.agent-badge.disagree{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
+.agent-badge.unavail{background:var(--surface3);color:var(--text3);border-color:var(--border)}
+.agent-badge.principal{background:var(--brand-light);color:var(--brand);border-color:var(--brand-border)}
+.agent-badge.fallback{background:var(--surface3);color:var(--text4);border-color:var(--border)}
+.pipeline-verdict{margin-top:8px;padding:9px 11px;border-radius:5px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px}
+.pipeline-verdict.ok{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.pipeline-verdict.warn{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
+.qwen-reasoning{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--surface2);padding:7px 9px;border:1px solid var(--border-subtle);border-radius:4px;margin-top:8px;line-height:1.5}
+.qwen-reasoning-label{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px}
+
+/* Scores */
+.sc-row{display:grid;grid-template-columns:120px 1fr 38px;gap:6px;align-items:center;margin-bottom:4px}
+.sc-name{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-bg{height:3px;background:var(--surface3);border-radius:2px}.sc-fill{height:3px;border-radius:2px;background:var(--border)}.sc-fill.top{background:var(--brand)}
+.sc-pct{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right}
+
+/* Meta */
 .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .meta-cell{background:var(--surface2);border:1px solid var(--border-subtle);border-radius:5px;padding:9px 11px}
 .meta-cell.full{grid-column:span 2}
 .meta-key{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px}
 .meta-val{font-family:var(--mono);font-size:11px;color:var(--text);word-break:break-all;line-height:1.4}
-/* Correction form */
+
+/* Correction */
 .corr-tabs{display:flex;gap:2px;background:var(--surface3);padding:2px;border-radius:5px;margin-bottom:10px}
 .ct{flex:1;padding:7px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text3);border-radius:4px;font-family:var(--font)}
 .ct.active{background:var(--surface);color:var(--brand)}
@@ -238,8 +230,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .info-box{background:var(--brand-light);border:1px solid var(--brand-border);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px}
 .corr-btn{width:100%;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:5px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;transition:background .15s}
 .corr-btn:hover{background:var(--brand2)}
-.corr-btn:disabled{opacity:.4;cursor:not-allowed}
-/* Extract */
+
+/* Extraction */
 .extract-btn{width:100%;padding:9px;background:var(--brand-light);border:1px solid var(--brand-border);border-radius:5px;color:var(--brand);font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
 .extract-btn:hover{background:var(--brand);color:#fff}
 .fields-table{width:100%;border-collapse:collapse}
@@ -253,13 +245,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .src-badge.llama{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
 .src-badge.qwen{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
 .src-badge.cache{background:var(--surface2);color:var(--text3);border-color:var(--border)}
-/* Scores mini */
-.sc-row{display:grid;grid-template-columns:120px 1fr 38px;gap:6px;align-items:center;margin-bottom:4px}
-.sc-name{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sc-bg{height:3px;background:var(--surface3);border-radius:2px}.sc-fill{height:3px;border-radius:2px;background:var(--border)}.sc-fill.top{background:var(--brand)}
-.sc-pct{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right}
+
 /* OCR */
 .ocr-box{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.7;max-height:150px;overflow-y:auto;white-space:pre-wrap}
+
 /* Modal footer */
 .modal-footer{padding:12px 18px;border-top:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;flex-shrink:0}
 .mf-btn{flex:1;padding:9px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
@@ -276,12 +265,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 @keyframes fadeup{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
 
 @media(max-width:900px){
-  .workspace{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .modal-body{grid-template-columns:1fr}
-  .modal-left{border-right:none;border-bottom:1px solid var(--border)}
+  .workspace{grid-template-columns:1fr}.sidebar{display:none}
+  .modal-body{grid-template-columns:1fr}.modal-left{border-right:none;border-bottom:1px solid var(--border)}
 }
-@media(max-width:600px){.modal{max-height:95vh;border-radius:8px}}
 </style>
 </head>
 <body>
@@ -296,7 +282,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <a class="nav-link" href="dashboard.html">Tableau de bord</a>
     <a class="nav-link" href="queue.html">Traitement par lot</a>
     <a class="nav-link active" href="library.html">Bibliothèque</a>
-    <a class="nav-link" href="manual_review.html" id="nav-manual" style="color:var(--warning)">À réviser</a>
+    <a class="nav-link" href="smart_search.html">Recherche</a>
   </div>
   <div class="nav-right">
     <div class="status-chip" id="total-chip">— docs</div>
@@ -306,7 +292,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </nav>
 
 <div class="workspace">
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-inner">
       <div>
@@ -341,7 +326,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <div class="stats-list" id="stats-list"></div>
       </div>
       <div id="manual-sidebar" style="display:none">
-        <a href="manual_review.html" class="manual-badge" style="text-decoration:none">
+        <a href="manual_classify.html" class="manual-badge" style="text-decoration:none">
           <span class="manual-badge-left">⚠ À réviser manuellement</span>
           <span class="manual-badge-cnt" id="manual-cnt">—</span>
         </a>
@@ -349,7 +334,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     </div>
   </div>
 
-  <!-- CENTER -->
   <div class="center">
     <div class="batch-bar" id="batch-bar">
       <span class="batch-cnt" id="batch-cnt">0 sélectionné(s)</span>
@@ -372,10 +356,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
 </div>
 
-<!-- ════════════════ MODAL DÉTAIL ════════════════ -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
-    <div class="modal-header" id="modal-header">
+    <div class="modal-header">
       <span class="modal-title" id="modal-title">—</span>
       <button class="modal-close" onclick="closeModalDirect()">×</button>
     </div>
@@ -391,7 +375,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <script>
 const API='http://localhost:5000';
-const TYPE_LABELS={rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde",carte_identite:"Carte d'Identité"};
+const TYPE_LABELS={
+  rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",
+  acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",
+  assurance:"Assurance",attestation_solde:"Attestation de solde",carte_identite:"Carte d'Identité"
+};
 const FIELD_LABELS={
   rib:{titulaire:"Titulaire",iban:"IBAN",bic:"BIC",code_banque:"Code banque",code_guichet:"Code guichet",num_compte:"N° compte",cle_rib:"Clé RIB",domiciliation:"Domiciliation",banque:"Banque"},
   cheque:{beneficiaire:"Bénéficiaire",montant_chiffres:"Montant",montant_lettres:"En lettres",date_emission:"Date",num_cheque:"N° chèque",tire_sur:"Tiré sur",emetteur:"Émetteur",endossable:"Endossable"},
@@ -416,37 +404,36 @@ function fmtSz(b){if(!b)return'—';if(b<1024)return b+' B';if(b<1048576)return(
 (async()=>{checkMongo();await loadAllTypes();await loadStats();await loadDocs();})();
 
 async function checkMongo(){
-  try{const r=await fetch(`${API}/status`,{signal:AbortSignal.timeout(4000)});const d=await r.json();
-  document.getElementById('dot-mongo').className=`dot ${d.mongodb?'ok':'err'}`;
-  const t=document.getElementById('txt-mongo');t.textContent=d.mongodb?'MongoDB':'Hors ligne';t.style.color=d.mongodb?'var(--success)':'var(--danger)';}
-  catch{document.getElementById('dot-mongo').className='dot err';}
+  try{
+    const r=await fetch(`${API}/status`,{signal:AbortSignal.timeout(4000)});
+    const d=await r.json();
+    document.getElementById('dot-mongo').className=`dot ${d.mongodb?'ok':'err'}`;
+    const t=document.getElementById('txt-mongo');
+    t.textContent=d.mongodb?'MongoDB':'Hors ligne';
+    t.style.color=d.mongodb?'var(--success)':'var(--danger)';
+  }catch{document.getElementById('dot-mongo').className='dot err';}
 }
 async function loadAllTypes(){try{const r=await fetch(`${API}/types`);const d=await r.json();S.allTypes=d.types||[];}catch{}}
+
 async function loadStats(){
   try{
     const r=await fetch(`${API}/documents/stats`);const d=await r.json();
     const stats=d.stats||[];const total=d.total||0;
     document.getElementById('total-chip').textContent=`${total} doc${total!==1?'s':''}`;
     document.getElementById('cnt-all').textContent=total;
-    // Cat list
     document.getElementById('cat-list').innerHTML=
       `<div class="cat-item ${S.cat===''?'active':''}" onclick="setCat('')" data-cat=""><span class="cat-name">Tous les documents</span><span class="cat-cnt">${total}</span></div>`
       +stats.map(s=>`<div class="cat-item ${S.cat===s.category?'active':''}" onclick="setCat('${esc(s.category)}')" data-cat="${esc(s.category)}"><span class="cat-name">${esc(TYPE_LABELS[s.category]||s.category)}</span><span class="cat-cnt">${s.count}</span></div>`).join('');
-    // Stats list
     document.getElementById('stats-list').innerHTML=stats.map(s=>`<div class="stat-row" onclick="setCat('${esc(s.category)}')"><span class="stat-row-name">${esc(TYPE_LABELS[s.category]||s.category)}</span><span class="stat-row-conf ${confCls(s.avg_confidence)}">${s.avg_confidence.toFixed(0)}%</span></div>`).join('');
-    // Manual badge
     try{
       const mr=await fetch(`${API}/documents?page=1&per_page=1&needs_manual=true`);
       const md=await mr.json();
-      const manualCount=md.total||0;
-      if(manualCount>0){
-        document.getElementById('manual-sidebar').style.display='block';
-        document.getElementById('manual-cnt').textContent=manualCount;
-        document.getElementById('nav-manual').textContent=`⚠ À réviser (${manualCount})`;
-      }
+      const mc=md.total||0;
+      if(mc>0){document.getElementById('manual-sidebar').style.display='block';document.getElementById('manual-cnt').textContent=mc;}
     }catch{}
   }catch(e){console.error(e);}
 }
+
 async function loadDocs(page=1){
   S.page=page;
   document.getElementById('doc-grid').innerHTML=`<div class="grid-empty"><div class="spin"></div></div>`;
@@ -460,6 +447,7 @@ async function loadDocs(page=1){
     document.getElementById('toolbar-info').textContent=S.total?`${s}–${e} / ${S.total}`:'Aucun résultat';
   }catch(e){gridErr(e.message);}
 }
+
 function renderGrid(){
   const g=document.getElementById('doc-grid');
   g.className=`doc-grid ${S.view==='list'?'list-view':''}`;
@@ -482,6 +470,7 @@ function renderGrid(){
     </div>`;
   }).join('');
 }
+
 function renderPager(){
   const bar=document.getElementById('pager');if(S.pages<=1){bar.innerHTML='';return;}
   const p=S.page,t=S.pages,range=[];
@@ -510,24 +499,73 @@ function closeModal(e){if(e.target===document.getElementById('modal-overlay'))cl
 function closeModalDirect(){document.getElementById('modal-overlay').classList.remove('open');currentDoc=null;}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModalDirect();});
 
+/* ── RENDU MODAL (section agents remplacée) ── */
 function renderModal(doc){
   const cc=confCls(doc.confidence);
   document.getElementById('modal-title').textContent=doc.original_filename;
 
-  // ── LEFT ──
-  const qwen=doc.qwen||{};const votes=doc.votes||{};const llamaResult=doc.llama_result||{};
-  const llamaPred=votes.llm||llamaResult.class||null;
-  const qwenPred=votes.qwen||qwen.class||null;
-  const mp=doc.prediction;
-  const llamaAgrees=llamaPred&&llamaPred.toLowerCase()===mp.toLowerCase();
-  const qwenAgrees=qwenPred&&qwenPred.toLowerCase()===mp.toLowerCase();
-  const llamaAvail=!!(llamaPred);const qwenAvail=!!(qwenPred||qwen.available);
+  // ── Données agents ──────────────────────────────────────────────────────
+  const qwen   = doc.qwen   || {};
+  const gemma  = doc.gemma  || doc.llama_result || {};  // compat ancienne API
+  const votes  = doc.votes  || {};
+  const path   = doc.path   || '';
+
+  const qwenClass   = votes.qwen  || qwen.class  || null;
+  const gemmaClass  = votes.gemma || gemma.class || null;
+  const effClass    = votes.efficientnet || null;
+  const mp          = doc.prediction;
+
+  const qwenAvail   = !!(qwenClass || qwen.available);
+  const gemmaAvail  = !!(gemmaClass || gemma.available);
+  const usedEff     = !!effClass || path === 'efficientnet_fallback';
+
+  const qwenAgrees  = qwenAvail  && qwenClass  && qwenClass.toLowerCase()  === mp.toLowerCase();
+  const gemmaAgrees = gemmaAvail && gemmaClass && gemmaClass.toLowerCase() === mp.toLowerCase();
+
+  // ── Section agents ──────────────────────────────────────────────────────
+  function agentRow(name, role, badgeLabel, cls, pred, agrees, avail, isRef=false){
+    const dotCls = !avail ? 'na' : agrees || isRef ? 'ok' : 'warn';
+    const badgeCls = isRef ? 'principal' : !avail ? 'unavail' : agrees ? 'agree' : 'disagree';
+    const verdictTxt = isRef ? 'Référence' : !avail ? 'Indisponible' : agrees ? '✓ Confirme' : '✗ Désaccorde';
+    const predLabel = pred ? (TYPE_LABELS[pred] || pred) : '—';
+    return `<div class="agent-row">
+      <div class="agent-left">
+        <span class="agent-dot ${dotCls}"></span>
+        <div class="agent-info">
+          <div class="agent-name">${esc(name)} <span class="agent-badge ${badgeLabel==='Principal'?'principal':badgeLabel==='Vérificateur'?'agree':'fallback'}" style="font-size:8px;margin-left:3px">${badgeLabel}</span></div>
+          <div class="agent-role">${esc(role)}</div>
+          ${pred?`<div class="agent-pred">→ ${esc(predLabel)}</div>`:'<div class="agent-pred" style="color:var(--text4)">—</div>'}
+        </div>
+      </div>
+      <div class="agent-right">
+        <span class="agent-badge ${badgeCls}">${verdictTxt}</span>
+      </div>
+    </div>`;
+  }
+
+  // Verdict pipeline
+  let verdictPipelineCls='warn', verdictPipelineTxt='';
+  if(doc.agreement && !doc.needs_manual){
+    verdictPipelineCls='ok';
+    verdictPipelineTxt='✅ Validé automatiquement — Qwen et Gemma s\'accordent';
+  } else if(path==='qwen_gemma_disagreement'){
+    verdictPipelineTxt='⚠ Désaccord Qwen / Gemma — vérification humaine requise';
+  } else if(path==='qwen_only'){
+    verdictPipelineTxt='⚠ Qwen seul — Gemma indisponible';
+  } else if(path==='gemma_only'){
+    verdictPipelineTxt='⚠ Gemma seul — Qwen indisponible';
+  } else if(path==='efficientnet_fallback'){
+    verdictPipelineTxt='🔴 Mode dégradé — EfficientNet utilisé en secours';
+  } else {
+    verdictPipelineTxt=doc.needs_manual?'⚠ Vérification humaine recommandée':'Résultat pipeline';
+  }
 
   const SUPPORTED=['rib','cheque','tableau_amortissement','acte_naissance','acte_heredite','assurance','attestation_solde'];
   const supE=SUPPORTED.includes(doc.prediction);
   const cached=doc.extracted_fields;
   const hasCache=cached&&Object.values(cached).some(v=>v);
 
+  // ── LEFT ───────────────────────────────────────────────────────────────
   document.getElementById('modal-left').innerHTML=`
     <div class="preview-box">
       <div class="preview-img">
@@ -539,28 +577,39 @@ function renderModal(doc){
         <span>📏 ${fmtSz(doc.file_size_bytes)}</span>
       </div>
     </div>
+
     <div class="ms">
       <div class="ms-label">Classification</div>
       <div class="class-row">
         <div class="class-name">${esc(TYPE_LABELS[mp]||mp)}</div>
-        <div class="path-badge">${esc(doc.path||'—')}</div>
+        <div class="path-badge">${esc(path||'—')}</div>
       </div>
       <div class="conf-bar-wrap">
-        <div class="conf-bar-labels"><span style="font-size:11px;color:var(--text3)">Confiance</span><span style="font-family:var(--mono);font-size:11px;font-weight:500" class="${cc}">${(doc.confidence||0).toFixed(1)}%</span></div>
+        <div class="conf-bar-labels">
+          <span style="font-size:11px;color:var(--text3)">Confiance</span>
+          <span style="font-family:var(--mono);font-size:11px;font-weight:500" class="${cc}">${(doc.confidence||0).toFixed(1)}%</span>
+        </div>
         <div class="conf-bar-bg"><div class="conf-bar-fill ${cc}" style="width:${Math.min(doc.confidence||0,100)}%"></div></div>
       </div>
-      <div class="verdict-tag ${doc.agreement?'ok':'warn'}">${doc.agreement?'✅ Validé auto':'⚠ Révision requise'}</div>
+      <div class="verdict-tag ${doc.agreement?'ok':'warn'}">${doc.agreement?'✅ Validé automatiquement':'⚠ Vérification requise'}</div>
     </div>
+
     <div class="ms">
-      <div class="ms-label">Vérification IA</div>
-      <div class="llm-row"><div class="llm-name">llama3.2</div><div class="llm-pred">${llamaAvail?esc(TYPE_LABELS[llamaPred]||llamaPred):'—'}</div><div class="llm-badge ${!llamaAvail?'unavail':llamaAgrees?'agree':'disagree'}">${!llamaAvail?'Non dispo':llamaAgrees?'✓ OK':'✗ Diff.'}</div></div>
-      <div class="llm-row"><div class="llm-name" style="color:var(--purple)">Qwen2.5-VL</div><div class="llm-pred">${qwenAvail?esc(TYPE_LABELS[qwenPred]||qwenPred||'—'):'—'}</div><div class="llm-badge ${!qwenAvail?'unavail':qwenAgrees?'agree':'disagree'}">${!qwenAvail?'Non dispo':qwenAgrees?'✓ OK':'✗ Diff.'}</div></div>
-      ${qwen.reasoning?`<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:8px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border-subtle);border-radius:5px;line-height:1.5">${esc(qwen.reasoning.substring(0,200))}</div>`:''}
+      <div class="ms-label">Résultats des agents IA</div>
+      <div class="agent-pipeline">
+        ${agentRow('Qwen2.5-VL','Analyse visuelle (principal)','Principal',cc,qwenClass,qwenAgrees,qwenAvail,!usedEff)}
+        ${agentRow('Gemma2:9b','Vérification textuelle (OCR)','Vérificateur',cc,gemmaClass,gemmaAgrees,gemmaAvail)}
+        ${usedEff?agentRow('EfficientNet+mBERT','Modèle de secours','Fallback',cc,effClass||mp,false,true):''}
+      </div>
+      <div class="pipeline-verdict ${verdictPipelineCls}">${verdictPipelineTxt}</div>
+      ${qwen.reasoning?`<div class="qwen-reasoning"><div class="qwen-reasoning-label">Raisonnement Qwen</div>${esc(qwen.reasoning.substring(0,250))}</div>`:''}
     </div>
+
     ${(doc.all_scores||[]).length?`<div class="ms">
-      <div class="ms-label">Scores</div>
+      <div class="ms-label">Scores EfficientNet</div>
       ${doc.all_scores.map((s,i)=>`<div class="sc-row"><div class="sc-name">${esc(TYPE_LABELS[s.class]||s.class)}</div><div class="sc-bg"><div class="sc-fill ${i===0?'top':''}" style="width:${(s.score*100).toFixed(0)}%"></div></div><div class="sc-pct">${(s.score*100).toFixed(1)}%</div></div>`).join('')}
     </div>`:''}
+
     <div class="ms">
       <div class="ms-label">Informations</div>
       <div class="meta-grid">
@@ -571,11 +620,10 @@ function renderModal(doc){
     </div>
   `;
 
-  // ── RIGHT ──
-  // Correction
+  // ── RIGHT ──────────────────────────────────────────────────────────────
   const corrHTML=`<div>
     <div class="ms-label">Corriger la classification</div>
-    <div id="corr-tabs-${doc._id}" class="corr-tabs">
+    <div class="corr-tabs">
       <button class="ct active" id="ct-ex-${doc._id}" onclick="setCorrTab('${doc._id}','ex')">Type existant</button>
       <button class="ct" id="ct-nw-${doc._id}" onclick="setCorrTab('${doc._id}','nw')">Nouveau type</button>
     </div>
@@ -591,7 +639,6 @@ function renderModal(doc){
     <button class="corr-btn" onclick="correctCat('${doc._id}')">Confirmer la correction</button>
   </div>`;
 
-  // Extraction
   const extractHTML=supE?`<div>
     <div class="ms-label">Extraction de champs</div>
     <div id="ex-body-${doc._id}">
@@ -599,18 +646,16 @@ function renderModal(doc){
     </div>
   </div>`:'';
 
-  // OCR
   const ocrHTML=doc.ocr_text?`<div>
-    <div class="ms-label">Texte OCR</div>
+    <div class="ms-label">Texte OCR extrait</div>
     <div class="ocr-box">${esc(doc.ocr_text)}</div>
   </div>`:'';
 
-  // Pipeline steps
   const stepsHTML=(doc.steps&&doc.steps.length)?`<div>
-    <div class="ms-label">Journal pipeline</div>
+    <div class="ms-label">Journal d'exécution</div>
     <div style="display:flex;flex-direction:column;gap:4px">
       ${doc.steps.map((s,i)=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-subtle)">
-        <div style="width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:500;background:var(--surface3);border:1px solid var(--border);border-radius:3px">${i+1}</div>
+        <div style="width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;background:var(--surface3);border:1px solid var(--border);border-radius:3px">${i+1}</div>
         <div><div style="font-size:11px;font-weight:500;margin-bottom:1px">${esc(s.step)}</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.4">${esc(s.detail||'')}</div></div>
       </div>`).join('')}
     </div>
@@ -618,11 +663,10 @@ function renderModal(doc){
 
   document.getElementById('modal-right').innerHTML=corrHTML+extractHTML+ocrHTML+stepsHTML;
 
-  // Footer
   document.getElementById('modal-footer').innerHTML=`
     <button class="mf-btn primary" onclick="dlDoc('${doc._id}','${esc(doc.original_filename)}')">⬇ Télécharger</button>
     <button class="mf-btn danger" onclick="delDoc('${doc._id}')">🗑 Supprimer</button>
-    ${doc.needs_manual?`<a class="mf-btn" href="manual_classify.html?doc_id=${doc._id}&filename=${encodeURIComponent(doc.original_filename)}&confidence=${doc.confidence}&prediction=${encodeURIComponent(doc.prediction)}&ocr=${encodeURIComponent((doc.ocr_text||'').substring(0,500))}&scores=${encodeURIComponent(JSON.stringify(doc.all_scores||[]))}" style="text-decoration:none;background:var(--warning);border-color:var(--warning);color:#fff">⚠ Classifier</a>`:''}
+    ${doc.needs_manual?`<a class="mf-btn" href="manual_classify.html?doc_id=${doc._id}&filename=${encodeURIComponent(doc.original_filename)}&confidence=${doc.confidence}&prediction=${encodeURIComponent(doc.prediction)}&ocr=${encodeURIComponent((doc.ocr_text||'').substring(0,500))}&scores=${encodeURIComponent(JSON.stringify(doc.all_scores||[]))}" style="text-decoration:none;background:var(--warning);border-color:var(--warning);color:#fff">⚠ Classifier manuellement</a>`:''}
   `;
 }
 
@@ -669,11 +713,11 @@ function renderEmptyFields(docType,docId){
   return`<table class="fields-table">${fk.map(k=>`<tr><td class="ft-key">${esc(sf[k]||k)}</td><td class="ft-val empty">—</td></tr>`).join('')}</table>
   <div style="margin-top:10px"><button class="extract-btn" onclick="runExtract('${docId}','${docType}')">⚙ Extraire les informations</button></div>`;
 }
-function renderFields(fields,source,docType,docId,hasError=false,errorMsg=''){
+function renderFields(fields,source,docType,docId){
   const sf=FIELD_LABELS[docType]||{};const fk=Object.keys(sf);
   if(!fk.length)return`<div style="font-size:11px;color:var(--text3)">Aucun champ défini</div>`;
   const filled=fk.filter(k=>fields[k]).length;
-  const sCls={'llama3.2':'llama','qwen':'qwen','cache':'cache','none':'src-badge'}[source]||'cache';
+  const sCls={'llama3.2':'llama','qwen':'qwen','gemma2':'llama','cache':'cache','none':'cache'}[source]||'cache';
   return`<table class="fields-table">${fk.map(k=>`<tr><td class="ft-key">${esc(sf[k]||k)}</td><td class="ft-val ${fields[k]?'':' empty'}">${fields[k]?esc(String(fields[k])):'—'}</td></tr>`).join('')}</table>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:5px">
     <span class="src-badge ${sCls}">${esc(source||'—')} · ${filled}/${fk.length}</span>
@@ -686,12 +730,12 @@ async function runExtract(docId,docType,force=false){
   try{
     const r=await fetch(`${API}/documents/${docId}/extract`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({force})});
     const d=await r.json();
-    body.innerHTML=renderFields(d.fields||{},d.source||'none',docType,docId,d._error||!!d.error,d._error_msg||d.error||'');
-    toast(d._error?`⚠ Extraction échouée`:`✅ ${Object.values(d.fields||{}).filter(v=>v).length} champs`,'ok');
+    body.innerHTML=renderFields(d.fields||{},d.source||'none',docType,docId);
+    toast(d._error?`⚠ Extraction échouée`:`✅ ${Object.values(d.fields||{}).filter(v=>v).length} champs extraits`,'ok');
   }catch(e){toast(`❌ ${e.message}`,'err');}
 }
 
-/* ── FILTERS ── */
+/* ── FILTRES ── */
 function setCat(cat){S.cat=cat;S.page=1;document.querySelectorAll('.cat-item').forEach(el=>el.classList.toggle('active',el.dataset.cat===cat));loadDocs(1);}
 function setSort(v){S.sort=v;loadDocs(1);}
 function setConf(v){S.confMin=parseInt(v);document.getElementById('conf-val').textContent=v+'%';clearTimeout(searchT);searchT=setTimeout(()=>loadDocs(1),400);}
@@ -699,15 +743,29 @@ function onSearch(v){document.getElementById('s-clear').style.display=v?'block':
 function clearSearch(){document.getElementById('search').value='';document.getElementById('s-clear').style.display='none';S.q='';loadDocs(1);}
 function setView(v){S.view=v;document.getElementById('vg').classList.toggle('active',v==='grid');document.getElementById('vl').classList.toggle('active',v==='list');renderGrid();}
 
-/* ── SELECTION ── */
+/* ── SÉLECTION ── */
 function toggleSel(id){S.sel.has(id)?S.sel.delete(id):S.sel.add(id);const c=document.getElementById(`c-${id}`);c?.classList.toggle('selected',S.sel.has(id));c?.querySelector('.doc-sel')?.classList.toggle('on',S.sel.has(id));updateBatch();}
 function toggleSelAll(){S.sel.size===S.docs.length?S.sel.clear():S.docs.forEach(d=>S.sel.add(d._id));renderGrid();updateBatch();}
 function clearSel(){S.sel.clear();renderGrid();updateBatch();}
 function updateBatch(){const n=S.sel.size;document.getElementById('batch-bar').classList.toggle('show',n>0);document.getElementById('batch-cnt').textContent=`${n} sélectionné${n>1?'s':''}`;}
-async function batchDel(){if(!S.sel.size)return;if(!confirm(`Supprimer ${S.sel.size} document(s) ?`))return;let ok=0;for(const id of[...S.sel]){try{const r=await fetch(`${API}/documents/${id}`,{method:'DELETE'});const d=await r.json();if(d.success)ok++;}catch{}}S.sel.clear();updateBatch();toast(`${ok} supprimé(s)`,'ok');closeModalDirect();await loadStats();await loadDocs(1);}
-async function batchDL(){for(const id of[...S.sel]){const doc=S.docs.find(d=>d._id===id);if(doc){const a=document.createElement('a');a.href=`${API}/documents/${id}/download`;a.download=doc.original_filename;a.click();await new Promise(r=>setTimeout(r,200));}}toast('Téléchargements démarrés','ok');}
+
+async function batchDel(){
+  if(!S.sel.size)return;
+  if(!confirm(`Supprimer ${S.sel.size} document(s) ?`))return;
+  let ok=0;
+  for(const id of[...S.sel]){try{const r=await fetch(`${API}/documents/${id}`,{method:'DELETE'});const d=await r.json();if(d.success)ok++;}catch{}}
+  S.sel.clear();updateBatch();toast(`${ok} supprimé(s)`,'ok');closeModalDirect();await loadStats();await loadDocs(1);
+}
+async function batchDL(){
+  for(const id of[...S.sel]){const doc=S.docs.find(d=>d._id===id);if(doc){const a=document.createElement('a');a.href=`${API}/documents/${id}/download`;a.download=doc.original_filename;a.click();await new Promise(r=>setTimeout(r,200));}}
+  toast('Téléchargements démarrés','ok');
+}
 async function dlDoc(id,fn){const a=document.createElement('a');a.href=`${API}/documents/${id}/download`;a.download=fn;a.click();toast('Téléchargement démarré','ok');}
-async function delDoc(id){if(!confirm('Supprimer ce document ?'))return;try{const r=await fetch(`${API}/documents/${id}`,{method:'DELETE'});const d=await r.json();if(d.success){toast('Supprimé','ok');closeModalDirect();await loadStats();await loadDocs(S.page);}else toast('Erreur : '+(d.error||'?'),'err');}catch{toast('Erreur réseau','err');}}
+async function delDoc(id){
+  if(!confirm('Supprimer ce document ?'))return;
+  try{const r=await fetch(`${API}/documents/${id}`,{method:'DELETE'});const d=await r.json();if(d.success){toast('Supprimé','ok');closeModalDirect();await loadStats();await loadDocs(S.page);}else toast('Erreur : '+(d.error||'?'),'err');}
+  catch{toast('Erreur réseau','err');}
+}
 function toast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},3500);}
 </script>
 </body>

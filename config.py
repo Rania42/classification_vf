@@ -22,12 +22,12 @@ QWEN_MODEL   = "qwen2.5vl:3b"
 
 # Timeouts streaming (secondes sans recevoir de token)
 # llama3.2 : texte → rapide
-OLLAMA_TIMEOUT     = 30   # timeout_no_token pour classification
+OLLAMA_TIMEOUT     = 120   # timeout_no_token pour classification
 OLLAMA_MAX_RETRIES = 1
 
 # Qwen2.5-VL : vision → plus lent, surtout sans GPU
 # Augmenter à 90-120s si le modèle est très lent sur votre machine
-QWEN_TIMEOUT = 60
+QWEN_TIMEOUT = 120
 
 # ── MongoDB ────────────────────────────────────────────
 MONGO_URI = "mongodb://localhost:27017/"

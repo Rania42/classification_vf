@@ -17,7 +17,6 @@
   --border:#D8DDE8;--border-subtle:#EDF0F7;
   --shadow-sm:0 1px 3px rgba(13,17,23,0.06),0 1px 2px rgba(13,17,23,0.04);
   --shadow-md:0 4px 16px rgba(13,17,23,0.08),0 2px 4px rgba(13,17,23,0.04);
-  --shadow-lg:0 12px 40px rgba(13,17,23,0.10),0 4px 8px rgba(13,17,23,0.05);
   --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;--serif:'IBM Plex Serif',serif;
   --r:4px;--r2:6px;--r3:8px;
 }
@@ -38,12 +37,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-/* ── NAV ── */
-.nav{
-  height:52px;background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 28px;gap:0;
-  position:sticky;top:0;z-index:100;
-}
+.nav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:100}
 .nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:32px}
 .nav-logo{width:28px;height:28px;background:var(--brand);display:flex;align-items:center;justify-content:center}
 .nav-logo svg{width:16px;height:16px;fill:#fff}
@@ -56,42 +50,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .service-indicator{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);background:var(--surface2)}
 .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.dot.ok{background:var(--success)}
-.dot.warn{background:var(--warning)}
-.dot.err{background:var(--danger)}
+.dot.ok{background:var(--success)}.dot.warn{background:var(--warning)}.dot.err{background:var(--danger)}
 .dot.pulse{animation:blink 2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .theme-toggle{width:28px;height:28px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;transition:all .15s}
 .theme-toggle:hover{color:var(--text);border-color:var(--brand)}
 
-/* ── LAYOUT ── */
 .page-wrap{flex:1;overflow-y:auto}
 .page-content{max-width:1400px;margin:0 auto;padding:32px 28px;display:flex;flex-direction:column;gap:28px}
-
-/* ── PAGE HEADER ── */
 .page-header{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--border)}
 .page-header-left .label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
 .page-header-left h1{font-family:var(--serif);font-size:24px;font-weight:400;color:var(--text);letter-spacing:-.01em}
 .page-header-meta{font-size:12px;color:var(--text3);font-family:var(--mono)}
 
-/* ── STAT GRID ── */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
 .stat-card{background:var(--surface);padding:20px 22px;position:relative;overflow:hidden}
 .stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--brand);opacity:0;transition:opacity .2s}
 .stat-card:hover::before{opacity:1}
 .stat-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
 .stat-value{font-family:var(--serif);font-size:32px;font-weight:300;color:var(--text);line-height:1;margin-bottom:8px;letter-spacing:-.02em}
-.stat-value.brand{color:var(--brand)}
-.stat-value.success{color:var(--success)}
+.stat-value.brand{color:var(--brand)}.stat-value.success{color:var(--success)}
 .stat-delta{font-family:var(--mono);font-size:11px;color:var(--text3)}
-.stat-delta .up{color:var(--success)}
-.stat-delta .down{color:var(--danger)}
 
-/* ── MAIN GRID ── */
 .main-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
 .main-left{display:flex;flex-direction:column;gap:20px}
 
-/* ── CARD ── */
 .card{background:var(--surface);border:1px solid var(--border)}
 .card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle)}
 .card-title{font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px}
@@ -100,16 +83,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .card-action:hover{opacity:.7}
 .card-body{padding:18px}
 
-/* ── CHART ── */
-.chart-area{height:160px;position:relative;display:flex;align-items:flex-end;gap:3px;padding:0 2px}
-.chart-bar{flex:1;background:var(--surface3);position:relative;transition:background .15s;cursor:default;min-height:2px}
-.chart-bar:hover{background:var(--brand-light)}
-.chart-bar-fill{position:absolute;bottom:0;left:0;right:0;background:var(--brand);transition:height .6s cubic-bezier(.4,0,.2,1)}
-.chart-bar:hover .chart-bar-fill{background:var(--brand-accent)}
-.chart-labels{display:flex;gap:3px;padding:6px 2px 0;font-family:var(--mono);font-size:9px;color:var(--text4)}
-.chart-labels span{flex:1;text-align:center;overflow:hidden;text-overflow:clip;white-space:nowrap}
-
-/* ── CATEGORY TABLE ── */
 .cat-table{width:100%;border-collapse:collapse}
 .cat-table tr{border-bottom:1px solid var(--border-subtle)}
 .cat-table tr:last-child{border-bottom:none}
@@ -120,36 +93,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .cat-bar-fill{height:3px;background:var(--brand)}
 .cat-count{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right;min-width:40px}
 .cat-conf{font-family:var(--mono);font-size:11px;min-width:44px;text-align:right}
-.conf-hi{color:var(--success)}
-.conf-mid{color:var(--warning)}
-.conf-lo{color:var(--danger)}
+.conf-hi{color:var(--success)}.conf-mid{color:var(--warning)}.conf-lo{color:var(--danger)}
 
-/* ── ACTIVITY FEED ── */
 .activity-list{display:flex;flex-direction:column}
 .activity-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border-subtle);transition:background .12s}
 .activity-item:last-child{border-bottom:none}
 .activity-item:hover{background:var(--surface2)}
 .act-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.act-indicator.ok{background:var(--success)}
-.act-indicator.warn{background:var(--warning)}
-.act-indicator.manual{background:var(--gold)}
+.act-indicator.ok{background:var(--success)}.act-indicator.warn{background:var(--warning)}.act-indicator.manual{background:var(--gold)}
 .act-body{flex:1;min-width:0}
 .act-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .act-meta{font-family:var(--mono);font-size:10px;color:var(--text3)}
 .act-conf{font-family:var(--mono);font-size:11px;font-weight:500;flex-shrink:0;margin-top:2px}
 
-/* ── SERVICES ── */
 .service-list{display:flex;flex-direction:column;gap:0}
 .service-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border-subtle)}
 .service-item:last-child{border-bottom:none}
 .service-name{font-size:12px;font-weight:500;color:var(--text)}
 .service-detail{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:1px}
 .service-status{font-family:var(--mono);font-size:10px;font-weight:500;display:flex;align-items:center;gap:5px}
-.service-status.ok{color:var(--success)}
-.service-status.err{color:var(--danger)}
-.service-status.warn{color:var(--warning)}
+.service-status.ok{color:var(--success)}.service-status.err{color:var(--danger)}.service-status.warn{color:var(--warning)}
+.service-role{font-family:var(--mono);font-size:9px;padding:1px 6px;border:1px solid var(--border);color:var(--text3);margin-top:2px;display:inline-block}
+.service-role.principal{background:var(--brand-light);color:var(--brand);border-color:var(--brand-border)}
+.service-role.verif{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
+.service-role.fallback{background:var(--surface3);color:var(--text4)}
 
-/* ── QUICK ACTIONS ── */
 .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border)}
 .qa-btn{background:var(--surface);padding:16px;cursor:pointer;text-decoration:none;transition:background .15s;display:flex;flex-direction:column;gap:6px;border:none;text-align:left;font-family:var(--font)}
 .qa-btn:hover{background:var(--surface2)}
@@ -162,7 +130,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .qa-arrow{font-size:16px;color:var(--text3);align-self:flex-end;margin-top:4px}
 .qa-btn.primary .qa-arrow{color:rgba(255,255,255,.7)}
 
-/* ── CONFIDENCE GAUGE ── */
 .gauge-row{display:flex;flex-direction:column;gap:8px}
 .gauge-item{display:flex;flex-direction:column;gap:4px}
 .gauge-top{display:flex;justify-content:space-between;font-size:11px}
@@ -170,11 +137,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .gauge-val{font-family:var(--mono);font-weight:500}
 .gauge-bg{height:4px;background:var(--surface3)}
 .gauge-fill{height:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
-.gauge-fill.hi{background:var(--success)}
-.gauge-fill.mid{background:var(--warning)}
-.gauge-fill.lo{background:var(--danger)}
+.gauge-fill.hi{background:var(--success)}.gauge-fill.mid{background:var(--warning)}.gauge-fill.lo{background:var(--danger)}
 
-/* ── RESPONSIVE ── */
 @media(max-width:1100px){.main-grid{grid-template-columns:1fr}}
 @media(max-width:800px){.stat-grid{grid-template-columns:repeat(2,1fr)}.nav-links{display:none}}
 </style>
@@ -183,9 +147,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 <nav class="nav">
   <a class="nav-brand" href="dashboard.html">
-    <div class="nav-logo">
-      <svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg>
-    </div>
+    <div class="nav-logo"><svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg></div>
     <span class="nav-title">BankDoc</span>
   </a>
   <div class="nav-sep"></div>
@@ -193,6 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <a class="nav-link active" href="dashboard.html">Tableau de bord</a>
     <a class="nav-link" href="queue.html">Traitement par lot</a>
     <a class="nav-link" href="library.html">Bibliothèque</a>
+    <a class="nav-link" href="smart_search.html">Recherche</a>
   </div>
   <div class="nav-right">
     <div class="service-indicator" id="si-model"><span class="dot pulse" id="dot-model"></span><span id="txt-model">Modèle</span></div>
@@ -212,146 +175,87 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="page-header-meta" id="last-refresh">—</div>
   </div>
 
-  <!-- KPI -->
-  <div class="stat-grid" id="kpi-grid">
-    <div class="stat-card">
-      <div class="stat-label">Documents traités</div>
-      <div class="stat-value brand" id="kpi-total">—</div>
-      <div class="stat-delta">Total en base</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Confiance moyenne</div>
-      <div class="stat-value" id="kpi-conf">—</div>
-      <div class="stat-delta" id="kpi-conf-delta">Ensemble du corpus</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Typologies</div>
-      <div class="stat-value" id="kpi-types">—</div>
-      <div class="stat-delta">Catégories actives</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Révision manuelle</div>
-      <div class="stat-value" id="kpi-manual">—</div>
-      <div class="stat-delta" id="kpi-manual-pct">Documents en attente</div>
-    </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Documents traités</div><div class="stat-value brand" id="kpi-total">—</div><div class="stat-delta">Total en base</div></div>
+    <div class="stat-card"><div class="stat-label">Confiance moyenne</div><div class="stat-value" id="kpi-conf">—</div><div class="stat-delta">Ensemble du corpus</div></div>
+    <div class="stat-card"><div class="stat-label">Typologies</div><div class="stat-value" id="kpi-types">—</div><div class="stat-delta">Catégories actives</div></div>
+    <div class="stat-card"><div class="stat-label">Révision manuelle</div><div class="stat-value" id="kpi-manual">—</div><div class="stat-delta" id="kpi-manual-pct">Documents en attente</div></div>
   </div>
 
-  <!-- MAIN GRID -->
   <div class="main-grid">
     <div class="main-left">
-
-      <!-- Volume par type -->
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">Répartition par typologie</span>
-          <a class="card-action" href="library.html">Bibliothèque →</a>
-        </div>
-        <div class="card-body">
-          <div id="cat-table-wrap">
-            <table class="cat-table" id="cat-table"><tbody><tr><td colspan="4" style="color:var(--text3);font-size:12px;padding:20px;text-align:center">Chargement…</td></tr></tbody></table>
-          </div>
-        </div>
+        <div class="card-header"><span class="card-title">Répartition par typologie</span><a class="card-action" href="library.html">Bibliothèque →</a></div>
+        <div class="card-body"><table class="cat-table" id="cat-table"><tbody><tr><td colspan="4" style="color:var(--text3);font-size:12px;padding:20px;text-align:center">Chargement…</td></tr></tbody></table></div>
       </div>
-
-      <!-- Confiance par type -->
       <div class="card">
-        <div class="card-header"><span class="card-title">Indice de confiance par catégorie</span></div>
+        <div class="card-header"><span class="card-title">Confiance par catégorie</span></div>
         <div class="card-body"><div class="gauge-row" id="gauge-row"></div></div>
       </div>
-
-      <!-- Dernières soumissions -->
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">Dernières soumissions</span>
-          <a class="card-action" href="library.html">Voir tout →</a>
-        </div>
-        <div class="activity-list" id="activity-list">
-          <div style="padding:20px;font-size:12px;color:var(--text3);text-align:center">Chargement…</div>
-        </div>
+        <div class="card-header"><span class="card-title">Dernières soumissions</span><a class="card-action" href="library.html">Voir tout →</a></div>
+        <div class="activity-list" id="activity-list"><div style="padding:20px;font-size:12px;color:var(--text3);text-align:center">Chargement…</div></div>
       </div>
-
     </div>
 
     <div class="main-right" style="display:flex;flex-direction:column;gap:20px">
-
-      <!-- Actions rapides -->
       <div>
         <div style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Actions</div>
         <div class="quick-actions">
-          <a class="qa-btn primary" href="queue.html">
-            <div class="qa-label">Traitement par lot</div>
-            <div class="qa-sub">Soumettre plusieurs documents</div>
-            <div class="qa-arrow">→</div>
-          </a>
-          <a class="qa-btn" href="index.html">
-            <div class="qa-label">Analyse unitaire</div>
-            <div class="qa-sub">Tester un document</div>
-            <div class="qa-arrow" style="color:var(--brand)">→</div>
-          </a>
-          <a class="qa-btn" href="library.html">
-            <div class="qa-label">Bibliothèque</div>
-            <div class="qa-sub">Gérer les documents</div>
-            <div class="qa-arrow" style="color:var(--brand)">→</div>
-          </a>
-          <a class="qa-btn" href="retrain.html">
-            <div class="qa-label">Ré-entraînement</div>
-            <div class="qa-sub">Étendre le modèle</div>
-            <div class="qa-arrow" style="color:var(--brand)">→</div>
-          </a>
+          <a class="qa-btn primary" href="queue.html"><div class="qa-label">Traitement par lot</div><div class="qa-sub">Soumettre plusieurs documents</div><div class="qa-arrow">→</div></a>
+          <a class="qa-btn" href="index.html"><div class="qa-label">Analyse unitaire</div><div class="qa-sub">Tester un document</div><div class="qa-arrow" style="color:var(--brand)">→</div></a>
+          <a class="qa-btn" href="library.html"><div class="qa-label">Bibliothèque</div><div class="qa-sub">Gérer les documents</div><div class="qa-arrow" style="color:var(--brand)">→</div></a>
+          <a class="qa-btn" href="retrain.html"><div class="qa-label">Ré-entraînement</div><div class="qa-sub">Étendre le modèle</div><div class="qa-arrow" style="color:var(--brand)">→</div></a>
         </div>
       </div>
 
-      <!-- Services -->
       <div class="card">
         <div class="card-header"><span class="card-title">État des services</span></div>
-        <div class="service-list" id="service-list">
+        <div class="service-list">
           <div class="service-item">
-            <div><div class="service-name">Modèle EfficientNet+mBERT</div><div class="service-detail" id="svc-model-detail">—</div></div>
-            <div class="service-status" id="svc-model">—</div>
-          </div>
-          <div class="service-item">
-            <div><div class="service-name">Qwen2.5-VL</div><div class="service-detail">Vision multimodale</div></div>
+            <div>
+              <div class="service-name">Qwen2.5-VL</div>
+              <div class="service-detail">Analyse visuelle — modèle principal</div>
+              <span class="service-role principal">Principal</span>
+            </div>
             <div class="service-status" id="svc-qwen">—</div>
           </div>
           <div class="service-item">
-            <div><div class="service-name">llama3.2</div><div class="service-detail">Agent LLM texte</div></div>
-            <div class="service-status" id="svc-llama">—</div>
+            <div>
+              <div class="service-name">Gemma2:9b</div>
+              <div class="service-detail">Vérification textuelle (OCR)</div>
+              <span class="service-role verif">Vérificateur</span>
+            </div>
+            <div class="service-status" id="svc-gemma">—</div>
           </div>
           <div class="service-item">
-            <div><div class="service-name">MongoDB</div><div class="service-detail" id="svc-mongo-detail">—</div></div>
+            <div>
+              <div class="service-name">EfficientNet+mBERT</div>
+              <div class="service-detail" id="svc-model-detail">Secours — toujours révision humaine</div>
+              <span class="service-role fallback">Fallback</span>
+            </div>
+            <div class="service-status" id="svc-model">—</div>
+          </div>
+          <div class="service-item">
+            <div><div class="service-name">MongoDB</div><div class="service-detail" id="svc-mongo-detail">Base de données</div></div>
             <div class="service-status" id="svc-mongo">—</div>
           </div>
         </div>
       </div>
 
-      <!-- Conf globale -->
       <div class="card">
         <div class="card-header"><span class="card-title">Paramètres modèle</span></div>
         <div class="card-body">
           <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;justify-content:space-between;font-size:12px">
-              <span style="color:var(--text3)">Précision validation</span>
-              <span class="conf-hi" style="font-family:var(--mono);font-weight:500" id="param-acc">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:12px">
-              <span style="color:var(--text3)">Seuil de confiance</span>
-              <span style="font-family:var(--mono);font-weight:500" id="param-thresh">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:12px">
-              <span style="color:var(--text3)">Dispositif</span>
-              <span style="font-family:var(--mono);font-weight:500" id="param-device">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:12px">
-              <span style="color:var(--text3)">Classes reconnues</span>
-              <span style="font-family:var(--mono);font-weight:500" id="param-classes">—</span>
-            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text3)">Précision validation</span><span class="conf-hi" style="font-family:var(--mono);font-weight:500" id="param-acc">—</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text3)">Seuil de confiance</span><span style="font-family:var(--mono);font-weight:500" id="param-thresh">—</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text3)">Dispositif</span><span style="font-family:var(--mono);font-weight:500" id="param-device">—</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text3)">Classes reconnues</span><span style="font-family:var(--mono);font-weight:500" id="param-classes">—</span></div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
-
 </div>
 </div>
 
@@ -361,9 +265,8 @@ const TYPE_LABELS={rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'a
 
 function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
 (()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
-
 function fmtN(n){return new Intl.NumberFormat('fr-FR').format(n);}
-function fmtDate(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+function fmtDate(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
 function confClass(c){return c>=80?'conf-hi':c>=60?'conf-mid':'conf-lo';}
 function confCls2(c){return c>=80?'hi':c>=60?'mid':'lo';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -374,22 +277,27 @@ async function loadStatus(){
     const d=await r.json();
     setDot('dot-model',d.device?'ok':'err');
     document.getElementById('txt-model').textContent=d.device?`${(d.device||'CPU').toUpperCase()} ${d.val_acc}%`:'Hors ligne';
+
     const svcM=document.getElementById('svc-model');
     svcM.className=`service-status ${d.device?'ok':'err'}`;
-    svcM.innerHTML=`<span class="dot ${d.device?'ok':'err'}"></span>${d.device?'Opérationnel':'Hors ligne'}`;
+    svcM.innerHTML=`<span class="dot ${d.device?'ok':'err'}"></span>${d.device?'Disponible':'Hors ligne'}`;
     document.getElementById('svc-model-detail').textContent=`GPU: ${d.device||'CPU'} — Acc. ${d.val_acc}%`;
+
     const svcQ=document.getElementById('svc-qwen');
     svcQ.className=`service-status ${d.qwen?'ok':'warn'}`;
     svcQ.innerHTML=`<span class="dot ${d.qwen?'ok':'warn'}"></span>${d.qwen?'Disponible':'Hors ligne'}`;
-    const svcL=document.getElementById('svc-llama');
-    svcL.className=`service-status ${d.ollama?'ok':'warn'}`;
-    svcL.innerHTML=`<span class="dot ${d.ollama?'ok':'warn'}"></span>${d.ollama?'Disponible':'Hors ligne'}`;
+
+    const svcG=document.getElementById('svc-gemma');
+    svcG.className=`service-status ${d.ollama?'ok':'warn'}`;
+    svcG.innerHTML=`<span class="dot ${d.ollama?'ok':'warn'}"></span>${d.ollama?'Disponible':'Hors ligne'}`;
+
     const svcMon=document.getElementById('svc-mongo');
     svcMon.className=`service-status ${d.mongodb?'ok':'err'}`;
     svcMon.innerHTML=`<span class="dot ${d.mongodb?'ok':'err'}"></span>${d.mongodb?'Connecté':'Hors ligne'}`;
     setDot('dot-mongo',d.mongodb?'ok':'err');
     document.getElementById('txt-mongo').textContent=d.mongodb?'MongoDB':'MongoDB hors ligne';
     if(d.mongodb_version)document.getElementById('svc-mongo-detail').textContent=`v${d.mongodb_version}`;
+
     document.getElementById('param-acc').textContent=`${d.val_acc}%`;
     document.getElementById('param-thresh').textContent=`${d.threshold}%`;
     document.getElementById('param-device').textContent=(d.device||'cpu').toUpperCase();
@@ -398,23 +306,18 @@ async function loadStatus(){
     ['dot-model','dot-mongo'].forEach(id=>setDot(id,'err'));
   }
 }
-
-function setDot(id,state){const d=document.getElementById(id);d.className=`dot ${state}`;}
+function setDot(id,state){const d=document.getElementById(id);if(d)d.className=`dot ${state}`;}
 
 async function loadStats(){
   try{
     const r=await fetch(`${API}/documents/stats`);
     const d=await r.json();
-    const stats=d.stats||[];
-    const total=d.total||0;
+    const stats=d.stats||[];const total=d.total||0;
     document.getElementById('kpi-total').textContent=fmtN(total);
     document.getElementById('kpi-types').textContent=stats.length;
     const avgConf=stats.length?Math.round(stats.reduce((a,s)=>a+s.avg_confidence*s.count,0)/Math.max(total,1)):0;
     const confEl=document.getElementById('kpi-conf');
     confEl.textContent=avgConf+'%';
-    confEl.className=`stat-value ${confCls2(avgConf)==='hi'?'success':confCls2(avgConf)==='mid'?'':''}`;
-
-    // Cat table
     const max=stats[0]?.count||1;
     document.getElementById('cat-table').innerHTML=`<thead><tr>
       <td style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:8px 12px">Catégorie</td>
@@ -427,21 +330,17 @@ async function loadStats(){
       <td><div class="cat-bar-wrap"><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${(s.count/max*100).toFixed(0)}%"></div></div></div></td>
       <td class="cat-conf ${confClass(s.avg_confidence)}">${s.avg_confidence.toFixed(0)}%</td>
     </tr>`).join('')}</tbody>`;
-
-    // Gauge
     document.getElementById('gauge-row').innerHTML=stats.map(s=>`<div class="gauge-item">
       <div class="gauge-top"><span class="gauge-name">${esc(TYPE_LABELS[s.category]||s.category)}</span><span class="gauge-val ${confClass(s.avg_confidence)}">${s.avg_confidence.toFixed(0)}%</span></div>
       <div class="gauge-bg"><div class="gauge-fill ${confCls2(s.avg_confidence)}" style="width:${s.avg_confidence}%"></div></div>
     </div>`).join('');
-
   }catch(e){console.error(e);}
 }
 
 async function loadRecent(){
   try{
     const r=await fetch(`${API}/documents?page=1&per_page=8&sort=date_desc`);
-    const d=await r.json();
-    const docs=d.documents||[];
+    const d=await r.json();const docs=d.documents||[];
     if(!docs.length){document.getElementById('activity-list').innerHTML=`<div style="padding:20px;font-size:12px;color:var(--text3);text-align:center">Aucun document</div>`;return;}
     const manual=docs.filter(doc=>doc.needs_manual).length;
     document.getElementById('kpi-manual').textContent=fmtN(manual);
@@ -449,20 +348,13 @@ async function loadRecent(){
     document.getElementById('activity-list').innerHTML=docs.map(doc=>{
       const ind=doc.needs_manual?'manual':doc.confidence>=70?'ok':'warn';
       const cc=confClass(doc.confidence);
-      return`<div class="activity-item">
-        <div class="act-indicator ${ind}"></div>
-        <div class="act-body">
-          <div class="act-name" title="${esc(doc.original_filename)}">${esc(doc.original_filename)}</div>
-          <div class="act-meta">${esc(TYPE_LABELS[doc.prediction]||doc.prediction)} · ${fmtDate(doc.uploaded_at)}</div>
-        </div>
-        <div class="act-conf ${cc}">${(doc.confidence||0).toFixed(0)}%</div>
-      </div>`;
+      return`<div class="activity-item"><div class="act-indicator ${ind}"></div><div class="act-body"><div class="act-name" title="${esc(doc.original_filename)}">${esc(doc.original_filename)}</div><div class="act-meta">${esc(TYPE_LABELS[doc.prediction]||doc.prediction)} · ${fmtDate(doc.uploaded_at)}</div></div><div class="act-conf ${cc}">${(doc.confidence||0).toFixed(0)}%</div></div>`;
     }).join('');
   }catch{}
 }
 
 async function init(){
-  document.getElementById('last-refresh').textContent='Actualisé à ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('last-refresh').textContent='Actualisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   await Promise.all([loadStatus(),loadStats(),loadRecent()]);
 }
 init();
