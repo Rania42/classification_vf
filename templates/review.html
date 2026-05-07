@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BankDoc — Révision manuelle</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#F5F6F8;--surface:#FFFFFF;--surface2:#F0F2F7;--surface3:#E8EBF2;
+  --brand:#1A2E6B;--brand2:#253D8A;--brand-light:rgba(26,46,107,0.08);--brand-border:rgba(26,46,107,0.2);
+  --success:#0C6B4E;--success-bg:rgba(12,107,78,0.07);--success-border:rgba(12,107,78,0.18);
+  --warning:#7A4500;--warning-bg:rgba(122,69,0,0.07);--warning-border:rgba(122,69,0,0.18);
+  --danger:#8B1A1A;--danger-bg:rgba(139,26,26,0.07);--danger-border:rgba(139,26,26,0.18);
+  --text:#0D1117;--text2:#3D4A5C;--text3:#6B7A8D;--text4:#9AAAB8;
+  --border:#D8DDE8;--border-subtle:#EDF0F7;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;--serif:'IBM Plex Serif',serif;
+}
+[data-theme="dark"]{
+  --bg:#0A0D14;--surface:#111520;--surface2:#171C2B;--surface3:#1D2336;
+  --brand:#4A6ED4;--brand2:#5A80E0;--brand-light:rgba(74,110,212,0.12);--brand-border:rgba(74,110,212,0.25);
+  --success:#1DB87A;--success-bg:rgba(29,184,122,0.08);--success-border:rgba(29,184,122,0.2);
+  --warning:#D4870A;--warning-bg:rgba(212,135,10,0.08);--warning-border:rgba(212,135,10,0.2);
+  --danger:#E05050;--danger-bg:rgba(224,80,80,0.08);--danger-border:rgba(224,80,80,0.2);
+  --text:#E4EAF4;--text2:#8A9BB8;--text3:#5A6B84;--text4:#384456;
+  --border:#1E2840;--border-subtle:#141A28;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* NAV */
+.nav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:0;flex-shrink:0}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:32px}
+.nav-logo{width:28px;height:28px;background:var(--brand);display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;fill:#fff}
+.nav-title{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--text)}
+.nav-sep{width:1px;height:16px;background:var(--border);margin:0 20px}
+.nav-links{display:flex;gap:2px}
+.nav-link{padding:6px 12px;font-size:13px;color:var(--text3);text-decoration:none;border-bottom:2px solid transparent;transition:color .15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.counter-badge{padding:4px 12px;background:var(--warning-bg);border:1px solid var(--warning-border);font-size:12px;font-weight:500;color:var(--warning)}
+.theme-toggle{width:28px;height:28px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px}
+
+/* WORKSPACE */
+.workspace{flex:1;display:grid;grid-template-columns:380px 1fr;overflow:hidden;min-height:0}
+
+/* ── LISTE GAUCHE ── */
+.list-panel{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.list-header{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.list-header-title{font-family:var(--serif);font-size:16px;font-weight:400;color:var(--text);margin-bottom:4px}
+.list-header-sub{font-size:11px;color:var(--text3)}
+.list-progress{margin-top:12px}
+.prog-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px}
+.prog-done{font-weight:600;color:var(--success)}
+.prog-bg{height:4px;background:var(--surface3);border-radius:2px}
+.prog-fill{height:4px;background:var(--success);border-radius:2px;transition:width .4s ease}
+.list-scroll{flex:1;overflow-y:auto}
+.doc-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border-subtle);cursor:pointer;transition:background .12s;position:relative}
+.doc-item:hover{background:var(--surface2)}
+.doc-item.active{background:var(--brand-light);border-right:2px solid var(--brand)}
+.doc-thumb{width:44px;height:44px;background:var(--surface3);border:1px solid var(--border);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.doc-thumb img{width:100%;height:100%;object-fit:cover}
+.doc-thumb-icon{font-size:18px;color:var(--text4)}
+.doc-item-body{flex:1;min-width:0}
+.doc-item-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.doc-item-type{font-size:11px;color:var(--text3)}
+.doc-item-status{font-size:9px;font-weight:500;padding:2px 7px;border:1px solid var(--warning-border);background:var(--warning-bg);color:var(--warning);flex-shrink:0;white-space:nowrap}
+.doc-item-reason{font-size:9px;color:var(--text4);margin-top:1px}
+.empty-list{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;text-align:center}
+.empty-list-icon{font-size:40px}
+.empty-list-title{font-family:var(--serif);font-size:15px;color:var(--success)}
+.empty-list-sub{font-size:12px;color:var(--text3)}
+
+/* ── PANNEAU DROIT ── */
+.review-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.review-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text3);text-align:center;padding:40px}
+.review-empty-icon{font-size:48px}
+.review-empty-title{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--text3)}
+.review-empty-sub{font-size:12px;color:var(--text4);max-width:300px;line-height:1.6}
+
+.review-content{flex:1;overflow:hidden;display:grid;grid-template-rows:auto 1fr;gap:0}
+.review-toolbar{padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.doc-title{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reason-tag{padding:4px 10px;font-size:11px;font-weight:500;background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning)}
+.nav-btns{display:flex;gap:4px;margin-left:auto}
+.nav-btn{padding:6px 12px;background:none;border:1px solid var(--border);font-size:12px;color:var(--text3);cursor:pointer;transition:all .12s;font-family:var(--font)}
+.nav-btn:hover{border-color:var(--brand-border);color:var(--brand)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+
+.review-body{display:grid;grid-template-columns:1fr 360px;overflow:hidden;min-height:0}
+
+/* APERÇU */
+.preview-pane{overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--surface2);border-right:1px solid var(--border)}
+.preview-img-box{background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:300px;overflow:hidden}
+.preview-img-box img{max-width:100%;max-height:400px;object-fit:contain}
+.ocr-box{background:var(--surface);border:1px solid var(--border);padding:12px;font-size:11px;color:var(--text2);line-height:1.7;max-height:150px;overflow-y:auto;white-space:pre-wrap}
+.section-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.section-label::before{content:"";width:3px;height:10px;background:var(--brand)}
+
+/* ACTION PANE */
+.action-pane{overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:18px}
+
+/* SUGGESTION ACTUELLE */
+.suggestion-box{background:var(--surface);border:1px solid var(--border);padding:16px}
+.sugg-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px}
+.sugg-current{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sugg-type{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--text)}
+.sugg-agents{display:flex;flex-direction:column;gap:5px}
+.agent-line{display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border-subtle)}
+.agent-name{color:var(--text3)}
+.agent-val{font-weight:500}
+.agent-val.agree{color:var(--success)}.agent-val.disagree{color:var(--danger)}.agent-val.na{color:var(--text4)}
+
+/* CONFIRM / CORRECT */
+.action-section{display:flex;flex-direction:column;gap:10px}
+.confirm-btn{width:100%;padding:13px;background:var(--success);color:#fff;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.confirm-btn:hover{opacity:.88}
+.confirm-btn:disabled{opacity:.4;cursor:not-allowed}
+.divider{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text4)}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.type-select{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
+.type-select:focus{border-color:var(--brand)}
+.correct-btn{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.correct-btn:hover{background:var(--brand2)}
+.correct-btn:disabled{opacity:.4;cursor:not-allowed}
+.skip-btn{width:100%;padding:9px;background:none;border:1px solid var(--border);color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s}
+.skip-btn:hover{border-color:var(--danger-border);color:var(--danger)}
+
+/* SUCCESS FLASH */
+.success-flash{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:10px 24px;font-size:13px;font-weight:500;z-index:9999;display:none;gap:8px;align-items:center;box-shadow:0 4px 20px rgba(12,107,78,.3)}
+.success-flash.show{display:flex;animation:slidedown .3s ease}
+@keyframes slidedown{from{transform:translateX(-50%) translateY(-10px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+/* SPINNER */
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){.workspace{grid-template-columns:1fr}.list-panel{display:none}.review-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="dashboard.html">
+    <div class="nav-logo"><svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg></div>
+    <span class="nav-title">BankDoc</span>
+  </a>
+  <div class="nav-sep"></div>
+  <div class="nav-links">
+    <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+    <a class="nav-link active" href="review.html">Révision</a>
+    <a class="nav-link" href="queue.html">Traitement par lot</a>
+    <a class="nav-link" href="library.html">Bibliothèque</a>
+    <a class="nav-link" href="smart_search.html">Recherche</a>
+  </div>
+  <div class="nav-right">
+    <div class="counter-badge" id="counter-badge">— à réviser</div>
+    <button class="theme-toggle" onclick="toggleTheme()">◐</button>
+  </div>
+</nav>
+
+<div class="workspace">
+
+  <!-- LISTE GAUCHE -->
+  <div class="list-panel">
+    <div class="list-header">
+      <div class="list-header-title">Documents à vérifier</div>
+      <div class="list-header-sub">Cliquez sur un document pour l'examiner</div>
+      <div class="list-progress" id="progress-wrap" style="display:none">
+        <div class="prog-row">
+          <span>Traités dans cette session</span>
+          <span class="prog-done" id="prog-label">—</span>
+        </div>
+        <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0"></div></div>
+      </div>
+    </div>
+    <div class="list-scroll" id="doc-list">
+      <div style="display:flex;align-items:center;justify-content:center;padding:40px">
+        <div style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNEAU DROIT -->
+  <div class="review-panel" id="review-panel">
+    <div class="review-empty" id="review-empty">
+      <div class="review-empty-icon">📋</div>
+      <div class="review-empty-title">Sélectionnez un document</div>
+      <div class="review-empty-sub">Choisissez un document dans la liste à gauche pour l'examiner et le valider.</div>
+    </div>
+    <div class="review-content" id="review-content" style="display:none">
+      <div class="review-toolbar">
+        <span class="doc-title" id="rt-filename">—</span>
+        <span class="reason-tag" id="rt-reason">—</span>
+        <div class="nav-btns">
+          <button class="nav-btn" id="btn-prev" onclick="navigateTo(-1)">← Préc.</button>
+          <button class="nav-btn" id="btn-next" onclick="navigateTo(1)">Suiv. →</button>
+        </div>
+      </div>
+      <div class="review-body">
+        <!-- APERÇU -->
+        <div class="preview-pane">
+          <div>
+            <div class="section-label">Aperçu du document</div>
+            <div class="preview-img-box">
+              <img id="doc-preview" src="" alt="Aperçu" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+              <div style="display:none;font-size:12px;color:var(--text4);padding:20px;text-align:center">Aperçu non disponible</div>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">Texte reconnu dans le document</div>
+            <div class="ocr-box" id="doc-ocr">—</div>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="action-pane">
+
+          <div class="suggestion-box">
+            <div class="sugg-label">Proposition du système</div>
+            <div class="sugg-current">
+              <div class="sugg-type" id="sugg-type">—</div>
+            </div>
+            <div class="sugg-agents" id="sugg-agents"></div>
+          </div>
+
+          <div class="action-section">
+            <div class="section-label">Votre décision</div>
+            <button class="confirm-btn" id="confirm-btn" onclick="confirmDoc()">
+              <span>✓</span> Confirmer cette classification
+            </button>
+            <div class="divider">ou corriger</div>
+            <select class="type-select" id="type-select">
+              <option value="">Sélectionner le bon type…</option>
+            </select>
+            <button class="correct-btn" id="correct-btn" onclick="correctDoc()" disabled>
+              Corriger la classification
+            </button>
+            <button class="skip-btn" onclick="navigateTo(1)">Passer au suivant →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="success-flash" id="success-flash">
+  <span>✓</span><span id="success-msg">Validé</span>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+const TYPE_LABELS = {
+  rib:"RIB", cheque:"Chèque", tableau_amortissement:"Tableau d'amortissement",
+  acte_naissance:"Acte de naissance", acte_heredite:"Acte d'hérédité",
+  assurance:"Assurance", attestation_solde:"Attestation de solde",
+  carte_identite:"Carte d'Identité", cin:"Carte d'Identité Nationale",
+  lettre_de_change:"Lettre de change", certificat_medical:"Certificat médical",
+  contrat_garantie:"Contrat de garantie", bon_a_ordre:"Bon à ordre",
+  inconnu:"Inconnu"
+};
+
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');}
+(()=>{document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+let docs = [];
+let allTypes = [];
+let currentIdx = -1;
+let totalInitial = 0;
+let processedCount = 0;
+
+async function init() {
+  await Promise.all([loadTypes(), loadDocs()]);
+}
+
+async function loadTypes() {
+  try {
+    const r = await fetch(`${API}/types`);
+    const d = await r.json();
+    allTypes = d.types || [];
+    populateSelect();
+  } catch(e) { console.error(e); }
+}
+
+function populateSelect() {
+  const sel = document.getElementById('type-select');
+  sel.innerHTML = '<option value="">Sélectionner le bon type…</option>'
+    + allTypes.map(t => `<option value="${esc(t.name)}">${esc(TYPE_LABELS[t.name]||t.label||t.name)}</option>`).join('');
+  sel.addEventListener('change', () => {
+    document.getElementById('correct-btn').disabled = !sel.value;
+  });
+}
+
+async function loadDocs() {
+  try {
+    const r = await fetch(`${API}/documents?needs_manual=true&per_page=100&sort=date_desc`);
+    const d = await r.json();
+    docs = d.documents || [];
+    totalInitial = docs.length;
+    processedCount = 0;
+    renderList();
+    updateCounter();
+    if (docs.length > 0) openDoc(0);
+    else showAllDone();
+  } catch(e) {
+    document.getElementById('doc-list').innerHTML = `<div style="padding:20px;font-size:12px;color:var(--danger)">Erreur de chargement</div>`;
+  }
+}
+
+function updateCounter() {
+  document.getElementById('counter-badge').textContent = `${docs.length} à réviser`;
+  if (totalInitial > 0) {
+    document.getElementById('progress-wrap').style.display = 'block';
+    document.getElementById('prog-label').textContent = `${processedCount} traité${processedCount > 1 ? 's' : ''}`;
+    document.getElementById('prog-fill').style.width = `${Math.round(processedCount / (totalInitial) * 100)}%`;
+  }
+}
+
+function renderList() {
+  const list = document.getElementById('doc-list');
+  if (!docs.length) {
+    list.innerHTML = `<div class="empty-list">
+      <div class="empty-list-icon">✅</div>
+      <div class="empty-list-title">Tout est à jour !</div>
+      <div class="empty-list-sub">Aucun document ne nécessite de révision pour le moment.</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = docs.map((doc, i) => {
+    const label = TYPE_LABELS[doc.prediction] || doc.prediction;
+    const reason = getReasonLabel(doc);
+    return `<div class="doc-item ${i===currentIdx?'active':''}" id="li-${doc._id}" onclick="openDoc(${i})">
+      <div class="doc-thumb">
+        <img src="${API}/documents/${doc._id}/download" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div style="display:none" class="doc-thumb-icon">📄</div>
+      </div>
+      <div class="doc-item-body">
+        <div class="doc-item-name" title="${esc(doc.original_filename)}">${esc(doc.original_filename)}</div>
+        <div class="doc-item-type">${esc(label)}</div>
+        <div class="doc-item-reason">${esc(reason)}</div>
+      </div>
+      <div class="doc-item-status">À vérifier</div>
+    </div>`;
+  }).join('');
+}
+
+function getReasonLabel(doc) {
+  const path = doc.path || '';
+  if (path === 'qwen_gemma_disagreement') return 'Désaccord entre les analyses';
+  if (path === 'qwen_only') return 'Analyse partielle';
+  if (path === 'gemma_only') return 'Analyse partielle';
+  if (path === 'efficientnet_fallback') return 'Mode dégradé';
+  if ((doc.confidence||0) < 70) return `Confiance faible (${(doc.confidence||0).toFixed(0)}%)`;
+  return 'Vérification recommandée';
+}
+
+function openDoc(idx) {
+  if (idx < 0 || idx >= docs.length) return;
+  currentIdx = idx;
+  const doc = docs[idx];
+
+  document.querySelectorAll('.doc-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`li-${doc._id}`)?.classList.add('active');
+  document.getElementById(`li-${doc._id}`)?.scrollIntoView({ block: 'nearest' });
+
+  document.getElementById('review-empty').style.display = 'none';
+  document.getElementById('review-content').style.display = 'grid';
+
+  document.getElementById('rt-filename').textContent = doc.original_filename;
+  document.getElementById('rt-reason').textContent = getReasonLabel(doc);
+  document.getElementById('btn-prev').disabled = idx === 0;
+  document.getElementById('btn-next').disabled = idx === docs.length - 1;
+
+  const img = document.getElementById('doc-preview');
+  img.style.display = 'block';
+  img.src = `${API}/documents/${doc._id}/download?t=${Date.now()}`;
+
+  document.getElementById('doc-ocr').textContent = doc.ocr_text || 'Aucun texte reconnu dans ce document';
+
+  const predLabel = TYPE_LABELS[doc.prediction] || doc.prediction;
+  document.getElementById('sugg-type').textContent = predLabel;
+
+  const votes = doc.votes || {};
+  const qwen = doc.qwen || {};
+  const gemma = doc.gemma || doc.llama_result || {};
+  const qwenClass = votes.qwen || qwen.class;
+  const gemmaClass = votes.gemma || gemma.class;
+  const pred = doc.prediction;
+
+  document.getElementById('sugg-agents').innerHTML = [
+    { name: 'Analyse visuelle', val: qwenClass, ref: pred },
+    { name: 'Vérification textuelle', val: gemmaClass, ref: pred },
+  ].map(a => {
+    const avail = !!a.val;
+    const agrees = avail && a.val.toLowerCase() === (a.ref||'').toLowerCase();
+    const cls = !avail ? 'na' : agrees ? 'agree' : 'disagree';
+    const label = !avail ? 'Non disponible' : TYPE_LABELS[a.val] || a.val;
+    return `<div class="agent-line">
+      <span class="agent-name">${esc(a.name)}</span>
+      <span class="agent-val ${cls}">${esc(label)}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('type-select').value = '';
+  document.getElementById('correct-btn').disabled = true;
+  document.getElementById('confirm-btn').disabled = false;
+  document.getElementById('confirm-btn').innerHTML = '<span>✓</span> Confirmer cette classification';
+}
+
+function navigateTo(dir) {
+  const next = currentIdx + dir;
+  if (next >= 0 && next < docs.length) openDoc(next);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigateTo(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigateTo(-1);
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmDoc(); }
+});
+
+async function confirmDoc() {
+  const doc = docs[currentIdx];
+  if (!doc) return;
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> Validation…';
+
+  try {
+    const r = await fetch(`${API}/documents/${doc._id}/correct`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prediction: doc.prediction })
+    });
+    const d = await r.json();
+    if (d.success || r.ok) {
+      flash(`Confirmé — ${TYPE_LABELS[doc.prediction]||doc.prediction}`);
+      removeAndAdvance(doc._id);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<span>✓</span> Confirmer cette classification';
+      flash('Erreur : ' + (d.error||'inconnue'), true);
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>✓</span> Confirmer cette classification';
+    flash('Erreur réseau', true);
+  }
+}
+
+async function correctDoc() {
+  const doc = docs[currentIdx];
+  const sel = document.getElementById('type-select');
+  if (!doc || !sel.value) return;
+  const btn = document.getElementById('correct-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> Correction…';
+
+  try {
+    const r = await fetch(`${API}/documents/${doc._id}/classify_manual`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type_name: sel.value, create_new: false })
+    });
+    const d = await r.json();
+    if (d.success) {
+      flash(`Corrigé → ${TYPE_LABELS[sel.value]||sel.value}`);
+      removeAndAdvance(doc._id);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = 'Corriger la classification';
+      flash('Erreur : ' + (d.error||'inconnue'), true);
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = 'Corriger la classification';
+    flash('Erreur réseau', true);
+  }
+}
+
+function removeAndAdvance(docId) {
+  processedCount++;
+  const removedIdx = docs.findIndex(d => d._id === docId);
+  docs = docs.filter(d => d._id !== docId);
+
+  updateCounter();
+
+  if (docs.length === 0) {
+    renderList();
+    setTimeout(showAllDone, 400);
+    return;
+  }
+
+  // Determine next index to open
+  let nextIdx = removedIdx;
+  if (nextIdx >= docs.length) nextIdx = docs.length - 1;
+
+  currentIdx = -1; // reset so renderList doesn't mark active
+  renderList();
+
+  setTimeout(() => openDoc(nextIdx), 300);
+}
+
+function showAllDone() {
+  document.getElementById('review-empty').style.display = 'flex';
+  document.getElementById('review-content').style.display = 'none';
+  document.getElementById('review-empty').innerHTML = `
+    <div class="review-empty-icon">🎉</div>
+    <div class="review-empty-title">Révision terminée !</div>
+    <div class="review-empty-sub">Tous les documents ont été vérifiés. La file est vide.</div>
+  `;
+}
+
+let flashTimer;
+function flash(msg, isErr=false) {
+  const el = document.getElementById('success-flash');
+  const msgEl = document.getElementById('success-msg');
+  el.style.background = isErr ? 'var(--danger)' : 'var(--success)';
+  msgEl.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

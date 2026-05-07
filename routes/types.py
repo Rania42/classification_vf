@@ -11,6 +11,28 @@ from config import DOCS_FOLDER, TRAINING_THRESHOLD
 
 types_bp = Blueprint("types", __name__)
 
+NATIVE_TYPES = [
+    "rib", "cheque", "tableau_amortissement",
+    "acte_naissance", "acte_heredite", "assurance", "attestation_solde",
+    "cin", "lettre_de_change", "certificat_medical",
+    "contrat_garantie", "bon_a_ordre",
+]
+
+NATIVE_LABELS = {
+    "rib": "RIB",
+    "cheque": "Chèque",
+    "tableau_amortissement": "Tableau d'amortissement",
+    "acte_naissance": "Acte de naissance",
+    "acte_heredite": "Acte d'hérédité",
+    "assurance": "Assurance",
+    "attestation_solde": "Attestation de solde",
+    "cin": "Carte d'Identité Nationale (CIN)",
+    "lettre_de_change": "Lettre de change",
+    "certificat_medical": "Certificat médical",
+    "contrat_garantie": "Contrat de garantie",
+    "bon_a_ordre": "Bon à ordre",
+}
+
 
 def _require_mongo():
     if not is_mongo_available():
@@ -25,10 +47,11 @@ def _get_db():
 @types_bp.route("/types", methods=["GET"])
 def list_types():
     if not is_mongo_available():
-        native = ["rib","cheque","tableau_amortissement",
-                  "acte_naissance","acte_heredite","assurance","attestation_solde"]
-        return jsonify({"types": [{"name": t, "label": t.replace("_"," ").title(),
-                                   "is_custom": False, "count": 0} for t in native]})
+        return jsonify({"types": [
+            {"name": t, "label": NATIVE_LABELS.get(t, t.replace("_", " ").title()),
+             "is_custom": False, "count": 0}
+            for t in NATIVE_TYPES
+        ]})
     
     db = _get_db()
     if db is None:

@@ -2,15 +2,13 @@
 OCR bilingue + évaluation qualité image + prétraitement si dégradée.
 Support PDF : première page convertie en image avant traitement.
 """
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
-
 import re
 import os
 import tempfile
 import torch
+import numpy as np
 import easyocr
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import Image, ImageFilter, ImageEnhance, ImageOps
 
 from config import DEVICE, OCR_QUALITY_THRESHOLD
 
@@ -51,14 +49,9 @@ def pdf_first_page_to_image(pdf_path: str) -> str:
     raise RuntimeError("Impossible de convertir le PDF (installer pdf2image+poppler ou pymupdf)")
 
 # Init readers une seule fois
-try:
-    ocr_latin  = easyocr.Reader(["fr", "en"], gpu=torch.cuda.is_available(), verbose=False)
-    ocr_arabic = easyocr.Reader(["ar", "en"], gpu=torch.cuda.is_available(), verbose=False)
-    print("[INIT] OCR prêt")
-except Exception as e:
-    print(f"[INIT] Erreur initialisation OCR: {e}")
-    print("[INIT] Vérifiez votre connexion internet ou les modèles EasyOCR")
-    raise
+ocr_latin  = easyocr.Reader(["fr", "en"], gpu=torch.cuda.is_available(), verbose=False)
+ocr_arabic = easyocr.Reader(["ar", "en"], gpu=torch.cuda.is_available(), verbose=False)
+print("[INIT] OCR prêt")
 
 
 def _ocr_quality_score(text: str) -> float:
@@ -72,22 +65,117 @@ def _ocr_quality_score(text: str) -> float:
     return alphanum / len(text)
 
 
+def _otsu_threshold(gray_np: np.ndarray) -> int:
+    """Calcule le seuil de binarisation Otsu réel."""
+    hist, _ = np.histogram(gray_np.flatten(), bins=256, range=(0, 256))
+    total = gray_np.size
+    sum_total = np.dot(np.arange(256), hist)
+    sum_bg, w_bg, mean_max, thresh = 0.0, 0, 0.0, 128
+    for t in range(256):
+        w_bg += hist[t]
+        if w_bg == 0:
+            continue
+        w_fg = total - w_bg
+        if w_fg == 0:
+            break
+        sum_bg += t * hist[t]
+        mean_bg = sum_bg / w_bg
+        mean_fg = (sum_total - sum_bg) / w_fg
+        var = w_bg * w_fg * (mean_bg - mean_fg) ** 2
+        if var > mean_max:
+            mean_max = var
+            thresh = t
+    return thresh
+
+
+def _upscale_if_small(img: Image.Image, min_dim: int = 1200) -> Image.Image:
+    """Upscale si l'image est trop petite pour un bon OCR."""
+    w, h = img.size
+    if min(w, h) < min_dim:
+        scale = min_dim / min(w, h)
+        new_w, new_h = int(w * scale), int(h * scale)
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+    return img
+
+
+def _deskew(img: Image.Image) -> Image.Image:
+    """Correction de l'inclinaison basique via détection de l'angle dominant."""
+    try:
+        gray = np.array(img.convert("L"))
+        # Utiliser les colonnes de pixels sombres pour estimer l'angle
+        # Approche simple : projections horizontales pour détecter rotation
+        # On tente des angles de -5 à +5 degrés et on garde la variance max
+        best_angle, best_var = 0.0, 0.0
+        for angle in np.arange(-5, 5.5, 0.5):
+            rotated = img.rotate(angle, expand=False, fillcolor=255)
+            arr = np.array(rotated.convert("L"))
+            row_sums = arr.sum(axis=1).astype(float)
+            var = float(np.var(row_sums))
+            if var > best_var:
+                best_var = var
+                best_angle = angle
+        if abs(best_angle) > 0.3:
+            img = img.rotate(best_angle, expand=True, fillcolor=255)
+    except Exception:
+        pass
+    return img
+
+
 def _preprocess_degraded(img_path: str) -> str:
     """
-    Prétraitement PIL pour images dégradées :
-    contrast, sharpen, binarisation.
-    Sauvegarde une version temporaire et retourne son chemin.
+    Pipeline de prétraitement robuste pour images dégradées :
+    1. Upscale si trop petite
+    2. Conversion niveaux de gris
+    3. Correction gamma adaptative
+    4. Débruitage (MedianFilter)
+    5. Amélioration contraste (CLAHE approché via Equalize)
+    6. Sharpen
+    7. Binarisation Otsu réelle
+    8. Deskew
+    Retourne le chemin d'une image temporaire.
     """
-    import tempfile, os
-    img = Image.open(img_path).convert("L")          # Niveaux de gris
-    img = ImageEnhance.Contrast(img).enhance(2.5)
-    img = img.filter(ImageFilter.SHARPEN)
-    img = img.filter(ImageFilter.MedianFilter(3))
-    # Binarisation simple (Otsu approché)
-    img = img.point(lambda x: 255 if x > 128 else 0, '1').convert("RGB")
+    img = Image.open(img_path).convert("RGB")
+
+    # 1. Upscale si petite résolution
+    img = _upscale_if_small(img, min_dim=1400)
+
+    # 2. Niveaux de gris
+    gray = img.convert("L")
+
+    # 3. Correction gamma — éclaircit les images sous-exposées
+    arr = np.array(gray, dtype=np.float32)
+    mean_lum = arr.mean()
+    if mean_lum < 100:          # image sombre → gamma < 1 pour éclaircir
+        gamma = max(0.4, mean_lum / 128)
+        arr = 255 * (arr / 255) ** gamma
+        gray = Image.fromarray(arr.astype(np.uint8))
+    elif mean_lum > 200:        # image surexposée → gamma > 1 pour assombrir
+        gamma = 1.5
+        arr = 255 * (arr / 255) ** gamma
+        gray = Image.fromarray(arr.astype(np.uint8))
+
+    # 4. Débruitage médian
+    gray = gray.filter(ImageFilter.MedianFilter(3))
+
+    # 5. Égalisation histogramme (CLAHE approché)
+    gray = ImageOps.equalize(gray)
+
+    # 6. Boost contraste
+    gray = ImageEnhance.Contrast(gray).enhance(2.0)
+
+    # 7. Sharpen
+    gray = gray.filter(ImageFilter.UnsharpMask(radius=1.5, percent=150, threshold=3))
+
+    # 8. Binarisation Otsu réelle
+    arr_np = np.array(gray)
+    thresh = _otsu_threshold(arr_np)
+    binary = gray.point(lambda x: 255 if x > thresh else 0, '1').convert("RGB")
+
+    # 9. Deskew sur l'image binaire
+    binary = _deskew(binary)
 
     tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-    img.save(tmp.name)
+    binary.save(tmp.name, dpi=(300, 300))
     return tmp.name
 
 

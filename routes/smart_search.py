@@ -1,6 +1,5 @@
 """
 Route POST /smart_search — recherche intelligente via LLM (Gemma2).
-Le LLM interprète le prompt en langage naturel et génère des filtres MongoDB.
 """
 import re
 import json
@@ -11,21 +10,33 @@ from core.agents import _call_ollama_streaming, USE_OLLAMA
 
 smart_search_bp = Blueprint("smart_search", __name__)
 
-GEMMA_MODEL = "gemma2:9b"
+GEMMA_MODEL = "gemma2:2b"
 
 DOC_TYPES = [
     "rib", "cheque", "tableau_amortissement", "acte_naissance",
-    "acte_heredite", "assurance", "attestation_solde", "carte_identite"
+    "acte_heredite", "assurance", "attestation_solde", "carte_identite",
+    "cin", "lettre_de_change", "certificat_medical", "contrat_garantie", "bon_a_ordre",
 ]
+
+DOC_TYPES_LABELS = {
+    "rib": "RIB / Relevé d'Identité Bancaire",
+    "cheque": "Chèque bancaire",
+    "tableau_amortissement": "Tableau d'amortissement",
+    "acte_naissance": "Acte de naissance",
+    "acte_heredite": "Acte d'hérédité",
+    "assurance": "Contrat d'assurance",
+    "attestation_solde": "Attestation de solde",
+    "carte_identite": "Carte d'Identité Nationale",
+    "cin": "Carte d'Identité Nationale (CIN)",
+    "lettre_de_change": "Lettre de change / Traite",
+    "certificat_medical": "Certificat médical",
+    "contrat_garantie": "Contrat de garantie",
+    "bon_a_ordre": "Bon à ordre / Billet à ordre",
+}
 
 
 def _llm_interpret_query(user_prompt: str) -> dict:
-    """
-    Demande à Gemma2 d'interpréter le prompt et de retourner des filtres structurés.
-    Retourne un dict avec: doc_types, keywords, extracted_fields, text_query, explanation
-    """
     if not USE_OLLAMA:
-        # Fallback: recherche textuelle brute
         return {
             "doc_types": [],
             "keywords": user_prompt.split(),
@@ -34,16 +45,18 @@ def _llm_interpret_query(user_prompt: str) -> dict:
             "explanation": "Recherche textuelle directe (LLM indisponible)"
         }
 
-    prompt = f"""Tu es un assistant expert en documents bancaires marocains.
+    types_with_labels = "\n".join(f"  - {k}: {v}" for k, v in DOC_TYPES_LABELS.items())
+    prompt = f"""Tu es un assistant expert en documents bancaires et administratifs marocains.
 L'utilisateur veut rechercher des documents dans une base de données.
 
-Types de documents disponibles : {', '.join(DOC_TYPES)}
+Types de documents disponibles :
+{types_with_labels}
 
 Prompt de l'utilisateur : "{user_prompt}"
 
 Analyse ce prompt et retourne UNIQUEMENT un JSON avec ces champs :
 {{
-  "doc_types": ["liste des types de documents concernés, ex: cheque, rib"],
+  "doc_types": ["liste des types de documents concernés"],
   "keywords": ["mots-clés importants à chercher dans le texte OCR"],
   "extracted_fields": {{"champ": "valeur"}},
   "text_query": "requête de recherche textuelle optimisée",
@@ -51,10 +64,12 @@ Analyse ce prompt et retourne UNIQUEMENT un JSON avec ces champs :
 }}
 
 Exemples :
-- "le chèque de monsieur Alami" → doc_types: ["cheque"], keywords: ["Alami"], extracted_fields: {{"beneficiaire": "Alami"}}
-- "les RIB de la banque Attijariwafa" → doc_types: ["rib"], keywords: ["Attijariwafa"], extracted_fields: {{"banque": "Attijariwafa"}}
-- "actes de naissance de 2023" → doc_types: ["acte_naissance"], keywords: ["2023"]
-- "tous les documents de Ahmed Benali" → doc_types: [], keywords: ["Ahmed", "Benali"]
+- "le chèque de monsieur Alami" → doc_types: ["cheque"], keywords: ["Alami"]
+- "les lettres de change de 2024" → doc_types: ["lettre_de_change"], keywords: ["2024"]
+- "certificats médicaux d'arrêt de travail" → doc_types: ["certificat_medical"], keywords: ["arrêt de travail"]
+- "contrats de garantie bancaire" → doc_types: ["contrat_garantie"], keywords: ["garantie"]
+- "bons à ordre" → doc_types: ["bon_a_ordre"], keywords: []
+- "cartes d'identité expirées" → doc_types: ["cin"], keywords: ["expir"]
 
 Réponds UNIQUEMENT avec le JSON, aucun autre texte."""
 
@@ -68,7 +83,6 @@ Réponds UNIQUEMENT avec le JSON, aucun autre texte."""
             "explanation": "LLM n'a pas répondu — recherche textuelle directe"
         }
 
-    # Parse JSON
     raw = re.sub(r"```(?:json)?\s*", "", raw).strip().strip("`")
     start, end = raw.find("{"), raw.rfind("}")
     if start != -1 and end != -1:
@@ -94,14 +108,11 @@ Réponds UNIQUEMENT avec le JSON, aucun autre texte."""
 
 
 def _build_mongo_query(interpretation: dict) -> dict:
-    """Construit la requête MongoDB depuis l'interprétation LLM."""
     conditions = []
 
-    # Filtre par type(s) de document
     if interpretation.get("doc_types"):
         conditions.append({"prediction": {"$in": interpretation["doc_types"]}})
 
-    # Recherche textuelle dans OCR + filename
     all_keywords = []
     if interpretation.get("keywords"):
         all_keywords.extend(interpretation["keywords"])
@@ -116,7 +127,6 @@ def _build_mongo_query(interpretation: dict) -> dict:
                 text_conditions.append({"ocr_text": {"$regex": kw, "$options": "i"}})
                 text_conditions.append({"original_filename": {"$regex": kw, "$options": "i"}})
 
-        # Recherche dans les champs extraits
         for field_key, field_val in interpretation.get("extracted_fields", {}).items():
             if field_val:
                 text_conditions.append({
@@ -149,13 +159,9 @@ def smart_search():
     if not user_prompt:
         return jsonify({"error": "Prompt vide", "results": []}), 400
 
-    # 1. Interprétation LLM
     interpretation = _llm_interpret_query(user_prompt)
-
-    # 2. Construction requête MongoDB
     mongo_query = _build_mongo_query(interpretation)
 
-    # 3. Exécution
     try:
         docs = list(
             db.documents.find(mongo_query)

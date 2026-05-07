@@ -20,14 +20,9 @@ OLLAMA_CHAT  = "http://localhost:11434/api/chat"
 OLLAMA_MODEL = "llama3.2"
 QWEN_MODEL   = "qwen2.5vl:3b"
 
-# Timeouts streaming (secondes sans recevoir de token)
-# llama3.2 : texte → rapide
-OLLAMA_TIMEOUT     = 120   # timeout_no_token pour classification
+OLLAMA_TIMEOUT     = 30
 OLLAMA_MAX_RETRIES = 1
-
-# Qwen2.5-VL : vision → plus lent, surtout sans GPU
-# Augmenter à 90-120s si le modèle est très lent sur votre machine
-QWEN_TIMEOUT = 120
+QWEN_TIMEOUT = 70
 
 # ── MongoDB ────────────────────────────────────────────
 MONGO_URI = "mongodb://localhost:27017/"
@@ -36,16 +31,13 @@ MONGO_DB  = "bankdoc"
 # ── Pipeline ───────────────────────────────────────────
 TRAINING_THRESHOLD = 50
 
-# Seuils de confiance (utilisés pour affichage UI uniquement dans le nouveau pipeline)
-# La décision passe maintenant par la double confirmation LLM, pas par ces seuils.
 CONF_HIGH   = 0.80
 CONF_MEDIUM = 0.60
 
-# Seuil OCR
 OCR_QUALITY_THRESHOLD = 0.30
-OCR_MIN_LENGTH        = 200   # chars minimum avant re-OCR
+OCR_MIN_LENGTH        = 200
 
-# ── Keyword rules (consultatif — non décisionnel dans le pipeline) ─────
+# ── Keyword rules ──────────────────────────────────────
 KEYWORD_RULES = {
     "acte_heredite": [
         "acte de notoriété", "succession", "héritier", "héritière", "défunt",
@@ -84,5 +76,36 @@ KEYWORD_RULES = {
         "carte nationale d'identité", "cni", "cin", "carte d'identité",
         "né le", "n° cin", "numéro cin", "national identity card",
         "بطاقة الوطنية", "identity card", "pièce d'identité",
+    ],
+    # ── Nouveaux types ─────────────────────────────────
+    "cin": [
+        "carte nationale d'identité", "cin", "cni", "numéro de carte",
+        "n° cin", "identité nationale", "carte d'identité nationale",
+        "بطاقة التعريف الوطنية", "المملكة المغربية", "صالحة إلى",
+        "date d'expiration", "lieu de naissance", "prénom", "nom",
+    ],
+    "lettre_de_change": [
+        "lettre de change", "traite", "effet de commerce", "tireur", "tiré",
+        "acceptation", "à vue", "à ordre", "valeur reçue", "protêt",
+        "endossement", "aval", "échéance de paiement", "domiciliation",
+        "payable à", "bon pour aval",
+    ],
+    "certificat_medical": [
+        "certificat médical", "médecin", "docteur", "patient", "diagnostic",
+        "consultation", "ordonnance", "aptitude", "inaptitude", "arrêt de travail",
+        "congé maladie", "clinique", "hôpital", "cabinet médical",
+        "je soussigné médecin", "certifie avoir examiné", "repos médical",
+    ],
+    "contrat_garantie": [
+        "contrat de garantie", "garantie", "garant", "caution", "cautionnement",
+        "sûreté", "hypothèque", "nantissement", "gage", "engagement de garantie",
+        "bénéficiaire de la garantie", "montant garanti", "durée de la garantie",
+        "appel en garantie", "lettre de garantie bancaire",
+    ],
+    "bon_a_ordre": [
+        "bon à ordre", "billet à ordre", "promesse de payer", "souscripteur",
+        "bénéficiaire", "valeur reçue en marchandises", "à l'ordre de",
+        "je paierai", "nous paierons", "à l'échéance", "effet de commerce",
+        "titre négociable", "endossement", "aval",
     ],
 }

@@ -12,7 +12,6 @@ from bson import ObjectId
 
 from config import MONGO_URI, MONGO_DB, DOCS_FOLDER
 
-# État interne - ne pas accéder directement en dehors de ce module
 _mongo_client = None
 _mongo_db = None
 _fs = None
@@ -21,45 +20,52 @@ _mongo_initialized = False
 
 
 def init_mongodb(force_reconnect=False) -> bool:
-    """
-    Initialise la connexion MongoDB.
-    
-    Args:
-        force_reconnect: Force une reconnexion même si déjà initialisé
-    
-    Returns:
-        bool: True si connexion réussie, False sinon
-    """
     global _mongo_client, _mongo_db, _fs, _mongo_available, _mongo_initialized
     
-    # Éviter de réinitialiser si déjà connecté
     if _mongo_initialized and _mongo_available and not force_reconnect:
         return True
     
     print("[MongoDB] Initialisation...")
     try:
         _mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-        _mongo_client.server_info()  # Vérifie la connexion
+        _mongo_client.server_info()
         _mongo_db = _mongo_client[MONGO_DB]
         _fs = gridfs.GridFS(_mongo_db)
 
-        # Création des index
         _mongo_db.documents.create_index("prediction")
         _mongo_db.documents.create_index("original_filename")
         _mongo_db.documents.create_index("uploaded_at")
         _mongo_db.documents.create_index("confidence")
         _mongo_db.documents.create_index([("ocr_text", "text"), ("original_filename", "text")])
 
-        # Types natifs
         from config import TRAINING_THRESHOLD
-        native = ["rib", "cheque", "tableau_amortissement",
-                  "acte_naissance", "acte_heredite", "assurance", "attestation_solde"]
+        # Types natifs — liste étendue avec les 5 nouveaux types
+        native = [
+            "rib", "cheque", "tableau_amortissement",
+            "acte_naissance", "acte_heredite", "assurance", "attestation_solde",
+            "cin", "lettre_de_change", "certificat_medical",
+            "contrat_garantie", "bon_a_ordre",
+        ]
+        native_labels = {
+            "rib": "RIB",
+            "cheque": "Chèque",
+            "tableau_amortissement": "Tableau d'amortissement",
+            "acte_naissance": "Acte de naissance",
+            "acte_heredite": "Acte d'hérédité",
+            "assurance": "Assurance",
+            "attestation_solde": "Attestation de solde",
+            "cin": "Carte d'Identité Nationale (CIN)",
+            "lettre_de_change": "Lettre de change",
+            "certificat_medical": "Certificat médical",
+            "contrat_garantie": "Contrat de garantie",
+            "bon_a_ordre": "Bon à ordre",
+        }
         for t in native:
             _mongo_db.doc_types.update_one(
                 {"name": t},
                 {"$setOnInsert": {
                     "name": t,
-                    "label": t.replace("_", " ").title(),
+                    "label": native_labels.get(t, t.replace("_", " ").title()),
                     "is_custom": False,
                     "count": 0,
                     "ready_for_training": False,
@@ -77,45 +83,32 @@ def init_mongodb(force_reconnect=False) -> bool:
     except Exception as e:
         print(f"[MongoDB] ❌ Erreur : {e}")
         _mongo_available = False
-        _mongo_initialized = True  # Marqué comme initialisé même en échec
+        _mongo_initialized = True
         return False
 
 
 def is_mongo_available() -> bool:
-    """
-    Vérifie si MongoDB est disponible.
-    Tente une reconnexion si nécessaire.
-    """
     global _mongo_available, _mongo_initialized
-    
-    # Si déjà marqué comme disponible, retourner True
     if _mongo_available:
         return True
-    
-    # Si déjà initialisé mais échoué, ne pas réessayer automatiquement
     if _mongo_initialized and not _mongo_available:
         return False
-    
-    # Première initialisation
     return init_mongodb()
 
 
 def get_mongo_db():
-    """Retourne l'instance de la base de données MongoDB."""
     if is_mongo_available():
         return _mongo_db
     return None
 
 
 def get_gridfs():
-    """Retourne l'instance GridFS."""
     if is_mongo_available():
         return _fs
     return None
 
 
 def _serialize_doc(doc: dict) -> dict:
-    """Sérialise un document MongoDB en JSON-safe dict."""
     if doc is None:
         return {}
     doc = dict(doc)
@@ -133,7 +126,6 @@ def _serialize_doc(doc: dict) -> dict:
 
 
 def save_document_to_mongo(file_path: str, original_filename: str, result: dict) -> str | None:
-    """Sauvegarde un document dans MongoDB."""
     if not is_mongo_available():
         print("[MongoDB] Sauvegarde ignorée : MongoDB non disponible")
         return None

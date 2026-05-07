@@ -378,7 +378,10 @@ const API='http://localhost:5000';
 const TYPE_LABELS={
   rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",
   acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",
-  assurance:"Assurance",attestation_solde:"Attestation de solde",carte_identite:"Carte d'Identité"
+  assurance:"Assurance",attestation_solde:"Attestation de solde",carte_identite:"Carte d'Identité",
+  cin:"Carte d'Identité Nationale (CIN)",lettre_de_change:"Lettre de change",
+  certificat_medical:"Certificat médical",contrat_garantie:"Contrat de garantie",
+  bon_a_ordre:"Bon à ordre"
 };
 const FIELD_LABELS={
   rib:{titulaire:"Titulaire",iban:"IBAN",bic:"BIC",code_banque:"Code banque",code_guichet:"Code guichet",num_compte:"N° compte",cle_rib:"Clé RIB",domiciliation:"Domiciliation",banque:"Banque"},
@@ -388,6 +391,12 @@ const FIELD_LABELS={
   acte_heredite:{defunt:"Défunt(e)",date_deces:"Décès",lieu_deces:"Lieu décès",heritiers:"Héritiers",notaire:"Notaire",date_acte:"Date acte",lieu_acte:"Lieu acte"},
   assurance:{assure:"Assuré(e)",num_contrat:"N° contrat",type_garantie:"Garantie",date_effet:"Effet",date_echeance:"Échéance",prime:"Prime",assureur:"Assureur",agence:"Agence"},
   attestation_solde:{titulaire:"Titulaire",num_compte:"N° compte",solde:"Solde",arrete_au:"Arrêté au",banque:"Banque",agence:"Agence",type_compte:"Type compte"},
+  cin:{nom:"Nom",prenom:"Prénom(s)",cin_number:"N° CIN",date_naissance:"Naissance",lieu_naissance:"Lieu",date_delivrance:"Délivrance",date_expiration:"Expiration",adresse:"Adresse",sexe:"Sexe"},
+  carte_identite:{nom:"Nom",prenom:"Prénom(s)",cin_number:"N° CIN",date_naissance:"Naissance",lieu_naissance:"Lieu",date_delivrance:"Délivrance",date_expiration:"Expiration",adresse:"Adresse",sexe:"Sexe"},
+  lettre_de_change:{tireur:"Tireur",tire:"Tiré",beneficiaire:"Bénéficiaire",montant:"Montant",montant_lettres:"En lettres",date_echeance:"Échéance",lieu_paiement:"Lieu paiement",date_emission:"Date émission",lieu_creation:"Lieu création",valeur_recue:"Valeur reçue",domiciliation:"Domiciliation",num_effet:"N° effet"},
+  certificat_medical:{patient:"Patient",date_naissance_patient:"Naissance patient",medecin:"Médecin",specialite:"Spécialité",etablissement:"Établissement",date_consultation:"Consultation",diagnostic:"Diagnostic",duree_repos:"Durée arrêt",date_debut_arret:"Début arrêt",date_fin_arret:"Fin arrêt",aptitude:"Aptitude"},
+  contrat_garantie:{garant:"Garant",beneficiaire:"Bénéficiaire",debiteur_principal:"Débiteur",montant_garanti:"Montant garanti",type_garantie:"Type garantie",date_effet:"Effet",date_expiration:"Expiration",num_contrat:"N° contrat",conditions_appel:"Conditions appel",banque:"Banque"},
+  bon_a_ordre:{souscripteur:"Souscripteur",beneficiaire:"Bénéficiaire",montant:"Montant",montant_lettres:"En lettres",date_echeance:"Échéance",lieu_paiement:"Lieu paiement",date_emission:"Date émission",lieu_creation:"Lieu création",valeur_recue:"Valeur reçue",num_bon:"N° bon",domiciliation:"Domiciliation"},
 };
 
 let S={docs:[],total:0,page:1,pages:1,cat:'',q:'',sort:'date_desc',confMin:0,sel:new Set(),view:'grid',allTypes:[]};
@@ -560,7 +569,7 @@ function renderModal(doc){
     verdictPipelineTxt=doc.needs_manual?'⚠ Vérification humaine recommandée':'Résultat pipeline';
   }
 
-  const SUPPORTED=['rib','cheque','tableau_amortissement','acte_naissance','acte_heredite','assurance','attestation_solde'];
+  const SUPPORTED=['rib','cheque','tableau_amortissement','acte_naissance','acte_heredite','assurance','attestation_solde','cin','carte_identite','lettre_de_change','certificat_medical','contrat_garantie','bon_a_ordre'];
   const supE=SUPPORTED.includes(doc.prediction);
   const cached=doc.extracted_fields;
   const hasCache=cached&&Object.values(cached).some(v=>v);

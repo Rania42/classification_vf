@@ -1,8 +1,5 @@
 """
 Extraction des métadonnées structurées via LLM.
-Stratégie :
-  1. Gemma2:9b  → extraction via texte OCR (principal)
-  2. Qwen2.5-VL → extraction via image (fallback si Gemma échoue)
 """
 import re
 import time
@@ -20,6 +17,16 @@ GEMMA_MODEL = "gemma2:9b"
 DOC_FIELD_SCHEMAS = {
     "carte_identite": {
         "label": "Carte Nationale d'Identité (CIN)",
+        "fields": {
+            "nom": "Nom de famille", "prenom": "Prénom(s)",
+            "cin_number": "Numéro CIN", "date_naissance": "Date de naissance",
+            "lieu_naissance": "Lieu de naissance", "date_delivrance": "Date de délivrance",
+            "date_expiration": "Date d'expiration", "adresse": "Adresse complète",
+            "sexe": "Sexe (M/F)",
+        }
+    },
+    "cin": {
+        "label": "Carte d'Identité Nationale (CIN)",
         "fields": {
             "nom": "Nom de famille", "prenom": "Prénom(s)",
             "cin_number": "Numéro CIN", "date_naissance": "Date de naissance",
@@ -90,6 +97,51 @@ DOC_FIELD_SCHEMAS = {
             "type_compte": "Type de compte",
         }
     },
+    # ── Nouveaux types ──────────────────────────────────────────────────────
+    "lettre_de_change": {
+        "label": "Lettre de change",
+        "fields": {
+            "tireur": "Tireur (émetteur)", "tire": "Tiré (débiteur)",
+            "beneficiaire": "Bénéficiaire", "montant": "Montant",
+            "montant_lettres": "Montant en lettres", "date_echeance": "Date d'échéance",
+            "lieu_paiement": "Lieu de paiement", "date_emission": "Date d'émission",
+            "lieu_creation": "Lieu de création", "valeur_recue": "Valeur reçue (nature)",
+            "domiciliation": "Domiciliation bancaire", "num_effet": "Numéro d'effet",
+        }
+    },
+    "certificat_medical": {
+        "label": "Certificat médical",
+        "fields": {
+            "patient": "Nom du patient", "date_naissance_patient": "Date de naissance du patient",
+            "medecin": "Nom du médecin", "specialite": "Spécialité",
+            "etablissement": "Établissement/Cabinet", "date_consultation": "Date de consultation",
+            "diagnostic": "Diagnostic / Motif", "duree_repos": "Durée d'arrêt/repos",
+            "date_debut_arret": "Date de début d'arrêt", "date_fin_arret": "Date de fin d'arrêt",
+            "aptitude": "Aptitude (apte/inapte/arrêt)",
+        }
+    },
+    "contrat_garantie": {
+        "label": "Contrat de garantie",
+        "fields": {
+            "garant": "Garant (banque ou personne)", "beneficiaire": "Bénéficiaire de la garantie",
+            "debiteur_principal": "Débiteur principal", "montant_garanti": "Montant garanti",
+            "type_garantie": "Type de garantie (hypothèque, caution, nantissement…)",
+            "date_effet": "Date d'effet", "date_expiration": "Date d'expiration",
+            "num_contrat": "Numéro de contrat/référence", "conditions_appel": "Conditions d'appel",
+            "banque": "Banque émettrice",
+        }
+    },
+    "bon_a_ordre": {
+        "label": "Bon à ordre / Billet à ordre",
+        "fields": {
+            "souscripteur": "Souscripteur (émetteur)", "beneficiaire": "Bénéficiaire",
+            "montant": "Montant", "montant_lettres": "Montant en lettres",
+            "date_echeance": "Date d'échéance", "lieu_paiement": "Lieu de paiement",
+            "date_emission": "Date d'émission", "lieu_creation": "Lieu de création",
+            "valeur_recue": "Valeur reçue", "num_bon": "Numéro du bon",
+            "domiciliation": "Domiciliation bancaire",
+        }
+    },
 }
 
 
@@ -126,7 +178,6 @@ def _parse_llm_json(raw: str, field_keys: list) -> dict | None:
     except Exception:
         pass
 
-    # Fallback regex champ par champ
     result = {}
     for k in field_keys:
         m = re.search(rf'"{re.escape(k)}"\s*:\s*(?:"([^"]*?)"|null|None)',
@@ -138,16 +189,6 @@ def _parse_llm_json(raw: str, field_keys: list) -> dict | None:
 
 
 def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "") -> dict:
-    """
-    Extrait les métadonnées via LLM.
-
-    Stratégie :
-      1. Gemma2:9b (texte OCR) → rapide et précis sur le texte
-      2. Qwen2.5-VL (image)    → fallback si Gemma échoue ou champs vides
-      3. Échec total           → champs vides avec _error=True
-
-    Retourne TOUJOURS tous les champs du schéma (même vides).
-    """
     import core.agents as _agents_module
 
     schema = DOC_FIELD_SCHEMAS.get(doc_type)
@@ -160,15 +201,14 @@ def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "
     ocr_short   = ocr_text[:2000]
 
     prompt = (
-        f"Tu es un expert en documents bancaires marocains. "
-        f"Voici le texte OCR d'un document de type '{doc_type}' (peut être bruité) :\n"
+        f"Tu es un expert en documents bancaires et administratifs marocains. "
+        f"Voici le texte OCR d'un document de type '{doc_type}' ({schema['label']}) — le texte peut être bruité :\n"
         f"{ocr_short}\n\n"
         f"Extrais en JSON les champs suivants : {keys_inline}\n"
-        f"Mets null si le champ est absent. Corrige les erreurs OCR évidentes. "
+        f"Mets null si le champ est absent ou illisible. Corrige les erreurs OCR évidentes. "
         f"Réponds UNIQUEMENT avec le JSON, sans texte autour :"
     )
 
-    # ── Étape 1 : Gemma2:9b (extracteur principal via OCR) ─────────────────
     if _agents_module.USE_OLLAMA:
         print(f"[Extract] Gemma2:9b pour '{doc_type}'...")
         t0  = time.time()
@@ -185,10 +225,9 @@ def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "
                 return full
         print("[Extract] Gemma2 : réponse vide ou JSON invalide")
 
-    # ── Étape 2 : Qwen2.5-VL (fallback visuel) ─────────────────────────────
     if _agents_module.USE_QWEN and stored_path and os.path.exists(stored_path):
         prompt_q = (
-            f"Document type: {doc_type} (Moroccan banking document). "
+            f"Document type: {doc_type} ({schema['label']}) — Moroccan banking/administrative document. "
             f"Extract these JSON fields: {keys_inline}. "
             f"null if absent. Fix OCR errors. JSON only, no extra text:"
         )
@@ -211,7 +250,6 @@ def extract_metadata_with_llm(ocr_text: str, doc_type: str, stored_path: str = "
         except Exception as e:
             print(f"[Extract Qwen] ❌ {e}")
 
-    # ── Échec total ─────────────────────────────────────────────────────────
     print(f"[Extract] Échec total pour '{doc_type}'")
     empty["_source"]    = "none"
     empty["_error"]     = True

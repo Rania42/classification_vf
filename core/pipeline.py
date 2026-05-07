@@ -8,14 +8,24 @@ import os
 import time
 
 from core.ocr import extract_text_ocr, pdf_first_page_to_image
-from core.model import classify_with_model, DOC_CLASSES, CONFIDENCE_THRESHOLD
+from core.model import classify_with_model, DOC_CLASSES as MODEL_DOC_CLASSES, CONFIDENCE_THRESHOLD
 from core.agents import (
     agent_qwen_vision,
     agent_nettoyeur,
+    _build_classes_description,
     USE_OLLAMA, USE_QWEN,
 )
 
-GEMMA_MODEL = "gemma2:9b"
+GEMMA_MODEL = "gemma2:2b"
+
+# ── Classes étendues (modèle + nouveaux types LLM-only) ────────────────────
+EXTENDED_DOC_CLASSES = list(MODEL_DOC_CLASSES) + [
+    c for c in ["cin", "lettre_de_change", "certificat_medical", "contrat_garantie", "bon_a_ordre"]
+    if c not in MODEL_DOC_CLASSES
+]
+
+# DOC_CLASSES utilisé par le pipeline complet (LLM-aware)
+DOC_CLASSES = EXTENDED_DOC_CLASSES
 
 
 def _ensure_image_path(img_path: str) -> tuple[str, str | None]:
@@ -41,15 +51,15 @@ def _call_gemma_verify(ocr_text: str, predicted_class: str, doc_classes: list) -
     if not _agents_module.USE_OLLAMA:
         return {"agrees": False, "class": None, "available": False}
 
-    classes_str = ", ".join(doc_classes)
+    classes_desc = _build_classes_description(doc_classes)
     prompt = (
-        f"Tu es un expert en documents bancaires marocains.\n"
-        f"Un système d'analyse visuelle a classifié ce document comme : '{predicted_class}'\n"
-        f"Catégories possibles : {classes_str}\n\n"
-        f"Texte OCR extrait :\n{ocr_text[:1800]}\n\n"
-        f"En te basant UNIQUEMENT sur le texte OCR, quelle est la catégorie correcte ?\n"
-        f"Réponds UNIQUEMENT avec le nom exact de la catégorie. Si incertain : 'inconnu'.\n"
-        f"Catégorie :"
+        f"Tu es un expert en documents bancaires et administratifs marocains.\n"
+        f"Un système d'analyse visuelle a classifié ce document comme : '{predicted_class}'\n\n"
+        f"Catégories disponibles avec descriptions :\n{classes_desc}\n\n"
+        f"Texte OCR extrait du document :\n{ocr_text[:1800]}\n\n"
+        f"En te basant UNIQUEMENT sur le texte OCR ci-dessus, quelle est la catégorie correcte ?\n"
+        f"Réponds UNIQUEMENT avec le nom exact de la catégorie (ex: rib, cheque, cin, lettre_de_change, etc.). "
+        f"Si incertain : 'inconnu'.\nCatégorie :"
     )
 
     try:
@@ -82,12 +92,13 @@ def _call_gemma_classify(ocr_text: str, doc_classes: list) -> dict:
     if not _agents_module.USE_OLLAMA:
         return {"class": None, "available": False}
 
-    classes_str = ", ".join(doc_classes)
+    classes_desc = _build_classes_description(doc_classes)
     prompt = (
-        f"Tu es un expert en documents bancaires marocains.\n"
-        f"Catégories disponibles : {classes_str}\n"
+        f"Tu es un expert en documents bancaires et administratifs marocains.\n"
+        f"Catégories disponibles avec descriptions :\n{classes_desc}\n\n"
         f"Texte OCR du document :\n{ocr_text[:1800]}\n\n"
-        f"Identifie la catégorie de ce document. Réponds UNIQUEMENT avec le nom exact. "
+        f"Identifie la catégorie de ce document. "
+        f"Réponds UNIQUEMENT avec le nom exact de la catégorie. "
         f"Si incertain : 'inconnu'.\nCatégorie :"
     )
     try:
@@ -109,27 +120,28 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     steps: list = []
     agents_used: list = []
 
-    # ── ÉTAPE 0 : PDF → image ─────────────────────────────────────────────
     img_path_for_vision, pdf_tmp = _ensure_image_path(img_path)
     if pdf_tmp:
         _step(steps, "Conversion PDF", "ok",
               f"Première page extraite → {os.path.basename(pdf_tmp)}")
 
-    # ── ÉTAPE 1 : OCR ─────────────────────────────────────────────────────
     ocr_text, degraded = extract_text_ocr(img_path)
     _step(steps, "Extraction de texte (OCR)", "warning" if degraded else "ok",
           f"{'Image de qualité réduite — ' if degraded else ''}{len(ocr_text)} caractères extraits")
 
     clean_text = agent_nettoyeur(ocr_text)
 
-    # ── ÉTAPE 2 : Qwen2.5-VL — analyse visuelle principale ───────────────
+    # Utiliser les classes étendues pour les LLMs
+    llm_classes = DOC_CLASSES
+
+    # ── ÉTAPE 2 : Qwen2.5-VL ─────────────────────────────────────────────
     qwen_result = {"available": False, "class": None, "confidence": 0.0, "reasoning": "Non appelé"}
     qwen_class: str | None = None
     qwen_conf = 0.0
     qwen_available = False
 
     if USE_QWEN:
-        qwen_result = agent_qwen_vision(img_path_for_vision, clean_text, DOC_CLASSES)
+        qwen_result = agent_qwen_vision(img_path_for_vision, clean_text, llm_classes)
         if qwen_result.get("available") and qwen_result.get("class"):
             qwen_available = True
             qwen_class = qwen_result["class"]
@@ -143,14 +155,13 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     else:
         _step(steps, "Analyse visuelle (Qwen2.5-VL)", "warning", "Désactivé")
 
-    # ── ÉTAPE 3 : Gemma2:9b — vérification ou classification de secours ───
+    # ── ÉTAPE 3 : Gemma2:9b ──────────────────────────────────────────────
     gemma_result = {"agrees": False, "class": None, "available": False}
     gemma_available = False
     gemma_solo = False
 
     if qwen_available:
-        # Gemma vérifie la prédiction Qwen
-        gemma_result = _call_gemma_verify(clean_text, qwen_class, DOC_CLASSES)
+        gemma_result = _call_gemma_verify(clean_text, qwen_class, llm_classes)
         if gemma_result["available"]:
             gemma_available = True
             agents_used.append("gemma2")
@@ -164,9 +175,8 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
             _step(steps, "Vérification textuelle (Gemma2:9b)", "warning",
                   "Indisponible")
     else:
-        # Qwen absent → Gemma classifie seul
         if USE_OLLAMA:
-            gr = _call_gemma_classify(clean_text, DOC_CLASSES)
+            gr = _call_gemma_classify(clean_text, llm_classes)
             if gr["available"]:
                 gemma_available = True
                 gemma_solo = True
@@ -186,24 +196,38 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
     all_scores = []
     used_efficientnet = False
 
+    # EfficientNet ne connaît que les classes originales du modèle entraîné
+    # Pour les nouveaux types, les LLMs prennent le relais
+    new_llm_types = {"cin", "lettre_de_change", "certificat_medical", "contrat_garantie", "bon_a_ordre"}
+    qwen_predicted_new_type = qwen_class in new_llm_types if qwen_class else False
+
     if not qwen_available and not gemma_available:
-        model_pred, model_conf, all_scores = classify_with_model(img_path_for_vision, clean_text)
+        try:
+            model_pred, model_conf, all_scores = classify_with_model(img_path_for_vision, clean_text)
+        except Exception as e:
+            print(f"[Pipeline] EfficientNet erreur : {e}")
+            model_pred = "inconnu"
+            model_conf = 0.0
+            all_scores = []
         used_efficientnet = True
         _step(steps, "Modèle de secours (EfficientNet+mBERT)", "warning",
               f"Résultat : {model_pred} ({model_conf:.0%}) — révision humaine obligatoire")
     else:
-        try:
-            _, _, all_scores = classify_with_model(img_path_for_vision, clean_text)
-        except Exception:
-            all_scores = []
+        # On récupère les scores EfficientNet uniquement pour affichage (si pas un nouveau type)
+        if not qwen_predicted_new_type:
+            try:
+                _, _, all_scores = classify_with_model(img_path_for_vision, clean_text)
+            except Exception:
+                all_scores = []
 
-    # ── DÉCISION FINALE ────────────────────────────────────────────────────
+    # ── DÉCISION FINALE ───────────────────────────────────────────────────
     final_prediction = qwen_class or model_pred or "inconnu"
     final_confidence = qwen_conf if qwen_available else (model_conf if used_efficientnet else 0.5)
     path = ""
     agreement = False
     needs_manual = True
 
+    # Les nouveaux types LLM-only sont toujours validés si les deux LLMs s'accordent
     if qwen_available and gemma_available and gemma_result["agrees"]:
         agreement = True
         needs_manual = False
@@ -259,7 +283,6 @@ def run_pipeline(img_path: str, original_filename: str = "") -> dict:
         "degraded_image": degraded,
         "agents_used": agents_used,
         "used_efficientnet": used_efficientnet,
-        # Compatibilité avec l'ancienne API (llama_result → gemma)
         "llama_result": {
             "available": gemma_available,
             "class": gemma_result.get("class"),

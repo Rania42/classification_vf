@@ -19,7 +19,6 @@ docs_bp = Blueprint("documents", __name__)
 
 
 def _get_db():
-    """Retourne l'instance MongoDB avec vérification."""
     db = get_mongo_db()
     if db is None:
         return None
@@ -27,7 +26,6 @@ def _get_db():
 
 
 def _get_fs():
-    """Retourne l'instance GridFS avec vérification."""
     fs = get_gridfs()
     if fs is None:
         return None
@@ -35,7 +33,6 @@ def _get_fs():
 
 
 def _require_mongo():
-    """Vérifie que MongoDB est disponible."""
     if not is_mongo_available():
         return jsonify({"error": "MongoDB non disponible", "documents": [], "total": 0}), 503
     return None
@@ -59,12 +56,17 @@ def list_documents():
     skip = (page - 1) * per_page
     sort = request.args.get("sort", "date_desc")
     conf_min = float(request.args.get("conf_min", 0))
+    needs_manual = request.args.get("needs_manual", "")
 
     query = {}
     if category:
         query["prediction"] = category
     if conf_min > 0:
         query["confidence"] = {"$gte": conf_min}
+    if needs_manual == "true":
+        query["needs_manual"] = True
+        query["corrected"] = {"$ne": True}
+        query["manually_classified"] = {"$ne": True}
     if q:
         query["$or"] = [
             {"original_filename": {"$regex": q, "$options": "i"}},
@@ -187,6 +189,7 @@ def correct_document(doc_id):
         upd = {
             "prediction": new_pred,
             "corrected": True,
+            "needs_manual": False,
             "original_prediction": old_pred,
             "corrected_at": datetime.utcnow(),
         }
@@ -283,7 +286,6 @@ def extract_document_metadata(doc_id):
         stored_path = doc.get("stored_path", "")
         force = (request.json or {}).get("force", False)
 
-        # Re-OCR si texte trop court
         from config import OCR_MIN_LENGTH
         if stored_path and os.path.exists(stored_path) and len(ocr_text) < OCR_MIN_LENGTH:
             fresh, _ = extract_text_ocr(stored_path)
@@ -293,7 +295,6 @@ def extract_document_metadata(doc_id):
                     {"_id": ObjectId(doc_id)}, {"$set": {"ocr_text": ocr_text}}
                 )
 
-        # Cache
         if not force and doc.get("extracted_fields"):
             cached = doc["extracted_fields"]
             if any(v for v in cached.values()):
@@ -406,6 +407,7 @@ def classify_manual(doc_id):
             "original_prediction": old_type,
             "original_confidence": doc.get("confidence", 0),
             "needs_manual": False,
+            "corrected": True,
         }
         if new_path != old_path:
             upd["stored_path"] = new_path
