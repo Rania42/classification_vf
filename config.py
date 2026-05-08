@@ -22,7 +22,7 @@ QWEN_MODEL   = "qwen2.5vl:3b"
 
 OLLAMA_TIMEOUT     = 30
 OLLAMA_MAX_RETRIES = 1
-QWEN_TIMEOUT = 70
+QWEN_TIMEOUT = 120
 
 # ── MongoDB ────────────────────────────────────────────
 MONGO_URI = "mongodb://localhost:27017/"
