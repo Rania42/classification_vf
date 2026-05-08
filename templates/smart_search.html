@@ -87,6 +87,25 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 .itag.kw{background:var(--success-bg);color:var(--success);border-color:var(--success-border)}
 .interp-count{font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0;align-self:center}
 
+/* RAG ANSWER */
+.rag-answer-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:none;flex-direction:column;gap:12px;flex-shrink:0}
+.rag-answer-bar.show{display:flex}
+.rag-answer-header{display:flex;align-items:center;gap:10px}
+.rag-answer-icon{width:28px;height:28px;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rag-answer-icon svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.5}
+.rag-answer-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--brand)}
+.rag-answer-model{font-family:var(--mono);font-size:9px;color:var(--text4);margin-left:auto;padding:2px 7px;border:1px solid var(--border);background:var(--surface2)}
+.rag-answer-text{font-size:13px;color:var(--text);line-height:1.75;padding:12px 14px;background:var(--brand-light);border:1px solid var(--brand-border);border-left:3px solid var(--brand)}
+.rag-sources-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rag-sources-label{font-family:var(--mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text4)}
+.rag-source-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:3px 9px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .12s;color:var(--text2);text-decoration:none}
+.rag-source-pill:hover{border-color:var(--brand-border);color:var(--brand);background:var(--brand-light)}
+.rag-source-pill.highlighted{border-color:var(--brand);background:var(--brand-light);color:var(--brand)}
+.rag-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.rag-loading .rag-spin{width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rag-not-found{font-size:12px;color:var(--text3);padding:10px 14px;background:var(--surface2);border:1px solid var(--border);font-style:italic}
+
 /* RESULTS AREA */
 .results-area{flex:1;overflow-y:auto;padding:20px 32px}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;height:100%;text-align:center;color:var(--text3)}
@@ -245,6 +264,24 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
     <div class="interp-count" id="interp-count">—</div>
   </div>
 
+  <!-- RAG ANSWER PANEL -->
+  <div class="rag-answer-bar" id="rag-answer-bar">
+    <div class="rag-answer-header">
+      <div class="rag-answer-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <span class="rag-answer-label">Réponse de Gemma2</span>
+      <span class="rag-answer-model">gemma2:2b · RAG</span>
+    </div>
+    <div id="rag-answer-content">
+      <div class="rag-loading"><div class="rag-spin"></div>Gemma analyse les documents…</div>
+    </div>
+    <div class="rag-sources-row" id="rag-sources-row" style="display:none">
+      <span class="rag-sources-label">Sources :</span>
+      <div id="rag-source-pills"></div>
+    </div>
+  </div>
+
   <div class="results-area" id="results-area">
     <div class="empty-state">
       <div class="empty-icon">
@@ -322,19 +359,21 @@ async function runSearch() {
   btnTxt.textContent = 'Analyse…';
 
   document.getElementById('interp-bar').classList.remove('show');
+  document.getElementById('rag-answer-bar').classList.remove('show');
   showSkeletons();
 
   try {
     const r = await fetch(`${API}/smart_search`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt, limit: 30})
+      body: JSON.stringify({prompt, limit: 30, rag: true})
     });
     const d = await r.json();
     if (d.error) { toast('Erreur : ' + d.error, 'err'); showEmpty('Erreur de recherche'); return; }
 
     currentKeywords = d.interpretation?.keywords || [];
     renderInterpretation(d.interpretation, d.total, d.llm_available);
+    renderRagAnswer(d.rag_answer, d.rag_answered, d.rag_source_ids, d.results);
     renderResults(d.results, prompt);
   } catch(e) {
     toast('Erreur réseau : ' + e.message, 'err');
@@ -367,6 +406,68 @@ function renderInterpretation(interp, total, llmOk) {
     tagsHTML += `<span class="itag">🎯 ${esc(k)}: ${esc(v)}</span>`;
   });
   document.getElementById('interp-tags').innerHTML = tagsHTML;
+}
+
+function renderRagAnswer(answer, answered, sourceIds, allDocs) {
+  const bar = document.getElementById('rag-answer-bar');
+  const content = document.getElementById('rag-answer-content');
+  const sourcesRow = document.getElementById('rag-sources-row');
+  const pillsContainer = document.getElementById('rag-source-pills');
+
+  if (!answer && !answered) {
+    bar.classList.remove('show');
+    return;
+  }
+
+  bar.classList.add('show');
+
+  if (!answered || !answer) {
+    content.innerHTML = `<div class="rag-not-found">Gemma n'a pas pu trouver de réponse précise dans les documents. Consultez les documents ci-dessous.</div>`;
+    sourcesRow.style.display = 'none';
+    return;
+  }
+
+  content.innerHTML = `<div class="rag-answer-text">${esc(answer)}</div>`;
+
+  // Build source pills
+  if (sourceIds && sourceIds.length && allDocs && allDocs.length) {
+    const sourceDocs = sourceIds.map(id => allDocs.find(d => d._id === id)).filter(Boolean);
+    if (sourceDocs.length) {
+      sourcesRow.style.display = 'flex';
+      pillsContainer.innerHTML = sourceDocs.map((doc, i) =>
+        `<a class="rag-source-pill" href="javascript:void(0)" onclick="scrollToAndHighlight('${doc._id}')" title="${esc(doc.original_filename)}">
+          📄 ${esc(doc.original_filename.length > 28 ? doc.original_filename.substring(0,28)+'…' : doc.original_filename)}
+        </a>`
+      ).join('');
+    } else {
+      sourcesRow.style.display = 'none';
+    }
+  } else {
+    sourcesRow.style.display = 'none';
+  }
+}
+
+function scrollToAndHighlight(docId) {
+  // Expand the card if not already expanded
+  const card = document.getElementById(`rc-${docId}`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Highlight briefly
+  card.classList.add('expanded');
+  const detail = document.getElementById(`rcd-${docId}`);
+  const toggle = document.getElementById(`rct-${docId}`);
+  if (detail && !detail.classList.contains('open')) {
+    detail.classList.add('open');
+    if (toggle) toggle.classList.add('open');
+  }
+  // Flash effect
+  card.style.outline = '2px solid var(--brand)';
+  card.style.outlineOffset = '2px';
+  setTimeout(() => { card.style.outline = ''; card.style.outlineOffset = ''; }, 2000);
+  // Highlight pill
+  document.querySelectorAll('.rag-source-pill').forEach(p => p.classList.remove('highlighted'));
+  const pill = document.querySelector(`.rag-source-pill[onclick*="${docId}"]`);
+  if (pill) pill.classList.add('highlighted');
 }
 
 function highlightText(text, keywords) {
@@ -593,6 +694,14 @@ async function runExtractInline(docId, docType, force) {
 }
 
 function showSkeletons() {
+  // Show RAG bar with loading
+  const bar = document.getElementById('rag-answer-bar');
+  const content = document.getElementById('rag-answer-content');
+  const sourcesRow = document.getElementById('rag-sources-row');
+  bar.classList.add('show');
+  content.innerHTML = `<div class="rag-loading"><div class="rag-spin"></div>Gemma analyse les documents…</div>`;
+  sourcesRow.style.display = 'none';
+
   const area = document.getElementById('results-area');
   area.innerHTML = `<div class="results-list">${Array(4).fill(0).map(() =>
     `<div class="skel"></div>`

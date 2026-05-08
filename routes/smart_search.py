@@ -1,5 +1,5 @@
 """
-Route POST /smart_search — recherche intelligente via LLM (Gemma2).
+Route POST /smart_search — recherche intelligente via LLM (Gemma2) + réponse RAG conversationnelle.
 """
 import re
 import json
@@ -143,6 +143,69 @@ def _build_mongo_query(interpretation: dict) -> dict:
     return {"$and": conditions}
 
 
+def _llm_rag_answer(user_prompt: str, docs: list) -> dict:
+    """
+    Génère une réponse conversationnelle RAG basée sur les documents trouvés.
+    Retourne {"answer": str, "source_ids": [str], "answered": bool}
+    """
+    if not USE_OLLAMA or not docs:
+        return {"answer": None, "source_ids": [], "answered": False}
+
+    # Construire le contexte depuis les documents (OCR + champs extraits)
+    context_parts = []
+    source_ids = []
+    for i, doc in enumerate(docs[:5]):  # Max 5 docs pour le contexte
+        doc_type = DOC_TYPES_LABELS.get(doc.get("prediction", ""), doc.get("prediction", ""))
+        filename = doc.get("original_filename", "")
+        ocr = (doc.get("ocr_text") or "")[:800]
+        fields = doc.get("extracted_fields") or {}
+        fields_str = ""
+        if fields:
+            fields_str = " | ".join(
+                f"{k}: {v}" for k, v in fields.items()
+                if v and not k.startswith("_")
+            )
+
+        part = f"[Document {i+1} — {doc_type} — {filename}]\n"
+        if fields_str:
+            part += f"Champs extraits: {fields_str}\n"
+        if ocr:
+            part += f"Texte OCR: {ocr}\n"
+
+        context_parts.append(part)
+        source_ids.append(str(doc.get("_id", "")))
+
+    context = "\n\n".join(context_parts)
+
+    prompt = f"""Tu es un assistant expert en documents bancaires et administratifs marocains.
+Tu dois répondre à la question de l'utilisateur en te basant UNIQUEMENT sur les documents fournis ci-dessous.
+
+Question de l'utilisateur : "{user_prompt}"
+
+Documents disponibles :
+{context}
+
+Instructions :
+- Réponds directement et précisément à la question en français.
+- Si la réponse se trouve dans les documents, donne-la clairement avec le nom du document source entre parenthèses.
+- Si plusieurs documents sont pertinents, liste les informations de chacun.
+- Si tu ne trouves pas la réponse dans les documents, dis-le clairement.
+- Sois concis mais complet. Pas de markdown, texte simple.
+- Ne réinvente pas d'informations qui ne sont pas dans les documents.
+
+Réponse :"""
+
+    raw = _call_ollama_streaming(prompt, GEMMA_MODEL, timeout_no_token=60)
+    if not raw or len(raw.strip()) < 5:
+        return {"answer": None, "source_ids": source_ids, "answered": False}
+
+    return {
+        "answer": raw.strip(),
+        "source_ids": source_ids,
+        "answered": True
+    }
+
+
 @smart_search_bp.route("/smart_search", methods=["POST"])
 def smart_search():
     if not is_mongo_available():
@@ -155,6 +218,7 @@ def smart_search():
     data = request.json or {}
     user_prompt = data.get("prompt", "").strip()
     limit = min(int(data.get("limit", 20)), 50)
+    rag_mode = data.get("rag", True)  # RAG activé par défaut
 
     if not user_prompt:
         return jsonify({"error": "Prompt vide", "results": []}), 400
@@ -170,12 +234,20 @@ def smart_search():
         )
         serialized = [_serialize_doc(d) for d in docs]
 
+        # RAG : générer une réponse conversationnelle
+        rag_result = {"answer": None, "source_ids": [], "answered": False}
+        if rag_mode and docs:
+            rag_result = _llm_rag_answer(user_prompt, docs)
+
         return jsonify({
             "results": serialized,
             "total": len(serialized),
             "interpretation": interpretation,
             "query_used": str(mongo_query)[:500],
-            "llm_available": USE_OLLAMA
+            "llm_available": USE_OLLAMA,
+            "rag_answer": rag_result.get("answer"),
+            "rag_source_ids": rag_result.get("source_ids", []),
+            "rag_answered": rag_result.get("answered", False),
         })
     except Exception as e:
         import traceback
