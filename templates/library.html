@@ -280,9 +280,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <div class="nav-sep"></div>
   <div class="nav-links">
     <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+<<<<<<< HEAD
     <a class="nav-link" href="queue.html">Traitement par lot</a>
     <a class="nav-link active" href="library.html">Bibliothèque</a>
     <a class="nav-link" href="smart_search.html">Recherche</a>
+=======
+    <a class="nav-link" href="gedia/queue.html">Traitement par lot</a>
+    <a class="nav-link active" href="gedia/library.html">Bibliothèque</a>
+>>>>>>> 70a8997 (local modifications)
   </div>
   <div class="nav-right">
     <div class="status-chip" id="total-chip">— docs</div>
@@ -374,6 +379,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <div class="toasts" id="toasts"></div>
 
 <script>
+<<<<<<< HEAD
 const API='http://localhost:5000';
 const TYPE_LABELS={
   rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",
@@ -383,6 +389,10 @@ const TYPE_LABELS={
   certificat_medical:"Certificat médical",contrat_garantie:"Contrat de garantie",
   bon_a_ordre:"Bon à ordre"
 };
+=======
+const API='/gedia';
+const TYPE_LABELS={rib:"RIB",cheque:"Chèque",tableau_amortissement:"Tableau d'amortissement",acte_naissance:"Acte de naissance",acte_heredite:"Acte d'hérédité",assurance:"Assurance",attestation_solde:"Attestation de solde"};
+>>>>>>> 70a8997 (local modifications)
 const FIELD_LABELS={
   rib:{titulaire:"Titulaire",iban:"IBAN",bic:"BIC",code_banque:"Code banque",code_guichet:"Code guichet",num_compte:"N° compte",cle_rib:"Clé RIB",domiciliation:"Domiciliation",banque:"Banque"},
   cheque:{beneficiaire:"Bénéficiaire",montant_chiffres:"Montant",montant_lettres:"En lettres",date_emission:"Date",num_cheque:"N° chèque",tire_sur:"Tiré sur",emetteur:"Émetteur",endossable:"Endossable"},

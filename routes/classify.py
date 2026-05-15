@@ -12,7 +12,7 @@ from services.mongo import save_document_to_mongo
 classify_bp = Blueprint("classify", __name__)
 
 
-@classify_bp.route("/classify", methods=["POST"])
+@classify_bp.route("/gedia/classify", methods=["POST"])
 def classify():
     if "file" not in request.files:
         return jsonify({"error": "Aucun fichier fourni"}), 400

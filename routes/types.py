@@ -44,7 +44,7 @@ def _get_db():
     return get_mongo_db()
 
 
-@types_bp.route("/types", methods=["GET"])
+@types_bp.route("/gedia/types", methods=["GET"])
 def list_types():
     if not is_mongo_available():
         return jsonify({"types": [
@@ -66,7 +66,7 @@ def list_types():
     return jsonify({"types": types, "training_threshold": TRAINING_THRESHOLD})
 
 
-@types_bp.route("/types", methods=["POST"])
+@types_bp.route("/gedia/types", methods=["POST"])
 def create_type():
     err = _require_mongo()
     if err:
@@ -102,7 +102,7 @@ def create_type():
     }), 201
 
 
-@types_bp.route("/types/<type_name>", methods=["DELETE"])
+@types_bp.route("/gedia/types/<type_name>", methods=["DELETE"])
 def delete_type(type_name):
     err = _require_mongo()
     if err:
@@ -124,7 +124,7 @@ def delete_type(type_name):
     return jsonify({"success": True})
 
 
-@types_bp.route("/types/stats", methods=["GET"])
+@types_bp.route("/gedia/types/stats", methods=["GET"])
 def types_stats():
     if not is_mongo_available():
         return jsonify({"custom_types": [], "alerts": [], "threshold": TRAINING_THRESHOLD})

@@ -10,7 +10,7 @@ from services.queue_worker import (
 queue_bp = Blueprint("queue", __name__)
 
 
-@queue_bp.route("/queue/upload", methods=["POST"])
+@queue_bp.route("/gedia/queue/upload", methods=["POST"])
 def queue_upload():
     files     = request.files.getlist("files")
     use_qwen = True
@@ -25,7 +25,7 @@ def queue_upload():
     return jsonify({"uploaded": len(items), "items": items})
 
 
-@queue_bp.route("/queue/status", methods=["GET"])
+@queue_bp.route("/gedia/queue/status", methods=["GET"])
 def queue_status():
     return jsonify({
         "items":        get_all_items(),
@@ -33,7 +33,7 @@ def queue_status():
     })
 
 
-@queue_bp.route("/queue/item/<item_id>", methods=["GET"])
+@queue_bp.route("/gedia/queue/item/<item_id>", methods=["GET"])
 def queue_item_get(item_id):
     store = get_queue_store()
     item  = store.get(item_id)
@@ -42,7 +42,7 @@ def queue_item_get(item_id):
     return jsonify({k: v for k, v in item.items() if k != "path"})
 
 
-@queue_bp.route("/queue/item/<item_id>", methods=["DELETE"])
+@queue_bp.route("/gedia/queue/item/<item_id>", methods=["DELETE"])
 def queue_item_delete(item_id):
     ok, reason = delete_item(item_id)
     if not ok:
@@ -50,7 +50,7 @@ def queue_item_delete(item_id):
     return jsonify({"success": True})
 
 
-@queue_bp.route("/queue/clear", methods=["POST"])
+@queue_bp.route("/gedia/queue/clear", methods=["POST"])
 def queue_clear():
     mode    = (request.json or {}).get("mode", "finished")
     cleared = clear_items(mode)

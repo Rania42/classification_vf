@@ -12,6 +12,7 @@ from config import DEVICE
 status_bp = Blueprint("status", __name__)
 
 
+<<<<<<< HEAD
 def _get_extraction_service_status() -> dict:
     try:
         from services.extraction_client import get_service_status
@@ -21,6 +22,9 @@ def _get_extraction_service_status() -> dict:
 
 
 @status_bp.route("/status", methods=["GET"])
+=======
+@status_bp.route("/gedia/status", methods=["GET"])
+>>>>>>> 70a8997 (local modifications)
 def status():
     check_ollama_available()
     mongo_ok      = is_mongo_available()
@@ -59,7 +63,7 @@ def status():
     })
 
 
-@status_bp.route("/toggle_ollama", methods=["POST"])
+@status_bp.route("/gedia/toggle_ollama", methods=["POST"])
 def toggle_ollama():
     agents_module.USE_OLLAMA = request.json.get("enabled", agents_module.USE_OLLAMA)
     return jsonify({"ollama_enabled": agents_module.USE_OLLAMA,
@@ -72,7 +76,7 @@ def toggle_gemma():
     return jsonify({"gemma_enabled": agents_module.USE_OLLAMA})
 
 
-@status_bp.route("/toggle_qwen", methods=["POST"])
+@status_bp.route("/gedia/toggle_qwen", methods=["POST"])
 def toggle_qwen():
     agents_module.USE_QWEN = request.json.get("enabled", agents_module.USE_QWEN)
     return jsonify({"qwen_enabled": agents_module.USE_QWEN})

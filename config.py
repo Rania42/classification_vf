@@ -3,9 +3,9 @@ import os
 
 # ── Paths ──────────────────────────────────────────────
 MODEL_PATH       = "model/bank_doc_classifier_multimodal.pth"
-DOCS_FOLDER      = "stored_documents"
-UPLOAD_TEMP      = "uploads_temp"
-QUEUE_UPLOAD_DIR = "queue_uploads"
+DOCS_FOLDER      = "/home/mouline/gedia/classification_vf/stored_documents"
+UPLOAD_TEMP      = "/home/mouline/gedia/classification_vf/uploads_temp"
+QUEUE_UPLOAD_DIR = "/home/mouline/gedia/classification_vf/queue_uploads"
 
 os.makedirs(DOCS_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_TEMP, exist_ok=True)
@@ -17,8 +17,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # ── Ollama ─────────────────────────────────────────────
 OLLAMA_URL   = "http://localhost:11434/api/generate"
 OLLAMA_CHAT  = "http://localhost:11434/api/chat"
-OLLAMA_MODEL = "llama3.2"
-QWEN_MODEL   = "qwen2.5vl:3b"
+OLLAMA_MODEL = "gemma3:12b"
+QWEN_MODEL   = "gemma3:12b"
 
 OLLAMA_TIMEOUT     = 30
 OLLAMA_MAX_RETRIES = 1

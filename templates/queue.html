@@ -202,16 +202,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 <body>
 
 <nav class="nav">
-  <a class="nav-brand" href="dashboard.html">
+  <a class="nav-brand" href="/dashboard">
     <div class="nav-logo"><svg viewBox="0 0 16 16"><path d="M1 3h14v2H1zM1 7h14v6H1z"/></svg></div>
     <span class="nav-title">BankDoc</span>
   </a>
   <div class="nav-sep"></div>
   <div class="nav-links">
+<<<<<<< HEAD
     <a class="nav-link" href="dashboard.html">Tableau de bord</a>
     <a class="nav-link active" href="queue.html">Traitement par lot</a>
     <a class="nav-link" href="library.html">Bibliothèque</a>
     <a class="nav-link" href="smart_search.html">Recherche</a>
+=======
+    <a class="nav-link" href="/gedia/dashboard">Tableau de bord</a>
+    <a class="nav-link active" href="/gedia/queue">Traitement par lot</a>
+    <a class="nav-link" href="/gedia/library">Bibliothèque</a>
+>>>>>>> 70a8997 (local modifications)
   </div>
   <div class="nav-right">
     <div class="worker-status idle" id="worker-status">
@@ -331,7 +337,7 @@ async function uploadFiles(files){
     for(const f of files)fd.append('files',f);
     fd.append('use_qwen',useQwen?'true':'false');
     fill.style.width='60%';lbl.textContent='Envoi en cours…';
-    const r=await fetch('/queue/upload',{method:'POST',body:fd});
+    const r=await fetch('/gedia/queue/upload',{method:'POST',body:fd});
     if(!r.ok)throw new Error(`HTTP ${r.status}`);
     const d=await r.json();
     if(d.error)throw new Error(d.error);
@@ -345,7 +351,7 @@ async function uploadFiles(files){
 
 async function poll(){
   try{
-    const r=await fetch('/queue/status');if(!r.ok)return;
+    const r=await fetch('/gedia/queue/status');if(!r.ok)return;
     const d=await r.json();
     
     const newItems=d.items||[];

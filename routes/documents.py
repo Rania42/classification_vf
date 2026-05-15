@@ -53,7 +53,7 @@ def _require_mongo():
 
 
 # ── Liste ──────────────────────────────────────────────
-@docs_bp.route("/documents", methods=["GET"])
+@docs_bp.route("/gedia/documents", methods=["GET"])
 def list_documents():
     err = _require_mongo()
     if err:
@@ -112,7 +112,7 @@ def list_documents():
 
 
 # ── Stats ──────────────────────────────────────────────
-@docs_bp.route("/documents/stats", methods=["GET"])
+@docs_bp.route("/gedia/documents/stats", methods=["GET"])
 def documents_stats():
     if not is_mongo_available():
         return jsonify({"stats": [], "total": 0, "mongodb": False})
@@ -145,7 +145,7 @@ def documents_stats():
 
 
 # ── Détail ─────────────────────────────────────────────
-@docs_bp.route("/documents/<doc_id>", methods=["GET"])
+@docs_bp.route("/gedia/documents/<doc_id>", methods=["GET"])
 def get_document(doc_id):
     err = _require_mongo()
     if err:
@@ -165,7 +165,7 @@ def get_document(doc_id):
 
 
 # ── Corriger catégorie ─────────────────────────────────
-@docs_bp.route("/documents/<doc_id>/correct", methods=["PATCH"])
+@docs_bp.route("/gedia/documents/<doc_id>/correct", methods=["PATCH"])
 def correct_document(doc_id):
     err = _require_mongo()
     if err:
@@ -216,7 +216,7 @@ def correct_document(doc_id):
 
 
 # ── Téléchargement ─────────────────────────────────────
-@docs_bp.route("/documents/<doc_id>/download", methods=["GET"])
+@docs_bp.route("/gedia/documents/<doc_id>/download", methods=["GET"])
 def download_document(doc_id):
     err = _require_mongo()
     if err:
@@ -249,7 +249,7 @@ def download_document(doc_id):
 
 
 # ── Suppression ────────────────────────────────────────
-@docs_bp.route("/documents/<doc_id>", methods=["DELETE"])
+@docs_bp.route("/gedia/documents/<doc_id>", methods=["DELETE"])
 def delete_document(doc_id):
     err = _require_mongo()
     if err:
@@ -392,7 +392,7 @@ def extract_document_metadata(doc_id):
 
 
 # ── Classification manuelle ────────────────────────────
-@docs_bp.route("/documents/<doc_id>/classify_manual", methods=["POST"])
+@docs_bp.route("/gedia/documents/<doc_id>/classify_manual", methods=["POST"])
 def classify_manual(doc_id):
     err = _require_mongo()
     if err:
